@@ -60,9 +60,10 @@ const COMMIT_QUESTIONS = [
 const config = {
   prompter: (cz, commit) => {
     cz.prompt(COMMIT_QUESTIONS).then(({ description, scope, subject, type }) => {
-      const trimmedScope = scope.trim();
-      const trimmedDescription = description?.trim();
-      const baseCommitMessage = `${type}(${trimmedScope}): ${subject}`;
+      const [trimmedScope, trimmedSubject, trimmedDescription] = [scope, subject, description].map(
+        (value) => value?.trim(),
+      );
+      const baseCommitMessage = `${type}(${trimmedScope}): ${trimmedSubject}`;
       const commitMessage =
         trimmedDescription?.length > 0
           ? `${baseCommitMessage}\n\n${trimmedDescription}`
