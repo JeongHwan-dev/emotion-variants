@@ -48,7 +48,19 @@ const COMMIT_QUESTIONS = [
     message: '3️⃣ Enter commit message:',
     name: 'subject',
     type: 'input',
-    validate: (input) => input.length > 0 && input.length <= MAX_COMMIT_MESSAGE_LENGTH,
+    validate: (input) => {
+      const trimmedMessageLength = input.trim().length;
+
+      if (trimmedMessageLength === 0) {
+        return 'Commit message is required.';
+      }
+
+      if (trimmedMessageLength > MAX_COMMIT_MESSAGE_LENGTH) {
+        return `Commit message must be ${MAX_COMMIT_MESSAGE_LENGTH} characters or less.`;
+      }
+
+      return true;
+    },
   },
   {
     message: '4️⃣ Enter commit description (optional, press Enter to skip):',
