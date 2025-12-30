@@ -1,0 +1,54 @@
+name: Generate Label Files
+
+on:
+  pull_request:
+    paths:
+      - '.github/labels/labels.config.mjs'
+
+jobs:
+  sync-labels:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate label files
+        run: pnpm generate:labels
+
+      - name: Check for changes
+        id: verify-changed-files
+        run: |
+          if [ -n "$(git status --porcelain .github/labels/labels.json .github/labels/labeler.yml)" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            git diff .github/labels/labels.json .github/labels/labeler.yml || true
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit changes
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .github/labels/labels.json .github/labels/labeler.yml
+          git commit -m "chore(label): auto-sync related files based on labels.config.mjs update"
+          git push origin HEAD:${{ github.head_ref }}

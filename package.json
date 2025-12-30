@@ -35,7 +35,8 @@
     "format": "biome format --write ./src",
     "format:check": "biome format ./src",
     "check": "biome check --write ./src",
-    "prepublishOnly": "pnpm run check && pnpm run build && pnpm run test"
+    "prepublishOnly": "pnpm run check && pnpm run build && pnpm run test",
+    "generate:labels": "node .github/scripts/generate-labels.mjs"
   },
   "peerDependencies": {
     "@emotion/react": "^11.0.0",

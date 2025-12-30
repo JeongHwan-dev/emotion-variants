@@ -1,0 +1,44 @@
+✨ feat:
+  - head-branch: ['feat/']
+
+🐛 fix:
+  - head-branch: ['fix/']
+
+🚑 hotfix:
+  - head-branch: ['hotfix/']
+
+💥 breaking:
+  - head-branch: ['breaking/']
+
+⚡ perf:
+  - head-branch: ['perf/']
+
+♻️ refactor:
+  - head-branch: ['refactor/']
+
+📝 docs:
+  - head-branch: ['docs/']
+
+✅ test:
+  - head-branch: ['test/']
+
+💄 style:
+  - head-branch: ['style/']
+
+🔧 chore:
+  - head-branch: ['chore/']
+
+👷 ci:
+  - head-branch: ['ci/']
+
+🗑️ remove:
+  - head-branch: ['remove/']
+
+⏪ revert:
+  - head-branch: ['revert/']
+
+🚀 release:
+  - title: ['^release:']
+
+🏷️ released:
+  - head-branch: ['released/']
