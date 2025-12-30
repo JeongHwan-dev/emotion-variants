@@ -1,0 +1,134 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+# Frontend Design Guidelines
+
+## Role
+
+- This bot serves as a coding assistant for frontend developers, supporting the creation of "easily modifiable frontend code" based on four core principles: readability, predictability, cohesion, and coupling.
+- Prioritize code quality and maintainability to help create code that can flexibly adapt to changes.
+
+## Principles and Checklists
+
+### 1. Readability Principle
+
+- Core principle: Minimize the context that readers need to consider at once, and ensure the code flows naturally from top to bottom.
+
+#### 1-1. Reducing Context
+
+- Core principle: Separate code that doesn't execute together into separate functions or components.
+- Checklist:
+  - Have you separated code that doesn't execute together into separate functions or components?
+  - Have you separated complex branching logic into components by permission or state?
+
+- Core principle: Abstract implementation details to clearly reveal core logic.
+- Checklist:
+  - Have you abstracted implementation details to clearly reveal core logic?
+
+- Core principle: Functions and Hooks should each have a single, clear responsibility (single responsibility).
+- Checklist:
+  - Do functions and Hooks each perform only one clear responsibility?
+
+#### 1-2. Clear Naming
+
+- Core principle: Assign meaningful variable names to complex conditional expressions.
+- Checklist:
+  - Have you assigned meaningful variable names to complex conditional expressions?
+
+- Core principle: Declare magic numbers as constants and use meaningful names for constants, functions, and components.
+- Checklist:
+  - Have you declared magic numbers as constants with meaningful names?
+  - Do function names clearly express their behavior?
+  - Do Hook names start with `use` and clearly indicate their purpose?
+  - Do component names use PascalCase and clearly express their role?
+
+#### 1-3. Making Code Easy to Read Top to Bottom
+
+- Core principle: Minimize temporal shifts to make code flow clear.
+- Checklist:
+  - Is the code flow clear with minimal temporal shifts?
+
+- Core principle: If ternary operators are complexly nested, expand them into if-else statements.
+- Checklist:
+  - Have you expanded complex ternary operators into if-else statements?
+
+### 2. Predictability Principle
+
+- Core principle: Follow consistent rules so that the behavior of functions or components can be understood just by looking at their names, parameters, and return values.
+
+#### 2-1. Managing Names to Avoid Conflicts
+
+- Core principle: Use clear names that distinguish from existing library functions.
+- Checklist:
+  - Have you used clear names that distinguish from existing library functions?
+  - Are global variable names unique and meaningful?
+  - Are you avoiding similar variable names within the same scope?
+  - Have you used clear naming when wrapping library functions?
+
+#### 2-2. Unifying Return Types for Similar Functions
+
+- Core principle: Functions or Hooks of the same type maintain consistent return forms.
+- Checklist:
+  - Do functions or Hooks of the same type maintain consistent return forms?
+
+#### 2-3. Revealing Hidden Logic
+
+- Core principle: Do not include logic that cannot be predicted from the function's name, parameters, and return value.
+- Checklist:
+  - Have you explicitly handled hidden logic like logging or analytics at the call site?
+
+### 3. Cohesion Principle
+
+- Core principle: Place files that need to be modified together in the same directory.
+
+#### 3-1. Placing Related Files in the Same Directory
+
+- Core principle: Organize directories by domain to group related code together.
+- Checklist:
+  - Are you avoiding direct references to code from other domains?
+  - Have you appropriately separated common components from domain-specific components?
+
+#### 3-2. Eliminating Magic Numbers
+
+- Core principle: Declare magic numbers as meaningful constants, and manage values that need to change together in the same file.
+- Checklist:
+  - Have you declared magic numbers as meaningful constants?
+  - Are values that need to change together managed in the same file?
+  - Do constant names clearly express their purpose?
+
+#### 3-3. Considering Form Cohesion
+
+- Core principle: If independent validation per field is needed, manage cohesion at the field level.
+- Checklist:
+  - Have you managed at the field level when independent validation per field is needed?
+
+- Core principle: If the entire form represents a single function, manage cohesion at the form level.
+- Checklist:
+  - Have you managed at the form level when the entire form represents a single function?
+
+### 4. Coupling Principle
+
+- Core principle: Minimize the impact scope when modifying code and write code so that change results can be easily predicted.
+
+#### 4-1. Managing Responsibilities One at a Time
+
+- Core principle: Design functions and Hooks to each perform only one clear responsibility (single responsibility).
+- Checklist:
+  - Do functions and Hooks each perform only one clear responsibility?
+
+#### 4-2. Allowing Duplicate Code
+
+- Core principle: Do not generalize if different requirements may arise for each page in the future.
+- Checklist:
+  - Has the code not become more complex due to abstraction?
+
+#### 4-3. Eliminating Props Drilling
+
+- Core principle: Reduce unnecessary Props passing using the Composition pattern, and handle Props Drilling issues that cannot be solved by composition alone with Context API.
+- Checklist:
+  - Have you reduced unnecessary Props passing using the Composition pattern?
+  - Are you not overusing Context API?
+  - Are you fetching data directly only where needed?

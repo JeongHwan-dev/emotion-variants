@@ -1,0 +1,42 @@
+# Source files
+src/
+tests/
+examples/
+docs/
+
+# Config files
+tsconfig.json
+tsup.config.ts
+vitest.config.ts
+biome.json
+.editorconfig
+.cursorrules
+pnpm-workspace.yaml
+pnpm-lock.yaml
+
+# Git
+.git/
+.gitignore
+
+# CI/CD
+.github/
+
+# Development
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+coverage/
+.vscode/
+.idea/
+
+# Documentation (development)
+CHANGELOG.md
+CONTRIBUTING.md
+DEVELOPMENT.md
+PROJECT_STRUCTURE.md
+
+# Misc
+*.log
+.DS_Store
+
