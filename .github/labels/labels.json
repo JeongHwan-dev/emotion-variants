@@ -1,0 +1,77 @@
+[
+  {
+    "color": "#FFD700",
+    "description": "New feature or enhancement",
+    "name": "✨ feat"
+  },
+  {
+    "color": "#FF6B6B",
+    "description": "Bug fix",
+    "name": "🐛 fix"
+  },
+  {
+    "color": "#FF4444",
+    "description": "Hotfix",
+    "name": "🚑 hotfix"
+  },
+  {
+    "color": "#C40948",
+    "description": "Breaking change",
+    "name": "💥 breaking"
+  },
+  {
+    "color": "#FDB813",
+    "description": "Performance improvement",
+    "name": "⚡ perf"
+  },
+  {
+    "color": "#2ECC71",
+    "description": "Code refactoring",
+    "name": "♻️ refactor"
+  },
+  {
+    "color": "#4169E1",
+    "description": "Documentation update",
+    "name": "📝 docs"
+  },
+  {
+    "color": "#00FF00",
+    "description": "Test code addition or modification",
+    "name": "✅ test"
+  },
+  {
+    "color": "#FF69B4",
+    "description": "Code style update",
+    "name": "💄 style"
+  },
+  {
+    "color": "#808080",
+    "description": "Build, package updates, or other non-functional changes",
+    "name": "🔧 chore"
+  },
+  {
+    "color": "#FF8C00",
+    "description": "CI/CD configuration changes",
+    "name": "👷 ci"
+  },
+  {
+    "color": "#FF7F50",
+    "description": "Remove unused code or files",
+    "name": "🗑️ remove"
+  },
+  {
+    "color": "#9370DB",
+    "description": "Revert previous commit",
+    "name": "⏪ revert"
+  },
+  {
+    "color": "#8DE08B",
+    "description": "Release preparation PR",
+    "name": "🚀 release"
+  },
+  {
+    "color": "#EDEDED",
+    "description": "Released PR",
+    "name": "🏷️ released"
+  }
+]
