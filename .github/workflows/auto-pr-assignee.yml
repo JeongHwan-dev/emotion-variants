@@ -1,0 +1,24 @@
+name: Auto PR Assignee
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  assign-author:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign PR to repository owner
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const assignees = ['JeongHwan-dev'];
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              assignees: assignees,
+            });
