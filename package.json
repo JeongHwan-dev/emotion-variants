@@ -32,12 +32,18 @@
     "test:types": "tsc --noEmit",
     "lint": "biome lint ./src",
     "lint:fix": "biome lint --write ./src",
-    "format": "biome format --write ./src",
-    "format:check": "biome format ./src",
-    "check": "biome check --write ./src",
-    "prepublishOnly": "pnpm run check && pnpm run build && pnpm run test",
+    "format": "biome format ./src",
+    "format:fix": "biome format --write ./src",
+    "check": "biome check ./src",
+    "check:fix": "biome check --write ./src",
+    "prepublishOnly": "pnpm check:fix && pnpm build && pnpm test",
     "generate:labels": "node .github/scripts/generate-labels.mjs",
-    "commit": "cz"
+    "commit": "cz",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,jsx,mjs,ts,tsx,mts}": ["pnpm check:fix"],
+    "*.{json,css,md}": ["pnpm format:fix"]
   },
   "config": {
     "commitizen": {
@@ -59,6 +65,8 @@
     "@types/react": "^18.3.12",
     "commitizen": "^4.3.1",
     "happy-dom": "^15.11.7",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "react": "^18.3.1",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
