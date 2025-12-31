@@ -1,0 +1,158 @@
+---
+description: Development rules for emotion-variants library - type-safe variant API for Emotion CSS-in-JS
+alwaysApply: true
+---
+
+# emotion-variants Library Development Guidelines
+
+## Project Overview
+
+This is a TypeScript library that provides a type-safe variant API for Emotion CSS-in-JS. The library allows developers to create component styles with multiple variants without repetitive `css()` calls.
+
+## Core Principles
+
+### 1. Type Safety First
+- Always prioritize type safety and inference
+- Use TypeScript's advanced type features (conditional types, mapped types, template literal types)
+- Ensure all variant configurations are fully typed
+- Export types that users can leverage in their code
+
+### 2. API Design
+- Keep the API simple and intuitive
+- Follow the `ev()` function pattern: `ev(config) => function`
+- Support string, number, and boolean variant values
+- Provide access to `classNames` for advanced use cases
+- Support `base`, `variants`, `compoundVariants`, and `defaultVariants`
+
+### 3. Code Quality
+
+#### TypeScript
+- Use strict TypeScript settings
+- Prefer type inference over explicit types when possible
+- Use `const` assertions for literal types
+- Avoid `any` - use `unknown` or proper types instead
+- Export all public types from `src/index.ts`
+
+#### Documentation (TSDoc/JSDoc)
+- **ALWAYS** write TSDoc comments for all public functions, types, and interfaces
+- **ALWAYS** write JSDoc comments for internal helper functions
+- Use TSDoc format (not JSDoc) for TypeScript code
+- Include `@param` tags for all parameters with descriptions
+- Include `@returns` tag describing the return value
+- Include `@example` tag with usage examples for public APIs
+- Use `@internal` tag for internal-only functions/types
+- Use `@public` tag for public APIs (optional, but recommended)
+- Document complex types with detailed descriptions
+- Include type information in descriptions when helpful
+
+#### Code Style
+- Follow Biome configuration (single quotes, 100 char line width)
+- Use meaningful variable and function names
+- Keep functions focused on a single responsibility
+- Prefer composition over complex nested logic
+
+#### Testing
+- Write unit tests for all core functionality in `tests/`
+- Write type tests to ensure type inference works correctly
+- Test edge cases (empty variants, boolean variants, compound variants)
+- Use Vitest for testing
+
+## File Structure
+
+```
+src/
+  ev.ts          # Main ev() function implementation
+  types.ts       # TypeScript type definitions
+  index.ts       # Public API exports
+tests/
+  ev.test.ts     # Functional tests
+  types.test.ts  # Type-level tests
+```
+
+## Development Guidelines
+
+### Adding New Features
+1. Write TSDoc comments for new types in `src/types.ts` first
+2. Update types in `src/types.ts` with documentation
+3. Write TSDoc comments for new functions in `src/ev.ts`
+4. Implement functionality in `src/ev.ts` with JSDoc for internal helpers
+5. Export new types from `src/index.ts`
+6. Add tests in `tests/`
+7. Update documentation in `docs/` if needed
+
+### Type Definitions
+- Keep type definitions in `src/types.ts`
+- Use descriptive type names prefixed with `Ev` for public types
+- **ALWAYS** document all public types with TSDoc comments
+- Document complex types with detailed TSDoc comments explaining their purpose
+- Include usage examples in type documentation when helpful
+- Ensure types are exported for library users
+
+### Variant Handling
+- Support string, number, and boolean variant values
+- Handle `true`/`false` as string keys `'true'`/`'false'` internally
+- Map boolean values correctly in `classNames` access
+- Ensure type inference works for all variant types
+
+### Error Handling
+- Validate configuration at runtime when necessary
+- Provide clear error messages
+- Use TypeScript types to prevent invalid configurations at compile time
+
+## Testing Standards
+
+- Write tests for all public APIs
+- Test type inference with `expectTypeOf` from `vitest`
+- Test edge cases and error conditions
+- Keep tests organized and readable
+- Use descriptive test names
+
+## Build & Distribution
+
+- Use `tsup` for building (configured in `tsup.config.ts`)
+- Generate both ESM (`.mjs`) and CJS (`.js`) outputs
+- Include type definitions (`.d.ts`)
+- Include source maps for debugging
+- Build output goes to `dist/`
+
+## Documentation
+
+- Keep README.md up to date
+- Document all public APIs
+- Provide usage examples
+
+## Dependencies
+
+- **Runtime**: `@emotion/serialize` only
+- **Peer**: `@emotion/react`, `react`
+- **Dev**: TypeScript, Biome, Vitest, tsup
+
+## When Writing Code
+
+1. **Document first**: Write TSDoc/JSDoc comments BEFORE implementing code
+2. **Think about type inference**: Will users get proper autocomplete and type checking?
+3. **Consider edge cases**: Empty variants, boolean values, compound variants
+4. **Keep it simple**: The API should be intuitive for library users
+5. **Test thoroughly**: Both runtime behavior and type inference
+6. **Document clearly**: Help users understand how to use the library
+
+## TSDoc/JSDoc Standards
+
+### Required Documentation
+
+**All public functions MUST have:**
+- Brief description (first line)
+- Detailed description if needed (additional paragraphs)
+- `@param` tags for each parameter with type and description
+- `@returns` tag describing return value and type
+- `@example` tag with at least one usage example
+
+**All public types/interfaces MUST have:**
+- Brief description explaining the type's purpose
+- `@template` tag if generic type
+- Usage examples if complex
+
+**Internal functions MUST have:**
+- Brief description
+- `@internal` tag
+- `@param` and `@returns` tags
