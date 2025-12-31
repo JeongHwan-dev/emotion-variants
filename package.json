@@ -2,7 +2,13 @@
   "name": "emotion-variants",
   "version": "0.1.0",
   "description": "Type-safe variant API for Emotion",
-  "keywords": ["emotion", "variants", "css-in-js", "typescript", "design-system"],
+  "keywords": [
+    "emotion",
+    "variants",
+    "css-in-js",
+    "typescript",
+    "design-system"
+  ],
   "author": "Jeonghwan Park",
   "license": "MIT",
   "repository": {
@@ -23,27 +29,35 @@
       "require": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:types": "tsc --noEmit",
-    "lint": "biome lint ./src",
-    "lint:fix": "biome lint --write ./src",
-    "format": "biome format ./src",
-    "format:fix": "biome format --write ./src",
-    "check": "biome check ./src",
-    "check:fix": "biome check --write ./src",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format .",
+    "format:fix": "biome format --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
     "prepublishOnly": "pnpm check:fix && pnpm build && pnpm test",
     "generate:labels": "node .github/scripts/generate-labels.mjs",
     "commit": "cz",
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{js,jsx,mjs,ts,tsx,mts}": ["pnpm check:fix"],
-    "*.{json,css,md}": ["pnpm format:fix"]
+    "*.{js,jsx,mjs,ts,tsx,mts}": [
+      "pnpm check:fix"
+    ],
+    "*.{json,css,md}": [
+      "pnpm format:fix"
+    ]
   },
   "config": {
     "commitizen": {
@@ -58,7 +72,7 @@
     "@emotion/serialize": "^1.1.4"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.0.6",
     "@emotion/react": "^11.13.5",
     "@testing-library/react": "^14.3.1",
     "@types/node": "^20.17.9",

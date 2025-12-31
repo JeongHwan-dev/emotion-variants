@@ -1,11 +1,11 @@
 export { ev } from './ev';
 export type {
-  VariantValue,
-  VariantConfig,
-  VariantKeys,
-  VariantValueFor,
   CompoundVariant,
   EvConfig,
-  EvVariants,
   EvFunction,
+  EvVariants,
+  VariantConfig,
+  VariantKeys,
+  VariantValue,
+  VariantValueFor,
 } from './types';
