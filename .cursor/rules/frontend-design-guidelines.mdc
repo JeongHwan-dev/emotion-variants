@@ -1,6 +1,5 @@
 ---
-description:
-globs:
+description: Frontend design guidelines based on readability, predictability, cohesion, and coupling principles
 alwaysApply: true
 ---
 
