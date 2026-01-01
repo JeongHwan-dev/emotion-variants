@@ -22,8 +22,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch --tags --force
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -48,6 +55,26 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Push local tags to remote
+        run: |
+          git push origin --tags --force || true
+
+      - name: Check and publish if needed
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          LOCAL_VERSION=$(node -p "require('./package.json').version")
+          NPM_VERSION=$(npm view emotion-variants version 2>/dev/null || echo "0.0.0")
+          echo "Local version: $LOCAL_VERSION"
+          echo "NPM version: $NPM_VERSION"
+          
+          if [ "$LOCAL_VERSION" != "$NPM_VERSION" ]; then
+            echo "Version mismatch detected. Publishing $LOCAL_VERSION to npm..."
+            npm publish
+          else
+            echo "Version $LOCAL_VERSION already exists on npm"
+          fi
 
       - name: Release
         env:
