@@ -1,77 +1,77 @@
 [
   {
-    "color": "#FFD700",
+    "name": "✨ feat",
     "description": "New feature or enhancement",
-    "name": "✨ feat"
+    "color": "#FFD700"
   },
   {
-    "color": "#FF6B6B",
+    "name": "🐛 fix",
     "description": "Bug fix",
-    "name": "🐛 fix"
+    "color": "#FF6B6B"
   },
   {
-    "color": "#FF4444",
+    "name": "🚑 hotfix",
     "description": "Hotfix",
-    "name": "🚑 hotfix"
+    "color": "#FF4444"
   },
   {
-    "color": "#C40948",
+    "name": "💥 breaking",
     "description": "Breaking change",
-    "name": "💥 breaking"
+    "color": "#C40948"
   },
   {
-    "color": "#FDB813",
+    "name": "⚡ perf",
     "description": "Performance improvement",
-    "name": "⚡ perf"
+    "color": "#FDB813"
   },
   {
-    "color": "#2ECC71",
+    "name": "♻️ refactor",
     "description": "Code refactoring",
-    "name": "♻️ refactor"
+    "color": "#2ECC71"
   },
   {
-    "color": "#4169E1",
+    "name": "📝 docs",
     "description": "Documentation update",
-    "name": "📝 docs"
+    "color": "#4169E1"
   },
   {
-    "color": "#00FF00",
+    "name": "✅ test",
     "description": "Test code addition or modification",
-    "name": "✅ test"
+    "color": "#00FF00"
   },
   {
-    "color": "#FF69B4",
+    "name": "💄 style",
     "description": "Code style update",
-    "name": "💄 style"
+    "color": "#FF69B4"
   },
   {
-    "color": "#808080",
+    "name": "🔧 chore",
     "description": "Build, package updates, or other non-functional changes",
-    "name": "🔧 chore"
+    "color": "#808080"
   },
   {
-    "color": "#FF8C00",
+    "name": "👷 ci",
     "description": "CI/CD configuration changes",
-    "name": "👷 ci"
+    "color": "#FF8C00"
   },
   {
-    "color": "#FF7F50",
+    "name": "🗑️ remove",
     "description": "Remove unused code or files",
-    "name": "🗑️ remove"
+    "color": "#FF7F50"
   },
   {
-    "color": "#9370DB",
+    "name": "⏪ revert",
     "description": "Revert previous commit",
-    "name": "⏪ revert"
+    "color": "#9370DB"
   },
   {
-    "color": "#8DE08B",
+    "name": "🚀 release",
     "description": "Release preparation PR",
-    "name": "🚀 release"
+    "color": "#8DE08B"
   },
   {
-    "color": "#EDEDED",
+    "name": "🏷️ released",
     "description": "Released PR",
-    "name": "🏷️ released"
+    "color": "#EDEDED"
   }
 ]
