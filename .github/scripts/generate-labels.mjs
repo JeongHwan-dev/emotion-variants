@@ -41,9 +41,9 @@ const formatLabelName = (emoji, value) => {
  */
 const formatLabelsToJsonString = (labels) => {
   const labelsForJson = labels.map(({ color, description, emoji, value }) => ({
-    color,
-    description,
     name: formatLabelName(emoji, value),
+    description,
+    color,
   }));
 
   return `${JSON.stringify(labelsForJson, null, 2)}\n`;
