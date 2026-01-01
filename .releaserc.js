@@ -1,152 +1,168 @@
-module.exports = {
-  branches: ['main'],
-  plugins: [
-    [
-      '@semantic-release/commit-analyzer',
-      {
-        preset: 'conventionalcommits',
-        releaseRules: [
+const isLocal = process.env.LOCAL === 'true';
+
+const plugins = [
+  [
+    '@semantic-release/commit-analyzer',
+    {
+      preset: 'conventionalcommits',
+      releaseRules: [
+        {
+          type: 'breaking',
+          release: 'major',
+        },
+        {
+          type: 'feat',
+          release: 'minor',
+        },
+        {
+          type: 'fix',
+          release: 'patch',
+        },
+        {
+          type: 'hotfix',
+          release: 'patch',
+        },
+        {
+          type: 'perf',
+          release: 'patch',
+        },
+        {
+          type: 'revert',
+          release: 'patch',
+        },
+        {
+          type: 'docs',
+          release: 'patch',
+        },
+        {
+          type: 'style',
+          release: false,
+        },
+        {
+          type: 'refactor',
+          release: 'patch',
+        },
+        {
+          type: 'test',
+          release: false,
+        },
+        {
+          type: 'chore',
+          release: 'patch',
+        },
+        {
+          type: 'ci',
+          release: false,
+        },
+        {
+          type: 'remove',
+          release: 'patch',
+        },
+        {
+          type: 'release',
+          release: 'patch',
+        },
+      ],
+    },
+  ],
+  [
+    '@semantic-release/release-notes-generator',
+    {
+      preset: 'conventionalcommits',
+      presetConfig: {
+        types: [
           {
             type: 'breaking',
-            release: 'major',
+            section: '💥 Breaking Changes',
           },
           {
             type: 'feat',
-            release: 'minor',
+            section: '✨ Features',
           },
           {
             type: 'fix',
-            release: 'patch',
+            section: '🐛 Bug Fixes',
           },
           {
             type: 'hotfix',
-            release: 'patch',
+            section: '🚑 Hot Fixes',
           },
           {
             type: 'perf',
-            release: 'patch',
+            section: '⚡️ Performance Improvements',
           },
           {
             type: 'revert',
-            release: 'patch',
+            section: '⏪️ Reverts',
           },
           {
             type: 'docs',
-            release: 'patch',
+            section: '📝 Documentation',
           },
           {
             type: 'style',
-            release: false,
+            section: '💄 Styles',
           },
           {
             type: 'refactor',
-            release: 'patch',
+            section: '♻️ Code Refactoring',
           },
           {
             type: 'test',
-            release: false,
+            section: '✅ Tests',
           },
           {
             type: 'chore',
-            release: 'patch',
+            section: '🔧 Miscellaneous Chores',
           },
           {
             type: 'ci',
-            release: false,
+            section: '👷 CI',
           },
           {
             type: 'remove',
-            release: 'patch',
-          },
-          {
-            type: 'release',
-            release: 'patch',
+            section: '🗑️ Removals',
           },
         ],
       },
-    ],
-    [
-      '@semantic-release/release-notes-generator',
-      {
-        preset: 'conventionalcommits',
-        presetConfig: {
-          types: [
-            {
-              type: 'breaking',
-              section: '💥 Breaking Changes',
-            },
-            {
-              type: 'feat',
-              section: '✨ Features',
-            },
-            {
-              type: 'fix',
-              section: '🐛 Bug Fixes',
-            },
-            {
-              type: 'hotfix',
-              section: '🚑 Hot Fixes',
-            },
-            {
-              type: 'perf',
-              section: '⚡️ Performance Improvements',
-            },
-            {
-              type: 'revert',
-              section: '⏪️ Reverts',
-            },
-            {
-              type: 'docs',
-              section: '📝 Documentation',
-            },
-            {
-              type: 'style',
-              section: '💄 Styles',
-            },
-            {
-              type: 'refactor',
-              section: '♻️ Code Refactoring',
-            },
-            {
-              type: 'test',
-              section: '✅ Tests',
-            },
-            {
-              type: 'chore',
-              section: '🔧 Miscellaneous Chores',
-            },
-            {
-              type: 'ci',
-              section: '👷 CI',
-            },
-            {
-              type: 'remove',
-              section: '🗑️ Removals',
-            },
-          ],
-        },
-      },
-    ],
-    '@semantic-release/changelog',
-    [
-      '@semantic-release/npm',
-      {
-        npmPublish: true,
-      },
-    ],
-    [
-      '@semantic-release/git',
-      {
-        assets: ['package.json', 'CHANGELOG.md'],
-        // biome-ignore lint/suspicious/noTemplateCurlyInString: semantic-release template syntax
-        message: 'release: bump to v${nextRelease.version}\n\n${nextRelease.notes}',
-      },
-    ],
-    [
-      '@semantic-release/github',
-      {
-        releasedLabels: ['🏷️ released'],
-      },
-    ],
+    },
   ],
+  '@semantic-release/changelog',
+  [
+    '@semantic-release/git',
+    {
+      assets: ['package.json', 'CHANGELOG.md'],
+      message: isLocal
+        ? // biome-ignore lint/suspicious/noTemplateCurlyInString: semantic-release template syntax
+          'chore(release): bump to v${nextRelease.version}\n\n${nextRelease.notes}'
+        : // biome-ignore lint/suspicious/noTemplateCurlyInString: semantic-release template syntax
+          'release: bump to v${nextRelease.version}\n\n${nextRelease.notes}',
+    },
+  ],
+];
+
+if (!isLocal) {
+  plugins.push([
+    '@semantic-release/npm',
+    {
+      npmPublish: true,
+    },
+  ]);
+  plugins.push([
+    '@semantic-release/github',
+    {
+      releasedLabels: ['🏷️ released'],
+    },
+  ]);
+}
+
+module.exports = {
+  branches: [
+    'main',
+    {
+      name: 'release/**',
+      prerelease: false,
+    },
+  ],
+  plugins,
 };
