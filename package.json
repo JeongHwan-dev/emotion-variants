@@ -74,6 +74,8 @@
   "devDependencies": {
     "@biomejs/biome": "^2.0.6",
     "@emotion/react": "^11.13.5",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
     "@testing-library/react": "^14.3.1",
     "@types/node": "^20.17.9",
     "@types/react": "^18.3.12",
@@ -82,6 +84,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "react": "^18.3.1",
+    "semantic-release": "^25.0.2",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
     "vitest": "^1.6.0"
