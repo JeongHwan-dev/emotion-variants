@@ -52,14 +52,6 @@
     "prepare": "husky",
     "release:prepare": "CI=true LOCAL=true pnpm exec semantic-release --dry-run=false"
   },
-  "lint-staged": {
-    "*.{js,jsx,mjs,ts,tsx,mts}": [
-      "pnpm check:fix"
-    ],
-    "*.{json,css,md}": [
-      "pnpm format:fix"
-    ]
-  },
   "config": {
     "commitizen": {
       "path": "./commitizen.config.mjs"
