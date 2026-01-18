@@ -1,0 +1,10 @@
+# Security vulnerability check
+# This hook runs before every git push to check for high-risk security vulnerabilities
+# in the project dependencies. If vulnerabilities are found, the push is blocked.
+
+pnpm audit --audit-level high
+if [ $? -ne 0 ]; then
+    echo "❌ Push failed: High-risk security vulnerabilities found in dependencies. Push has been blocked."
+    echo "Please fix the vulnerabilities before pushing."
+    exit 1
+fi
