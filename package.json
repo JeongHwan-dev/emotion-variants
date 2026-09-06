@@ -29,10 +29,13 @@
       "require": "./dist/index.js"
     }
   },
+  "publishConfig": {
+    "provenance": true
+  },
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE.md"
   ],
   "scripts": {
     "build": "tsup",
@@ -46,11 +49,12 @@
     "format:fix": "biome format --write .",
     "check": "biome check .",
     "check:fix": "biome check --write .",
-    "prepublishOnly": "pnpm check:fix && pnpm build && pnpm test",
+    "prepublishOnly": "pnpm build",
     "generate:labels": "node .github/scripts/generate-labels.mjs",
     "commit": "cz",
     "prepare": "husky",
-    "release:prepare": "CI=true LOCAL=true pnpm exec semantic-release --dry-run=false"
+    "changeset": "changeset",
+    "release": "pnpm build && changeset publish"
   },
   "config": {
     "commitizen": {
@@ -66,29 +70,43 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.6",
+    "@changesets/changelog-github": "^1.0.1",
+    "@changesets/cli": "^3.0.2",
     "@emotion/react": "^11.13.5",
-    "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/git": "^10.0.1",
     "@testing-library/react": "^14.3.1",
     "@types/node": "^20.17.9",
     "@types/react": "^18.3.12",
     "commitizen": "^4.3.1",
-    "conventional-changelog-conventionalcommits": "^9.1.0",
-    "happy-dom": "^20.3.1",
+    "happy-dom": "^20.14.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
+    "postcss": "^8.5.18",
     "react": "^18.3.1",
-    "semantic-release": "^25.0.2",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
-    "vitest": "^2.0.0"
+    "vitest": "^3.2.7"
   },
   "pnpm": {
     "overrides": {
       "esbuild": "^0.25.0",
       "preact": "^10.28.2",
       "undici": "^7.18.2",
-      "tmp": "^0.2.4"
+      "tmp": "^0.2.6",
+      "brace-expansion@1": "^1.1.18",
+      "brace-expansion@2": "^2.1.2",
+      "browserslist": "^4.28.7",
+      "fast-uri": "^3.1.4",
+      "js-yaml@4": "^4.3.0",
+      "lodash": "^4.18.1",
+      "minimatch@3": "^3.1.4",
+      "minimatch@9": "^9.0.7",
+      "nanoid@3": "^3.3.16",
+      "picomatch@2": "^2.3.2",
+      "picomatch@4": "^4.0.4",
+      "postcss": "^8.5.12",
+      "rollup": "^4.59.0",
+      "vite": "^6.4.3",
+      "ws@8": "^8.21.0"
     }
   },
   "packageManager": "pnpm@9.0.0"

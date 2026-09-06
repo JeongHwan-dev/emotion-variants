@@ -5,47 +5,37 @@ on:
     branches:
       - main
 
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
 permissions:
   contents: write
-  issues: write
   pull-requests: write
+  id-token: write # npm provenance
 
 jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    if: |
-      !contains(github.event.head_commit.message, 'skip ci') &&
-      startsWith(github.event.head_commit.message, 'release:')
+    env:
+      # Skip git hook installation; CI has no use for them and the pre-push
+      # `pnpm audit` hook would block a git-CLI push if one is ever enabled.
+      HUSKY: '0'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: main
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Configure Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch --tags --force
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
+        uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22.x
           registry-url: 'https://registry.npmjs.org'
-          always-auth: true
           cache: 'pnpm'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -53,32 +43,15 @@ jobs:
       - name: Run tests
         run: pnpm test
 
-      - name: Build
-        run: pnpm build
-
-      - name: Push local tags to remote
-        run: |
-          git push origin --tags --force || true
-
-      - name: Check and publish if needed
+      - name: Create release PR or publish
+        uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
+        with:
+          version-script: pnpm changeset version
+          publish-script: pnpm release
+          commit-message: 'release: version packages'
+          pr-title: 'release: version packages'
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          LOCAL_VERSION=$(node -p "require('./package.json').version")
-          NPM_VERSION=$(npm view emotion-variants version 2>/dev/null || echo "0.0.0")
-          echo "Local version: $LOCAL_VERSION"
-          echo "NPM version: $NPM_VERSION"
-          
-          if [ "$LOCAL_VERSION" != "$NPM_VERSION" ]; then
-            echo "Version mismatch detected. Publishing $LOCAL_VERSION to npm..."
-            npm publish
-          else
-            echo "Version $LOCAL_VERSION already exists on npm"
-          fi
-
-      - name: Release
-        env:
+          # Not used by the action itself (it reads the `github-token` input);
+          # @changesets/changelog-github needs it to resolve PR and author links.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: pnpm exec semantic-release
-
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
