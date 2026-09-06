@@ -46,6 +46,8 @@ jobs:
         with:
           version-script: pnpm changeset version
           publish-script: pnpm release
+          commit-message: "chore(package): version packages"
+          pr-title: "chore(package): version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
