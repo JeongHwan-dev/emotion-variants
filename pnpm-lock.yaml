@@ -74,9 +74,6 @@ importers:
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
-      unrun:
-        specifier: ^0.3.1
-        version: 0.3.1
       vitest:
         specifier: ^3.2.7
         version: 3.2.7(@types/node@20.19.27)(happy-dom@20.14.0)(jiti@2.7.0)(yaml@2.9.0)
@@ -6127,6 +6124,7 @@ snapshots:
   unrun@0.3.1:
     dependencies:
       rolldown: 1.2.7
+    optional: true
 
   update-browserslist-db@1.3.2(browserslist@4.28.9):
     dependencies:
