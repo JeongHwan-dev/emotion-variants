@@ -1,0 +1,40 @@
+name: Compressed Size
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  compressed-size:
+    runs-on: ubuntu-latest
+
+    env:
+      # Skip git hook installation; CI has no use for them and the action runs
+      # `pnpm install` twice (once per branch).
+      HUSKY: '0'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'pnpm'
+
+      # The action installs dependencies and runs the build itself, for both
+      # this branch and the PR base, then comments the gzipped size diff.
+      - name: Report compressed size
+        uses: preactjs/compressed-size-action@f322c295dde06a1cb7ccaef105732dd8a726d1d9 # 2.10.0
+        with:
+          # Scope to the published library; the default pattern would also
+          # match examples/*/dist if that ever gets built.
+          pattern: './dist/**/*.{js,mjs}'
