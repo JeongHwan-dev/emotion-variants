@@ -1,6 +1,6 @@
 {
   "name": "emotion-variants",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Type-safe variant API for Emotion",
   "keywords": [
     "emotion",
