@@ -1,5 +1,17 @@
 # emotion-variants
 
+## 1.0.1
+
+### Patch Changes
+
+- [#33](https://github.com/JeongHwan-dev/emotion-variants/pull/33) [`ddc21a5`](https://github.com/JeongHwan-dev/emotion-variants/commit/ddc21a54361ff8a0a25691e4f59f11ae4f89bb95) Thanks [@JeongHwan-dev](https://github.com/JeongHwan-dev)! - chore(core): build with tsdown instead of tsup
+  
+  Output filenames and entry points are unchanged; the bundle is 27-31% smaller gzipped.
+
+- [#27](https://github.com/JeongHwan-dev/emotion-variants/pull/27) [`ae2f98e`](https://github.com/JeongHwan-dev/emotion-variants/commit/ae2f98e706bab33eec4443769e06a12dea5fcc90) Thanks [@JeongHwan-dev](https://github.com/JeongHwan-dev)! - chore(core): remove unused `@emotion/serialize` runtime dependency
+
+- [#25](https://github.com/JeongHwan-dev/emotion-variants/pull/25) [`2630063`](https://github.com/JeongHwan-dev/emotion-variants/commit/26300636cf33e9186b19c376e0dfa0a9dc7e8e9c) Thanks [@JeongHwan-dev](https://github.com/JeongHwan-dev)! - ci(release): migrate release pipeline from semantic-release to changesets
+
 ## 1.0.0
 
 ### Major Changes
