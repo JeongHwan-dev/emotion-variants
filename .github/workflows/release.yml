@@ -51,4 +51,7 @@ jobs:
           commit-message: 'release: version packages'
           pr-title: 'release: version packages'
         env:
+          # Not used by the action itself (it reads the `github-token` input);
+          # @changesets/changelog-github needs it to resolve PR and author links.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
