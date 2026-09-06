@@ -7,6 +7,6 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   minify: false,
-  external: ['@emotion/react', '@emotion/serialize', 'react'],
+  external: ['@emotion/react', 'react'],
   treeshake: true,
 });

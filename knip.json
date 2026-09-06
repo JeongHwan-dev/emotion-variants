@@ -1,0 +1,10 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignoreWorkspaces": ["examples/*"],
+  "lint-staged": false,
+  "workspaces": {
+    ".": {
+      "project": ["src/**/*.ts", "tests/**/*.ts"]
+    }
+  }
+}
