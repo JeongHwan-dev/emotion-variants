@@ -11,8 +11,5 @@ export default defineConfig({
     js: format === 'es' ? '.mjs' : '.js',
     dts: format === 'es' ? '.d.mts' : '.d.ts',
   }),
-  minify: {
-    compress: false,
-    mangle: false,
-  },
+  minify: true,
 });
