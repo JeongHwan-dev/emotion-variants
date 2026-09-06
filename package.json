@@ -108,5 +108,5 @@
       "ws@8": "^8.21.0"
     }
   },
-  "packageManager": "pnpm@9.0.0"
+  "packageManager": "pnpm@12.3.4"
 }
