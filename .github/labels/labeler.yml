@@ -36,9 +36,3 @@
 
 ⏪ revert:
   - head-branch: ['revert/']
-
-🚀 release:
-  - title: ['^release:']
-
-🏷️ released:
-  - head-branch: ['released/']
