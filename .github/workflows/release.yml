@@ -10,16 +10,14 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 permissions:
   contents: write
   pull-requests: write
-  id-token: write # npm provenance
+  id-token: write
 
 jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
     env:
-      # Skip git hook installation; CI has no use for them and the pre-push
-      # `pnpm audit` hook would block a git-CLI push if one is ever enabled.
-      HUSKY: '0'
+      HUSKY: "0"
 
     steps:
       - name: Checkout
@@ -34,8 +32,8 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22.x
-          registry-url: 'https://registry.npmjs.org'
-          cache: 'pnpm'
+          registry-url: "https://registry.npmjs.org"
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -48,10 +46,6 @@ jobs:
         with:
           version-script: pnpm changeset version
           publish-script: pnpm release
-          commit-message: 'release: version packages'
-          pr-title: 'release: version packages'
         env:
-          # Not used by the action itself (it reads the `github-token` input);
-          # @changesets/changelog-github needs it to resolve PR and author links.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
