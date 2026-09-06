@@ -354,8 +354,8 @@ This project uses [changesets](https://github.com/changesets/changesets).
 
 1. After making a change, run `pnpm changeset`, pick a bump type, and write a short summary.
 2. Commit the generated file in `.changeset/` along with your change.
-3. Once merged into `main`, a `release: version packages` PR is opened automatically.
-4. Merging that PR bumps the version, updates the changelog, and publishes to npm.
+3. Once merged into `main`, a `release: version packages` PR is opened automatically, carrying the version bump and the changelog entry.
+4. Merging that PR publishes the new version to npm and creates the git tag and GitHub release.
 
 ## 📄 License
 
