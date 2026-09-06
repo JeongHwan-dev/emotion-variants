@@ -43,11 +43,40 @@ jobs:
         run: pnpm test
 
       - name: Create release PR or publish
+        id: changesets
         uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
         with:
           version-script: pnpm changeset version
           publish-script: pnpm release
           commit-message: "chore(package): version packages"
           pr-title: "chore(package): version packages"
+          # Tag and release are created below instead, so they can be named
+          # v<version>. changesets names them <pkg>@<version> in any workspace.
+          create-github-releases: false
+          push-git-tags: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag and create the GitHub release
+        if: steps.changesets.outputs.published == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}
+        run: |
+          set -euo pipefail
+
+          version=$(echo "$PUBLISHED_PACKAGES" | jq -er '.[0].version')
+          tag="v${version}"
+
+          notes=$(awk -v v="$version" '$0 == "## " v {f=1; next} /^## /{f=0} f' CHANGELOG.md)
+          if [ -z "$(echo "$notes" | tr -d '[:space:]')" ]; then
+            echo "::error::No CHANGELOG.md section found for ${version}"
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "$tag"
+          git push origin "$tag"
+
+          printf '%s\n' "$notes" | gh release create "$tag" --title "$tag" --notes-file -
