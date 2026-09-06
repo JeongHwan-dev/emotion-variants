@@ -52,13 +52,13 @@ const formatLabelsToJsonString = (labels) => {
 /**
  * Converts label array to YAML file format string.
  * @param {Array<{emoji: string, value: string}>} labels - Label array to convert
- * @returns {string} YAML format string (release uses title pattern, others use head-branch pattern)
+ * @returns {string} YAML format string matching each label to its head-branch prefix
  */
 const formatLabelsToYamlString = (labels) => {
   const labelerYml = labels
     .map(({ emoji, value }) => {
       const labelName = formatLabelName(emoji, value);
-      const pattern = value === 'release' ? `title: ['^release:']` : `head-branch: ['${value}/']`;
+      const pattern = `head-branch: ['${value}/']`;
 
       return `${labelName}:\n  - ${pattern}`;
     })

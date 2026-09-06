@@ -101,18 +101,4 @@ export const LABELS = [
     color: '#9370DB',
     isCommitType: true,
   },
-  {
-    value: 'release',
-    description: 'Release preparation PR',
-    emoji: '🚀',
-    color: '#8DE08B',
-    isCommitType: false,
-  },
-  {
-    value: 'released',
-    description: 'Released PR',
-    emoji: '🏷️',
-    color: '#EDEDED',
-    isCommitType: false,
-  },
 ];

@@ -63,15 +63,5 @@
     "name": "⏪ revert",
     "description": "Revert previous commit",
     "color": "#9370DB"
-  },
-  {
-    "name": "🚀 release",
-    "description": "Release preparation PR",
-    "color": "#8DE08B"
-  },
-  {
-    "name": "🏷️ released",
-    "description": "Released PR",
-    "color": "#EDEDED"
   }
 ]
