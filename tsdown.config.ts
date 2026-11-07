@@ -7,9 +7,6 @@ export default defineConfig({
     sourcemap: false,
   },
   sourcemap: true,
-  outExtensions: ({ format }) => ({
-    js: format === 'es' ? '.mjs' : '.js',
-    dts: format === 'es' ? '.d.mts' : '.d.ts',
-  }),
+  fixedExtension: false,
   minify: true,
 });

@@ -1,5 +1,5 @@
 /**
- * @filename: .lintstagedrc.js
+ * @filename: .lintstagedrc.cjs
  * @type {import('lint-staged').Configuration}
  */
 module.exports = {
@@ -26,6 +26,6 @@ module.exports = {
       return 'gitleaks protect --staged --redact';
     },
   ],
-  '*.{js,jsx,mjs,ts,tsx,mts}': ['pnpm check:fix'],
+  '*.{js,jsx,mjs,cjs,ts,tsx,mts}': ['pnpm check:fix'],
   '*.{json,css,md}': ['pnpm format:fix'],
 };

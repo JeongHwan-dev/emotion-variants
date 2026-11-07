@@ -13,29 +13,34 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/JeongHwan-dev/emotion-variants"
+    "url": "git+https://github.com/JeongHwan-dev/emotion-variants.git"
   },
   "homepage": "https://github.com/JeongHwan-dev/emotion-variants#readme",
   "bugs": {
     "url": "https://github.com/JeongHwan-dev/emotion-variants/issues"
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
   "publishConfig": {
     "provenance": true
   },
   "files": [
-    "dist",
-    "README.md",
-    "LICENSE.md"
+    "dist"
   ],
   "scripts": {
     "build": "tsdown",
@@ -56,7 +61,7 @@
     "commit": "cz",
     "prepare": "husky",
     "changeset": "changeset",
-    "release": "pnpm build && changeset publish"
+    "release": "changeset publish"
   },
   "config": {
     "commitizen": {
@@ -64,15 +69,14 @@
     }
   },
   "peerDependencies": {
-    "@emotion/react": "^11.0.0",
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
+    "@emotion/react": "^11.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.6",
     "@changesets/changelog-github": "^1.0.1",
     "@changesets/cli": "^3.0.2",
     "@emotion/react": "^11.13.5",
-    "@types/node": "^20.17.9",
+    "@types/node": "^22.0.0",
     "@types/react": "^18.3.12",
     "@vitest/coverage-v8": "^3.2.7",
     "commitizen": "^4.3.1",
