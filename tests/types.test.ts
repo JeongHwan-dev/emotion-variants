@@ -1,3 +1,4 @@
+import type { SerializedStyles } from '@emotion/react';
 import { describe, expectTypeOf, it } from 'vitest';
 import { ev } from '../src/ev';
 import type { EvFunction } from '../src/types';
@@ -107,10 +108,10 @@ describe('ev - Type Tests', () => {
 
     expectTypeOf(button).toMatchTypeOf<EvFunction<ButtonConfig>>();
     expectTypeOf(button.variants).toBeFunction();
-    expectTypeOf(button.classNames).toBeObject();
+    expectTypeOf(button()).toEqualTypeOf<SerializedStyles[]>();
   });
 
-  it('classNames type', () => {
+  it('classNames and className types', () => {
     const button = ev({
       base: { padding: '10px' },
       variants: {
@@ -118,12 +119,26 @@ describe('ev - Type Tests', () => {
           small: { fontSize: '12px' },
           large: { fontSize: '16px' },
         },
+        outlined: {
+          true: { border: '1px solid' },
+          false: { border: 'none' },
+        },
+        level: {
+          1: { zIndex: 1 },
+          2: { zIndex: 2 },
+        },
       },
     });
 
     expectTypeOf(button.classNames.base).toBeString();
-    expectTypeOf(button.classNames.variants.size.small).toBeString();
-    expectTypeOf(button.classNames.variants.size.large).toBeString();
+    expectTypeOf(button.classNames.variants.size).toEqualTypeOf<{ small: string; large: string }>();
+    expectTypeOf(button.classNames.variants.outlined).toEqualTypeOf<{
+      true: string;
+      false: string;
+    }>();
+    expectTypeOf(button.classNames.variants.level).toEqualTypeOf<{ 1: string; 2: string }>();
+    expectTypeOf(button.className).parameter(0).toEqualTypeOf<Parameters<typeof button>[0]>();
+    expectTypeOf(button.className()).toBeString();
   });
 
   it('type-safe with empty variants', () => {

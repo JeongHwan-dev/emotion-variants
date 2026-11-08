@@ -1,4 +1,4 @@
-import type { CSSObject } from '@emotion/react';
+import type { CSSObject, SerializedStyles } from '@emotion/react';
 
 /**
  * Valid types for variant values.
@@ -37,18 +37,6 @@ type KeyToValue<K> = K extends 'true'
       : K extends number
         ? K
         : never;
-
-/**
- * Helper type to convert value types back to string keys for classNames.
- * Converts boolean values back to string keys.
- */
-type ValueToKey<V> = V extends true
-  ? 'true'
-  : V extends false
-    ? 'false'
-    : V extends string | number
-      ? string
-      : never;
 
 /**
  * Type representing valid values for a specific variant key.
@@ -109,21 +97,39 @@ export type EvVariants<T extends VariantConfig<Record<string, Record<string, CSS
   }>;
 
 /**
+ * Class names generated for the base style and each variant value.
+ *
+ * Styles are injected through `@emotion/css` when the class names are first accessed.
+ *
+ * @typeParam T - The variant configuration type
+ */
+export type EvClassNames<T extends VariantConfig<Record<string, Record<string, CSSObject>>>> = {
+  /** Class name for the base style, or an empty string when no base style is defined */
+  base: string;
+  /** Class names for each variant value, keyed by variant name and the value's string form */
+  variants: {
+    [K in VariantKeys<T>]: {
+      [V in VariantValueFor<T, K> as `${V}`]: string;
+    };
+  };
+};
+
+/**
  * Function type returned by the ev function.
  *
- * This is a callable object that also has additional properties for accessing
- * variant information and generated class names.
+ * This is a callable object that also exposes the available variant keys and
+ * class-name helpers backed by `@emotion/css`.
  *
  * @typeParam T - The variant configuration type
  */
 export interface EvFunction<T extends VariantConfig<Record<string, Record<string, CSSObject>>>> {
   /**
-   * Main function that accepts variant values and returns Emotion Interpolation.
+   * Main function that accepts variant values and returns the matching styles.
    *
    * @param variants - Optional variant values to apply
-   * @returns Emotion Interpolation that can be used with the css prop
+   * @returns Array of SerializedStyles that can be passed to the css prop or `css()`
    */
-  (variants?: EvVariants<T>): import('@emotion/react').Interpolation<unknown>;
+  (variants?: EvVariants<T>): SerializedStyles[];
 
   /**
    * Returns an array of all available variant keys.
@@ -133,19 +139,20 @@ export interface EvFunction<T extends VariantConfig<Record<string, Record<string
   variants: () => Array<VariantKeys<T>>;
 
   /**
-   * Provides access to generated class names for base styles and variants.
+   * Returns a single class name for the given variant values.
    *
-   * Useful for accessing individual class names without applying styles,
-   * or for use in non-React contexts.
+   * Base, variant, and compound variant styles are merged and injected through
+   * `@emotion/css`'s global cache. Use it for `className` props or outside React.
+   *
+   * @param variants - Optional variant values to apply
+   * @returns Generated class name
    */
-  classNames: {
-    /** Class name for the base style */
-    base: string;
-    /** Class names for each variant value */
-    variants: {
-      [K in VariantKeys<T>]: {
-        [V in VariantValueFor<T, K> as ValueToKey<V>]: string;
-      };
-    };
-  };
+  className: (variants?: EvVariants<T>) => string;
+
+  /**
+   * Class names for the base style and each variant value.
+   *
+   * Generated and injected on first access.
+   */
+  classNames: EvClassNames<T>;
 }

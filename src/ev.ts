@@ -1,44 +1,14 @@
-import type { CSSObject, Interpolation } from '@emotion/react';
+import { css as cssClassName } from '@emotion/css';
+import type { CSSObject, SerializedStyles } from '@emotion/react';
 import { css } from '@emotion/react';
-import type { EvConfig, EvFunction, EvVariants, VariantConfig, VariantKeys } from './types';
-
-/**
- * Internal helper function that generates class names for the ev function.
- *
- * @param variantKeys - Array of variant keys
- * @param variants - Variant configuration object
- * @param baseStyle - Base style (result of css function) or null
- * @returns Generated class names object with base and variant-specific class names
- * @internal
- */
-function createEvClassNames<T extends VariantConfig<Record<string, Record<string, CSSObject>>>>(
-  variantKeys: Array<VariantKeys<T>>,
-  variants: T,
-  baseStyle: ReturnType<typeof css> | null,
-): EvFunction<T>['classNames'] {
-  const classNames = {
-    base: baseStyle ? String(baseStyle) : '',
-    variants: {} as EvFunction<T>['classNames']['variants'],
-  };
-
-  variantKeys.forEach((key) => {
-    const variantConfig = variants[key];
-    const hasVariantConfig = variantConfig !== undefined && variantConfig !== null;
-
-    if (hasVariantConfig) {
-      classNames.variants[key] = {} as EvFunction<T>['classNames']['variants'][typeof key];
-
-      Object.keys(variantConfig).forEach((value) => {
-        const style = variantConfig[value];
-        const cssStyle = css(style);
-
-        (classNames.variants[key] as Record<string, string>)[value] = String(cssStyle);
-      });
-    }
-  });
-
-  return classNames;
-}
+import type {
+  EvClassNames,
+  EvConfig,
+  EvFunction,
+  EvVariants,
+  VariantConfig,
+  VariantKeys,
+} from './types';
 
 /**
  * Creates a type-safe multi-variant style function for Emotion.
@@ -53,7 +23,7 @@ function createEvClassNames<T extends VariantConfig<Record<string, Record<string
  * @param config.variants - Object defining variant-specific styles
  * @param config.compoundVariants - Array of styles for specific variant combinations
  * @param config.defaultVariants - Default values for variants
- * @returns A function that accepts variant values and returns Emotion Interpolation
+ * @returns A function that accepts variant values and returns an array of SerializedStyles
  *
  * @example
  * ```typescript
@@ -94,8 +64,11 @@ function createEvClassNames<T extends VariantConfig<Record<string, Record<string
  *   }
  * });
  *
- * // Usage
+ * // css prop
  * <button css={button({ size: 'large', color: 'primary' })}>Click me</button>
+ *
+ * // className
+ * <button className={button.className({ size: 'large', color: 'primary' })}>Click me</button>
  * ```
  */
 export function ev<T extends VariantConfig<Record<string, Record<string, CSSObject>>>>({
@@ -106,7 +79,7 @@ export function ev<T extends VariantConfig<Record<string, Record<string, CSSObje
 }: EvConfig<T>): EvFunction<T> {
   const variantKeys = Object.keys(variants) as Array<VariantKeys<T>>;
   const baseStyle = base ? css(base) : null;
-  const variantStyles: Record<string, Record<string, ReturnType<typeof css>>> = {};
+  const variantStyles: Record<string, Record<string, SerializedStyles>> = {};
 
   variantKeys.forEach((key) => {
     const variantConfig = variants[key];
@@ -115,66 +88,92 @@ export function ev<T extends VariantConfig<Record<string, Record<string, CSSObje
       variantStyles[key as string] = {};
 
       Object.keys(variantConfig).forEach((value) => {
-        const style = variantConfig[value];
-        const cssStyle = css(style);
-
-        variantStyles[key as string][value] = cssStyle;
+        variantStyles[key as string][value] = css(variantConfig[value]);
       });
     }
   });
 
-  const compoundVariantStyles: Array<{
-    condition: Record<string, string>;
-    style: ReturnType<typeof css>;
-  }> = compoundVariants.map((compoundVariant) => {
+  const compoundVariantStyles = compoundVariants.map((compoundVariant) => {
     const condition: Record<string, string> = {};
 
     Object.entries(compoundVariant.variants).forEach(([key, value]) => {
       condition[key] = String(value);
     });
 
-    const style = css(compoundVariant.style);
-
     return {
       condition,
-      style,
+      style: css(compoundVariant.style),
     };
   });
 
-  function evFunction(variants: EvVariants<T> = {}): Interpolation<unknown> {
-    const mergedVariants = {
-      ...defaultVariants,
-      ...variants,
-    };
-    const styles: Interpolation<unknown>[] = [];
-
-    if (baseStyle !== null) {
-      styles.push(baseStyle);
-    }
+  function evFunction(props: EvVariants<T> = {}): SerializedStyles[] {
+    const styles: SerializedStyles[] = baseStyle ? [baseStyle] : [];
+    const resolved: Record<string, string> = {};
 
     variantKeys.forEach((key) => {
-      const value = mergedVariants[key];
+      const value = props[key] ?? defaultVariants[key];
 
-      if (value !== undefined && variantStyles[key as string]?.[String(value)]) {
-        styles.push(variantStyles[key as string][String(value)]);
+      if (value === undefined) {
+        return;
       }
-    });
 
-    compoundVariantStyles.forEach(({ condition, style }) => {
-      const isCompoundVariantMatch = Object.entries(condition).every(
-        ([key, value]) => String(mergedVariants[key as VariantKeys<T>]) === value,
-      );
+      const valueKey = String(value);
+      const style = variantStyles[key as string]?.[valueKey];
 
-      if (isCompoundVariantMatch) {
+      resolved[key as string] = valueKey;
+
+      if (style) {
         styles.push(style);
       }
     });
 
-    return styles.length === 1 ? styles[0] : styles;
+    compoundVariantStyles.forEach(({ condition, style }) => {
+      const isMatch = Object.entries(condition).every(([key, value]) => resolved[key] === value);
+
+      if (isMatch) {
+        styles.push(style);
+      }
+    });
+
+    return styles;
   }
 
-  evFunction.variants = () => variantKeys;
-  evFunction.classNames = createEvClassNames(variantKeys, variants, baseStyle);
+  // Class names are injected into @emotion/css's global cache, so build them on first
+  // access instead of at definition time; css-prop-only users never pay for them.
+  let classNames: EvClassNames<T> | undefined;
 
-  return evFunction;
+  const createClassNames = (): EvClassNames<T> => {
+    const variantClassNames: Record<string, Record<string, string>> = {};
+
+    variantKeys.forEach((key) => {
+      variantClassNames[key as string] = {};
+
+      Object.entries(variantStyles[key as string] ?? {}).forEach(([value, style]) => {
+        variantClassNames[key as string][value] = cssClassName(style);
+      });
+    });
+
+    return {
+      base: baseStyle ? cssClassName(baseStyle) : '',
+      variants: variantClassNames as EvClassNames<T>['variants'],
+    };
+  };
+
+  const result = Object.assign(evFunction, {
+    variants: () => variantKeys,
+    className: (props?: EvVariants<T>) => cssClassName(evFunction(props)),
+  }) as EvFunction<T>;
+
+  Object.defineProperty(result, 'classNames', {
+    enumerable: true,
+    get: () => {
+      if (!classNames) {
+        classNames = createClassNames();
+      }
+
+      return classNames;
+    },
+  });
+
+  return result;
 }

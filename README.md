@@ -11,20 +11,20 @@ Type-safe variant API for Emotion. Create component styles with multiple variant
 - 🚀 **No `css()` calls needed** - Use plain CSSObject directly
 - 🎨 **Compound variants** - Define styles for complex variant combinations
 - 📦 **Default variants** - Set sensible defaults easily
-- 🔍 **classNames access** - Access individual variant class names
+- 🔍 **Class names** - Get real class names for `className` props or non-React code
 - ⚡ **Emotion integration** - Works seamlessly with @emotion/react
 
 ## 📦 Installation
 
 ```bash
 # pnpm
-pnpm add emotion-variants @emotion/react
+pnpm add emotion-variants @emotion/react @emotion/css
 
 # npm
-npm install emotion-variants @emotion/react
+npm install emotion-variants @emotion/react @emotion/css
 
 # yarn
-yarn add emotion-variants @emotion/react
+yarn add emotion-variants @emotion/react @emotion/css
 ```
 
 ## 🚀 Quick Start
@@ -198,6 +198,8 @@ button({ size: 'large', color: 'primary' });
 button();
 ```
 
+The call returns an array of Emotion `SerializedStyles`. Pass it to the `css` prop or to `css()`.
+
 ##### `.variants()` method
 
 Returns array of variant keys.
@@ -213,9 +215,20 @@ const button = ev({
 button.variants(); // ['size', 'color']
 ```
 
+##### `.className()` method
+
+Returns a single class name for the given variants. Base, variant, and compound variant styles are merged and injected through `@emotion/css`.
+
+```typescript
+<button className={button.className({ size: 'large', color: 'primary' })}>Click me</button>
+
+// Defaults apply the same way as the main function
+button.className();
+```
+
 ##### `.classNames` property
 
-Access individual class names for each variant.
+Class names for the base style and each variant value. They are generated and injected on first access, so code that only uses the `css` prop never pays for them.
 
 ```typescript
 const button = ev({
@@ -225,13 +238,19 @@ const button = ev({
       small: { fontSize: '12px' },
       large: { fontSize: '16px' },
     },
+    outlined: {
+      true: { border: '1px solid' },
+    },
   },
 });
 
-button.classNames.base; // Base class name
-button.classNames.variants.size.small; // Small size class name
-button.classNames.variants.size.large; // Large size class name
+button.classNames.base; // 'css-abc123'
+button.classNames.variants.size.small; // 'css-def456'
+button.classNames.variants.outlined.true; // boolean and number keys use their string form
 ```
+
+> **Note**
+> `className()` and `classNames` use `@emotion/css`, which keeps its own global cache. It does not pick up `CacheProvider` options (`key`, `nonce`), and for server rendering you need [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach) to extract those styles. Avoid mixing `css={button(...)}` and `className={button.className(...)}` on the same element: the two caches do not share insertion order, so overrides may not resolve the way you expect.
 
 ## 🎨 Examples
 
