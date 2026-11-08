@@ -5,7 +5,7 @@
 
 Type-safe variant API for Emotion. Create component styles with multiple variants without repetitive `css()` calls.
 
-📖 **[Documentation](https://jeonghwan-dev.github.io/emotion-variants/)** · **[한국어](https://jeonghwan-dev.github.io/emotion-variants/ko/)**
+📖 **[Documentation](https://emotion-variants.org/)** · **[한국어](https://emotion-variants.org/ko/)**
 
 ## ✨ Features
 
@@ -70,11 +70,11 @@ Omitted props fall back to `defaultVariants`, so `<Button>` renders as `small` +
 
 ## 📖 Documentation
 
-- [Introduction](https://jeonghwan-dev.github.io/emotion-variants/intro) - what problem this solves
-- [Installation](https://jeonghwan-dev.github.io/emotion-variants/installation) - peer dependencies and the `css` prop
-- [Getting Started](https://jeonghwan-dev.github.io/emotion-variants/getting-started) - build a `Button` from scratch
-- [Core Concepts](https://jeonghwan-dev.github.io/emotion-variants/core-concepts) - `base`, `variants`, `compoundVariants`, `defaultVariants`
-- [API Reference](https://jeonghwan-dev.github.io/emotion-variants/reference/ev) - `ev()`, `className()`, `classNames`, `variants()`
+- [Introduction](https://emotion-variants.org/intro) - what problem this solves
+- [Installation](https://emotion-variants.org/installation) - peer dependencies and the `css` prop
+- [Getting Started](https://emotion-variants.org/getting-started) - build a `Button` from scratch
+- [Core Concepts](https://emotion-variants.org/core-concepts) - `base`, `variants`, `compoundVariants`, `defaultVariants`
+- [API Reference](https://emotion-variants.org/reference/ev) - `ev()`, `className()`, `classNames`, `variants()`
 
 ## 🤝 Contributing
 
@@ -104,6 +104,6 @@ MIT © [Jeonghwan Park](LICENSE)
 
 ## 🔗 Links
 
-- [Documentation](https://jeonghwan-dev.github.io/emotion-variants/)
+- [Documentation](https://emotion-variants.org/)
 - [GitHub Repository](https://github.com/JeongHwan-dev/emotion-variants)
 - [npm](https://www.npmjs.com/package/emotion-variants)

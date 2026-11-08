@@ -6,7 +6,6 @@ import { glob, readFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 
 const DIST = resolve(import.meta.dirname, '../.vitepress/dist');
-const BASE = '/emotion-variants/';
 
 const pages = [];
 
@@ -35,7 +34,7 @@ for (const page of pages) {
     let targetPage = page;
     if (rawPath) {
       const abs = rawPath.startsWith('/')
-        ? rawPath.slice(BASE.length)
+        ? rawPath.slice(1)
         : relative(DIST, resolve(DIST, dirname(page), rawPath));
 
       if (!abs || abs.startsWith('..')) continue;

@@ -2,26 +2,24 @@ import container from 'markdown-it-container';
 import { defineConfig } from 'vitepress';
 import { renderSandbox } from 'vitepress-plugin-sandpack';
 
-const base = '/emotion-variants/';
-
 export const shared = defineConfig({
   title: 'emotion-variants',
-  base,
   lastUpdated: true,
   cleanUrls: true,
   metaChunk: true,
+  sitemap: {
+    hostname: 'https://emotion-variants.org',
+  },
   vite: {
     publicDir: 'public',
   },
   head: [
-    // VitePress applies `base` to themeConfig and markdown links, but emits
-    // `head` verbatim.
     [
       'link',
       {
         rel: 'icon',
         type: 'image/svg+xml',
-        href: `${base}logo.svg`,
+        href: '/logo.svg',
       },
     ],
     [
