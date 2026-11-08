@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- **React** 16.8 or newer (Hooks era)
+- **React** 16.14 or newer — the automatic JSX runtime (`react/jsx-runtime`) landed in 16.14
 - **`@emotion/react`** 11.x
 - **`@emotion/css`** 11.x
 
@@ -28,28 +28,33 @@ Both Emotion packages are peer dependencies and must be installed alongside `emo
 
 ## Enable the `css` prop
 
-`emotion-variants` returns values you pass to Emotion's `css` prop. Make sure your project is set up to use it. The simplest setup is the JSX import-source pragma:
+`emotion-variants` returns values you pass to Emotion's `css` prop. Make sure your project is set up to use it. The simplest setup points the automatic JSX runtime at Emotion:
 
 ```json
 // tsconfig.json
 {
   "compilerOptions": {
+    "jsx": "react-jsx",
     "jsxImportSource": "@emotion/react"
   }
 }
 ```
 
-Or per file:
+Both options are required. `jsxImportSource` has no effect under `"jsx": "react"` — that is the classic transform, which calls `React.createElement` and never consults an import source.
+
+Or per file, for a project that cannot switch globally:
 
 ```tsx
 /** @jsxImportSource @emotion/react */
 ```
 
-See [Emotion's installation guide](https://emotion.sh/docs/css-prop) for other setups (Babel plugin, Next.js, Vite, etc.).
+The pragma needs the automatic runtime too, so it must be the first thing in the file and the file must be compiled with `react-jsx`. On React older than 16.14, use [Emotion's Babel plugin](https://emotion.sh/docs/css-prop#babel-plugin) with the classic transform instead.
+
+See [Emotion's installation guide](https://emotion.sh/docs/css-prop) for other setups (Next.js, Vite, etc.).
 
 ## Verify
 
-Create a tiny component and render it. If TypeScript autocompletes `size` and `color` inside `button({ ... })`, you're good to go.
+Create a tiny component and render it. If TypeScript autocompletes `size` inside `button({ ... })`, you're good to go.
 
 ```tsx
 import { ev } from 'emotion-variants';

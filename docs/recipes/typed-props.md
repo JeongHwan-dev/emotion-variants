@@ -45,7 +45,7 @@ For a polymorphic button-like component, intersect with `ComponentPropsWithoutRe
 ```tsx
 import type { ComponentPropsWithoutRef } from 'react';
 
-type ButtonProps = ComponentPropsWithoutRef<'button'> & ButtonVariants;
+export type ButtonProps = ComponentPropsWithoutRef<'button'> & ButtonVariants;
 
 export function Button({ size, color, ...rest }: ButtonProps) {
   return <button css={button({ size, color })} {...rest} />;
@@ -54,24 +54,32 @@ export function Button({ size, color, ...rest }: ButtonProps) {
 
 ## With sensible defaults
 
-Pair `defaultVariants` (for direct `button()` callers) with default values at the prop boundary (for `<Button />` callers — see [Default Variants](./default-variants) for why both matter):
+Declare the defaults once, in `defaultVariants`, and forward the props unchanged. An omitted prop arrives as `undefined` and still resolves to the default, so a second set of defaults at the prop boundary would only be a place for the two to drift apart:
 
 ```tsx
-export function Button({
-  size = 'medium',
-  color = 'primary',
-  ...rest
-}: ButtonProps) {
+const button = ev({
+  variants: {
+    /* ... */
+  },
+  defaultVariants: {
+    size: 'medium',
+    color: 'primary',
+  },
+});
+
+export function Button({ size, color, ...rest }: ButtonProps) {
   return <button css={button({ size, color })} {...rest} />;
 }
 ```
+
+See [Default Variants](./default-variants) for the resolution rules.
 
 ## Forwarding refs
 
 ```tsx
 import { forwardRef, type ComponentPropsWithoutRef } from 'react';
 
-type ButtonProps = ComponentPropsWithoutRef<'button'> & ButtonVariants;
+export type ButtonProps = ComponentPropsWithoutRef<'button'> & ButtonVariants;
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ size, color, ...rest }, ref) => (

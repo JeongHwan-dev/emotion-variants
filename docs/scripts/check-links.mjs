@@ -55,8 +55,17 @@ for (const page of pages) {
       targetPage = found;
     }
 
-    if (anchor && !ids.get(targetPage)?.has(anchor)) {
-      errors.push(`${page}: dead anchor ${href} (no id="${anchor}" in ${targetPage})`);
+    if (anchor) {
+      const pageIds = ids.get(targetPage);
+      let decoded = anchor;
+      try {
+        decoded = decodeURIComponent(anchor);
+      } catch {
+        // malformed escape: fall back to the raw fragment
+      }
+      if (!pageIds?.has(anchor) && !pageIds?.has(decoded)) {
+        errors.push(`${page}: dead anchor ${href} (no id="${anchor}" in ${targetPage})`);
+      }
     }
   }
 }

@@ -18,7 +18,7 @@ Emotion이 중첩 배열을 펼쳐 주기 때문에 spread는 선택이에요. �
 <button css={[...button({ size: 'large' }), { width: '100%' }]}>Submit</button>;
 ```
 
-순서가 전부예요. Emotion은 배열 순서대로 이어 붙이고, 같은 property는 마지막 선언이 이겨요. 덮어쓸 스타일을 앞에 두면 집니다.
+순서가 핵심이에요. Emotion은 배열 순서대로 이어 붙이고, **specificity가 같은** 선언끼리는 마지막 것이 이겨요. 덮어쓸 스타일을 앞에 두면 집니다.
 
 ```tsx
 // ✗ base와 variant 스타일이 `width`를 덮어써요
@@ -30,26 +30,30 @@ Emotion이 중첩 배열을 펼쳐 주기 때문에 spread는 선택이에요. �
 
 ### 덮어쓰기를 prop으로 받기
 
-`css` 모양의 prop을 받아서 같은 자리에 덧붙이면, 호출하는 쪽은 스타일이 어떻게 조립되는지 몰라도 덮어쓸 수 있어요.
+추가 스타일을 받을 prop을 하나 두고 같은 자리에 덧붙이면, 호출하는 쪽은 스타일이 어떻게 조립되는지 몰라도 덮어쓸 수 있어요.
 
 ```tsx
 import type { Interpolation, Theme } from '@emotion/react';
 
 type ButtonProps = NonNullable<Parameters<typeof button>[0]> & {
   children: React.ReactNode;
-  css?: Interpolation<Theme>;
+  styleOverride?: Interpolation<Theme>;
 };
 
-function Button({ size, color, css: override, children }: ButtonProps) {
-  return <button css={[button({ size, color }), override]}>{children}</button>;
+function Button({ size, color, styleOverride, children }: ButtonProps) {
+  return <button css={[button({ size, color }), styleOverride]}>{children}</button>;
 }
 ```
 
 ```tsx
-<Button size="large" css={{ width: '100%' }}>
+<Button size="large" styleOverride={{ width: '100%' }}>
   Submit
 </Button>
 ```
+
+::: warning
+이 prop의 이름을 `css`로 짓지 마세요. Emotion의 JSX runtime이 `css`를 호출 지점에서 가로채 `className`으로 바꿔 버리기 때문에, `css` prop은 `Button`까지 도달하지 못하고 덮어쓰기가 조용히 사라져요. 다른 이름은 그대로 전달돼요.
+:::
 
 ### `className`을 쓰는 곳에서 덮어쓰기
 
@@ -69,6 +73,26 @@ const full = cssClassName(button({ size: 'large' }), { width: '100%' });
 
 <button className={full}>Submit</button>;
 ```
+
+::: warning
+순서는 동점일 때만 결정해요. 평범한 선언은 더 구체적인 selector를 이기지 못해서, variant의 `&:hover` 규칙이 적용되는 동안에는 뒤에 붙인 `{ width: '100%' }`가 이기지 못해요. 덮어쓰려는 selector를 같이 맞춰 주세요.
+
+```tsx
+<button
+  css={[
+    button({ size: 'large' }),
+    {
+      width: '100%',
+      '&:hover': {
+        width: '100%',
+      },
+    },
+  ]}
+>
+  Submit
+</button>;
+```
+:::
 
 ## 덮어쓰기 대신 variant를 만들어야 할 때
 

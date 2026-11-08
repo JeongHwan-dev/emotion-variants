@@ -49,13 +49,15 @@ function Button({ size }: Props) {
 button({ size: undefined }); // button()과 완전히 같아요 — medium primary
 ```
 
+`null`도 런타임에서는 똑같이 기본값으로 떨어지지만, `EvVariants` 타입에는 `null`이 없어요. `strictNullChecks`에서는 nullable한 값을 넘기기 전에 `undefined`로 바꿔 줘야 해요.
+
 그래서 `defaultVariants`가 있는데 prop 기본값(`{ size = 'medium' }`)까지 또 줄 필요는 없어요. 기본값은 한 곳에서만 선언하세요. 컴포넌트 밖에서 `button()`을 직접 부르는 경우까지 덮어 주는 쪽은 `defaultVariants`예요.
 
 ::: warning
 `false`와 `0`은 유효한 variant 값이라서, 기본값으로 떨어지지 않고 그 값 그대로 쓰여요.
 
 ```ts
-const box = ev({
+const badge = ev({
   variants: {
     outlined: {
       true: {
@@ -71,7 +73,7 @@ const box = ev({
   },
 });
 
-box({ outlined: false }); // border: none. 기본값 `true` 스타일이 아니에요
+badge({ outlined: false }); // border: none. 기본값 `true` 스타일이 아니에요
 ```
 :::
 
@@ -80,7 +82,7 @@ box({ outlined: false }); // border: none. 기본값 `true` 스타일이 아니�
 문자열 키 `'true'` / `'false'`가 아니라 실제 Boolean `true` / `false`를 써요.
 
 ```ts
-const x = ev({
+const chip = ev({
   variants: {
     outlined: {
       true: {
@@ -96,7 +98,7 @@ const x = ev({
   },
 });
 
-x(); // false 스타일이 적용돼요
+chip(); // false 스타일이 적용돼요
 ```
 
 ## 복합 variant와도 잘 맞아요

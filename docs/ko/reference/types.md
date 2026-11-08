@@ -90,6 +90,17 @@ type ClassNames = EvClassNames<{
 ```typescript
 import type { CompoundVariant } from 'emotion-variants';
 
+const variants = {
+  size: {
+    small: {},
+    large: {},
+  },
+  color: {
+    primary: {},
+    danger: {},
+  },
+};
+
 const compounds: Array<CompoundVariant<typeof variants>> = [
   {
     variants: {

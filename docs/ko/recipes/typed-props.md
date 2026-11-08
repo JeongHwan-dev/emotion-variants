@@ -45,7 +45,7 @@ button처럼 HTML 요소를 감싸는 컴포넌트라면 `ComponentPropsWithoutR
 ```tsx
 import type { ComponentPropsWithoutRef } from 'react';
 
-type ButtonProps = ComponentPropsWithoutRef<'button'> & ButtonVariants;
+export type ButtonProps = ComponentPropsWithoutRef<'button'> & ButtonVariants;
 
 export function Button({ size, color, ...rest }: ButtonProps) {
   return <button css={button({ size, color })} {...rest} />;
@@ -54,24 +54,33 @@ export function Button({ size, color, ...rest }: ButtonProps) {
 
 ## 기본값과 함께 쓰기
 
-`defaultVariants`(직접 `button()`을 호출할 때 쓰임)와 prop 경계에서 잡는 기본값(`<Button />`을 호출할 때 쓰임)을 함께 두는 걸 추천해요. 둘 다 왜 필요한지는 [기본 Variants](./default-variants) 페이지를 참고해 주세요.
+기본값은 `defaultVariants` 한 곳에만 선언하고, props는 그대로 넘기세요. 생략된 prop은 `undefined`로 도착해도 기본값으로 해석되기 때문에, prop 경계에 기본값을 한 번 더 두면 두 값이 어긋날 자리만 생겨요.
 
 ```tsx
-export function Button({
-  size = 'medium',
-  color = 'primary',
-  ...rest
-}: ButtonProps) {
+const button = ev({
+  variants: {
+    /* ... */
+  },
+  defaultVariants: {
+    size: 'medium',
+    color: 'primary',
+  },
+});
+
+export function Button({ size, color, ...rest }: ButtonProps) {
   return <button css={button({ size, color })} {...rest} />;
 }
 ```
+
+해석 규칙은 [기본 Variants](./default-variants)에서 확인하세요.
+
 
 ## ref 전달
 
 ```tsx
 import { forwardRef, type ComponentPropsWithoutRef } from 'react';
 
-type ButtonProps = ComponentPropsWithoutRef<'button'> & ButtonVariants;
+export type ButtonProps = ComponentPropsWithoutRef<'button'> & ButtonVariants;
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ size, color, ...rest }, ref) => (

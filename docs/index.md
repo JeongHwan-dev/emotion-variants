@@ -27,8 +27,8 @@ features:
     title: Default variants
     details: Set sensible defaults so consumers can omit props and still get a styled component.
   - icon: 🚀
-    title: Zero runtime overhead
-    details: Styles are pre-serialized at definition time. Only the matching class names are applied at render.
+    title: Pre-serialized styles
+    details: Base styles are serialized once at definition time. Each call just selects the matching styles for Emotion's `css` prop.
   - icon: 🪶
     title: Drop-in for Emotion
     details: Works with `@emotion/react`'s `css` prop. No bundler config, no providers.

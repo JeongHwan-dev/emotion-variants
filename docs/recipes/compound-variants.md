@@ -1,6 +1,6 @@
 # Compound Variants
 
-Compound variants apply styles only when **multiple variant axes** match specific values. They're the answer to "I want this style only when `variant: 'outlined'` *and* `color: 'danger'`."
+Compound variants apply styles only when the variant values you list all match. They're the answer to "I want this style only when `variant: 'outlined'` *and* `color: 'danger'`." Listing a single axis is allowed too — it then behaves like a variant style that is applied after all the others.
 
 ## When to reach for them
 

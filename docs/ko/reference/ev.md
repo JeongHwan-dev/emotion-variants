@@ -80,7 +80,9 @@ function Button({ size, color, children }: ButtonProps) {
 <Button size="large" color="primary">Large primary</Button>
 ```
 
-값은 키 단위로 `??`로 결정돼요. 그래서 `undefined`와 `null`은 `defaultVariants`로 떨어져요. 위 `Button`이 선택 prop을 따로 걸러내지 않고 그대로 넘길 수 있는 이유예요. 생략된 prop은 `undefined`로 도착하지만 기본값이 그대로 적용돼요. `false`와 `0`은 실제 값이라서 그대로 쓰여요.
+값은 키 단위로 `??`로 결정돼요. 그래서 생략하거나 `undefined`를 넘기면 `defaultVariants`로 떨어져요. 위 `Button`이 선택 prop을 따로 걸러내지 않고 그대로 넘길 수 있는 이유예요. `false`와 `0`은 실제 값이라서 그대로 쓰여요.
+
+`null`도 런타임에서는 기본값으로 떨어지지만, `EvVariants` 타입에는 `null`이 없어요. `strictNullChecks`에서 `button({ size: null })`은 타입 에러예요. 호출 전에 `undefined`로 바꿔 주세요.
 
 ```typescript
 button({ size: undefined }); // button()과 완전히 같아요
@@ -165,6 +167,8 @@ button.classNames === button.classNames; // true
 
 ::: warning
 `classNames`는 `base`와 단일 variant 값만 다뤄요. **compound variants는 여기에 들어 있지 않아요.** 조합에 대응하는 키가 없어요. compound 스타일이 필요하면 [`className()`](#classname)을 사용하세요.
+
+이 class들을 이어 붙이는 건 함수를 호출하는 것과 달라요. 각각이 specificity가 같은 별개의 규칙이라서, `base`와 variant가 같은 property를 지정하면 나열한 순서가 아니라 Emotion이 먼저 주입한 쪽이 이겨요. variant가 `base`를 이겨야 한다면 [`className()`](#classname)을 쓰세요.
 
 설정에 `base`가 없으면 `base`는 빈 문자열이에요.
 :::
@@ -287,4 +291,6 @@ export default function App() {
 `className()`과 `classNames`는 [`@emotion/css`](https://emotion.sh/docs/@emotion/css)를 거쳐요. `@emotion/css`는 `@emotion/react`와 별개인 자체 global cache를 갖고 있어요. 그래서 `CacheProvider`의 `key`나 `nonce` 같은 옵션을 무시하고, 서버 렌더링에서 이 스타일을 뽑아내려면 [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach)가 필요해요.
 
 같은 엘리먼트에 `css={button(...)}`와 `className={button.className(...)}`를 함께 쓰는 건 피하세요. 두 cache는 주입 순서를 공유하지 않아서, 덮어쓰기가 예상대로 동작하지 않을 수 있어요.
+
+서버 렌더링에서는 뽑아내야 할 cache가 하나가 아니라 둘이라는 뜻이에요. `@emotion/react`의 cache만 모으면 `className()`과 `classNames`가 만든 규칙이 빠진 마크업이 나가서, hydration 전까지 스타일이 없는 화면이 보여요.
 :::

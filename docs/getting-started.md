@@ -2,6 +2,8 @@
 
 This page walks through building a `Button` component with `emotion-variants` from scratch.
 
+It assumes you have already [installed](./installation) the package and enabled Emotion's `css` prop.
+
 ## 1. Define the style
 
 Call `ev()` with a single configuration object describing your component's styles:

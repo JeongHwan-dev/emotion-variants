@@ -18,7 +18,7 @@ Emotion flattens nested arrays, so spreading is optional. Both forms behave iden
 <button css={[...button({ size: 'large' }), { width: '100%' }]}>Submit</button>;
 ```
 
-Order is the whole mechanism — Emotion concatenates in array order and the last declaration of a property wins. Put the override first and it loses:
+Order is the mechanism — Emotion concatenates in array order, and among declarations of **equal specificity** the last one wins. Put the override first and it loses:
 
 ```tsx
 // ✗ `width` is overwritten by base/variant styles
@@ -30,26 +30,30 @@ Order is the whole mechanism — Emotion concatenates in array order and the las
 
 ### Accept overrides as a prop
 
-Give the component a `css`-shaped prop and append it in the same position. Callers then override without knowing how the styles are built.
+Give the component a prop for extra styles and append it in the same position. Callers then override without knowing how the styles are built.
 
 ```tsx
 import type { Interpolation, Theme } from '@emotion/react';
 
 type ButtonProps = NonNullable<Parameters<typeof button>[0]> & {
   children: React.ReactNode;
-  css?: Interpolation<Theme>;
+  styleOverride?: Interpolation<Theme>;
 };
 
-function Button({ size, color, css: override, children }: ButtonProps) {
-  return <button css={[button({ size, color }), override]}>{children}</button>;
+function Button({ size, color, styleOverride, children }: ButtonProps) {
+  return <button css={[button({ size, color }), styleOverride]}>{children}</button>;
 }
 ```
 
 ```tsx
-<Button size="large" css={{ width: '100%' }}>
+<Button size="large" styleOverride={{ width: '100%' }}>
   Submit
 </Button>
 ```
+
+::: warning
+Do not name that prop `css`. Emotion's JSX runtime consumes `css` at the call site and hands the component a `className` instead, so a `css` prop never reaches `Button` and the override is silently dropped. Any other name is forwarded untouched.
+:::
 
 ### Overriding on `className` surfaces
 
@@ -69,6 +73,26 @@ const full = cssClassName(button({ size: 'large' }), { width: '100%' });
 
 <button className={full}>Submit</button>;
 ```
+
+::: warning
+Order only decides ties. A flat declaration never beats a more specific selector, so `{ width: '100%' }` appended after a variant does not win while that variant's `&:hover` rule applies. Match the selector you are overriding:
+
+```tsx
+<button
+  css={[
+    button({ size: 'large' }),
+    {
+      width: '100%',
+      '&:hover': {
+        width: '100%',
+      },
+    },
+  ]}
+>
+  Submit
+</button>;
+```
+:::
 
 ## When to add a variant instead
 

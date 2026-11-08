@@ -4,6 +4,15 @@ export const ko = defineConfig({
   label: '한국어',
   lang: 'ko-KR',
   link: '/ko/',
+  head: [
+    [
+      'meta',
+      {
+        property: 'og:locale',
+        content: 'ko_KR',
+      },
+    ],
+  ],
   description:
     'Emotion을 위한 Type-safe variant API. 반복적인 css() 호출 없이 다양한 variant를 가진 컴포넌트 스타일을 만들어요.',
   themeConfig: {

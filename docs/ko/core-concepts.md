@@ -82,7 +82,7 @@ button({ size: 'large', color: 'primary' });
 variant 값으로는 **string**, **number**, **Boolean** 세 종류를 쓸 수 있어요.
 
 ```ts
-const component = ev({
+const panel = ev({
   variants: {
     color: {
       red: {
@@ -111,7 +111,7 @@ const component = ev({
   },
 });
 
-component({ color: 'red', level: 2, outlined: true });
+panel({ color: 'red', level: 2, outlined: true });
 ```
 
 ::: info
@@ -202,7 +202,7 @@ button({ size: undefined }); // button()과 완전히 같아요 — size: 'small
 `false`와 `0`은 값이 없는 게 아니라 실제 variant 값이에요. 그래서 기본값으로 **떨어지지 않아요**.
 
 ```ts
-const box = ev({
+const badge = ev({
   variants: {
     outlined: {
       true: {
@@ -218,7 +218,7 @@ const box = ev({
   },
 });
 
-box({ outlined: false }); // border: none — 기본값이 적용되지 않아요
+badge({ outlined: false }); // border: none — 기본값이 적용되지 않아요
 ```
 :::
 

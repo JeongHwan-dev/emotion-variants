@@ -49,13 +49,15 @@ function Button({ size }: Props) {
 button({ size: undefined }); // identical to button() — medium primary
 ```
 
+`null` falls back the same way at runtime, but `EvVariants` does not include it — under `strictNullChecks` a nullable value has to be normalized to `undefined` before it is passed.
+
 This means you don't need a prop default (`{ size = 'medium' }`) on top of `defaultVariants`. Pick one place to declare the default, and `defaultVariants` is the one that also covers direct `button()` calls from outside the component.
 
 ::: warning
 `false` and `0` are valid variant values, so they are used as-is rather than falling back.
 
 ```ts
-const box = ev({
+const badge = ev({
   variants: {
     outlined: {
       true: {
@@ -71,7 +73,7 @@ const box = ev({
   },
 });
 
-box({ outlined: false }); // border: none, not the default `true` style
+badge({ outlined: false }); // border: none, not the default `true` style
 ```
 :::
 
@@ -80,7 +82,7 @@ box({ outlined: false }); // border: none, not the default `true` style
 Use literal `true` / `false`, not the string keys:
 
 ```ts
-const x = ev({
+const chip = ev({
   variants: {
     outlined: {
       true: {
@@ -96,7 +98,7 @@ const x = ev({
   },
 });
 
-x(); // applies the `false` style
+chip(); // applies the `false` style
 ```
 
 ## Defaults play well with compound variants

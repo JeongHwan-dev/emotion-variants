@@ -2,7 +2,7 @@
 
 ## 요구 사항
 
-- **React** 16.8 이상 (Hooks 도입 버전)
+- **React** 16.14 이상 — 자동 JSX runtime(`react/jsx-runtime`)이 16.14에서 들어왔어요
 - **`@emotion/react`** 11.x
 - **`@emotion/css`** 11.x
 
@@ -28,24 +28,30 @@ Emotion 패키지 두 개는 모두 peer dependency라서 `emotion-variants`와 
 
 ## `css` prop 활성화
 
-`emotion-variants`가 반환하는 값은 Emotion의 `css` prop에 그대로 넘기는 형태예요. 그래서 프로젝트에 `css` prop이 활성화돼 있어야 동작해요. 가장 간단한 방법은 JSX import-source pragma를 쓰는 거예요.
+`emotion-variants`가 반환하는 값은 Emotion의 `css` prop에 그대로 넘기는 형태예요. 그래서 프로젝트에 `css` prop이 활성화돼 있어야 동작해요. 가장 간단한 방법은 자동 JSX runtime이 Emotion을 가리키게 하는 거예요.
 
 ```json
 // tsconfig.json
 {
   "compilerOptions": {
+    "jsx": "react-jsx",
     "jsxImportSource": "@emotion/react"
   }
 }
 ```
 
-파일 단위로 지정할 수도 있어요.
+두 옵션이 모두 필요해요. `"jsx": "react"`에서는 `jsxImportSource`가 아무 효과가 없어요. 그건 classic transform이라 `React.createElement`를 호출하고 import source를 보지 않아요.
+
+프로젝트 전체 설정을 바꾸기 어렵다면 파일 단위로도 할 수 있어요.
 
 ```tsx
 /** @jsxImportSource @emotion/react */
 ```
 
-다른 설정 방법(Babel 플러그인, Next.js, Vite 등)은 [Emotion 공식 설치 가이드](https://emotion.sh/docs/css-prop)를 참고해 주세요.
+이 pragma도 자동 runtime이 전제라서, 파일의 가장 첫 줄에 있어야 하고 그 파일이 `react-jsx`로 컴파일돼야 해요. React 16.14보다 낮은 버전이라면 [Emotion의 Babel 플러그인](https://emotion.sh/docs/css-prop#babel-plugin)과 classic transform을 쓰세요.
+
+다른 설정 방법(Next.js, Vite 등)은 [Emotion 공식 설치 가이드](https://emotion.sh/docs/css-prop)를 참고해 주세요.
+
 
 ## 동작 확인
 

@@ -80,7 +80,9 @@ function Button({ size, color, children }: ButtonProps) {
 <Button size="large" color="primary">Large primary</Button>
 ```
 
-Values are resolved per key with `??`, so `undefined` and `null` fall back to `defaultVariants`. That is what lets `Button` above forward its optional props straight through without guarding them — an omitted prop arrives as `undefined` and the default still applies. `false` and `0` are real values and are used as-is.
+Values are resolved per key with `??`, so an omitted or `undefined` value falls back to `defaultVariants`. That is what lets `Button` above forward its optional props straight through without guarding them. `false` and `0` are real values and are used as-is.
+
+`null` also falls back at runtime, but `EvVariants` does not include it — under `strictNullChecks`, `button({ size: null })` is a type error. Convert `null` to `undefined` before calling.
 
 ```typescript
 button({ size: undefined }); // identical to button()
@@ -165,6 +167,8 @@ button.classNames === button.classNames; // true
 
 ::: warning
 `classNames` covers `base` and single variant values only. **Compound variants are not represented here** — there is no key for a combination. Use [`className()`](#classname) when compound styles matter.
+
+Concatenating these classes is not the same as calling the function. Each is a separate rule of equal specificity, so when `base` and a variant set the same property the winner is whichever Emotion inserted first, not the order you list them in. Use [`className()`](#classname) whenever a variant has to beat `base`.
 
 `base` is an empty string when the config has no `base`.
 :::
@@ -287,4 +291,6 @@ See [Types](./types) for `EvConfig`, `EvFunction`, `EvVariants`, and the rest of
 `className()` and `classNames` go through [`@emotion/css`](https://emotion.sh/docs/@emotion/css), which keeps its own global cache separate from `@emotion/react`. That means it ignores `CacheProvider` options such as `key` and `nonce`, and server rendering needs [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach) to extract those styles.
 
 Avoid putting `css={button(...)}` and `className={button.className(...)}` on the same element. The two caches do not share an insertion order, so overrides may not resolve the way you expect.
+
+For server rendering this means two caches to extract, not one. Collecting only `@emotion/react`'s cache ships markup whose `className()` and `classNames` rules are missing, so the first paint is unstyled until hydration.
 :::

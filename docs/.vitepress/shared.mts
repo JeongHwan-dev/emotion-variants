@@ -40,7 +40,7 @@ export const shared = defineConfig({
       'meta',
       {
         property: 'og:locale',
-        content: 'en',
+        content: 'en_US',
       },
     ],
     [

@@ -27,8 +27,8 @@ features:
     title: 기본 variants
     details: 합리적인 기본값을 정해 두면, props 없이 호출해도 스타일이 자연스럽게 잡혀요.
   - icon: 🚀
-    title: 런타임 오버헤드 0
-    details: 스타일은 정의 시점에 미리 직렬화돼요. 렌더링할 땐 해당하는 클래스 이름만 붙어요.
+    title: 미리 직렬화된 스타일
+    details: base 스타일은 정의 시점에 한 번만 직렬화돼요. 호출할 때는 일치하는 스타일을 골라 `css` prop에 넘기기만 해요.
   - icon: 🪶
     title: Emotion과 그대로
     details: "`@emotion/react`의 `css` prop과 바로 연결돼요. 번들러 설정도, Provider도 필요 없어요."

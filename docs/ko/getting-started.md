@@ -2,6 +2,8 @@
 
 이 페이지에서는 `emotion-variants`로 `Button` 컴포넌트를 처음부터 만들어 봐요.
 
+패키지를 [설치](./installation)하고 Emotion의 `css` prop을 활성화해 둔 상태를 전제로 해요.
+
 ## 1. 스타일 정의
 
 컴포넌트의 스타일을 기술하는 설정 객체 하나를 `ev()`에 넘겨요.

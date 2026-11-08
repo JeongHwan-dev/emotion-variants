@@ -82,7 +82,7 @@ button({ size: 'large', color: 'primary' });
 Variant values can be **strings**, **numbers**, or **booleans**:
 
 ```ts
-const component = ev({
+const panel = ev({
   variants: {
     color: {
       red: {
@@ -111,7 +111,7 @@ const component = ev({
   },
 });
 
-component({ color: 'red', level: 2, outlined: true });
+panel({ color: 'red', level: 2, outlined: true });
 ```
 
 ::: info
@@ -202,7 +202,7 @@ button({ size: undefined }); // identical to button() — size: 'small', color: 
 `false` and `0` are real variant values, not missing ones, so they do **not** fall back:
 
 ```ts
-const box = ev({
+const badge = ev({
   variants: {
     outlined: {
       true: {
@@ -218,7 +218,7 @@ const box = ev({
   },
 });
 
-box({ outlined: false }); // border: none — the default is not applied
+badge({ outlined: false }); // border: none — the default is not applied
 ```
 :::
 

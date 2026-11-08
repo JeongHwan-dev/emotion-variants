@@ -5,13 +5,17 @@ on:
     branches: [main]
     paths:
       - 'docs/**'
+      - 'package.json'
       - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
       - '.github/workflows/deploy-docs.yml'
   pull_request:
     branches: [main]
     paths:
       - 'docs/**'
+      - 'package.json'
       - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
       - '.github/workflows/deploy-docs.yml'
   workflow_dispatch:
 
@@ -30,6 +34,9 @@ jobs:
           # VitePress `lastUpdated` reads each page's commit date from git log,
           # so a shallow clone silently drops every timestamp.
           fetch-depth: 0
+          # The build runs dependency install scripts; don't leave the token
+          # readable in the runner's git config while they execute.
+          persist-credentials: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1

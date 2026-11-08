@@ -1,6 +1,6 @@
 # 복합 Variants
 
-복합 variant는 **여러 variant 축**이 특정 값으로 동시에 맞아떨어질 때만 스타일을 적용해요. "`variant: 'outlined'` *이면서* `color: 'danger'`일 때만" 같은 요구사항에 딱 맞아요.
+복합 variant는 나열한 variant 값이 모두 맞아떨어질 때만 스타일을 적용해요. "`variant: 'outlined'` *이면서* `color: 'danger'`일 때만" 같은 요구사항에 대한 답이에요. 축을 하나만 적어도 괜찮아요. 그럴 때는 다른 모든 variant 뒤에 적용되는 스타일처럼 동작해요.
 
 ## 언제 쓰면 좋나요?
 
