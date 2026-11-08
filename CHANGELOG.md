@@ -1,5 +1,18 @@
 # emotion-variants
 
+## 1.0.2
+
+### Patch Changes
+
+- [#41](https://github.com/JeongHwan-dev/emotion-variants/pull/41) [`176a7f2`](https://github.com/JeongHwan-dev/emotion-variants/commit/176a7f2c57e6d561a24d245261fad8fcf24a35d1) Thanks [@JeongHwan-dev](https://github.com/JeongHwan-dev)! - chore(core): switch to ESM package type and fix ESM type resolution
+  
+  - set "type": "module"; emit dist/index.{js,d.ts} for ESM and dist/index.{cjs,d.cts} for CJS
+  - split exports "types" per import/require condition so node16 ESM no longer resolves CJS types
+  - add "sideEffects": false, use git+https repository url, narrow "files" to dist
+  - drop redundant react peer dependency (@emotion/react already declares it)
+  - remove duplicate build from the release script (prepublishOnly already builds)
+  - rename .lintstagedrc.js to .cjs, delete stale .npmignore, bump @types/node to 22
+
 ## 1.0.1
 
 ### Patch Changes
