@@ -21,7 +21,6 @@ This is a TypeScript library that provides a type-safe variant API for Emotion C
 - Keep the API simple and intuitive
 - Follow the `ev()` function pattern: `ev(config) => function`
 - Support string, number, and boolean variant values
-- Provide access to `classNames` for advanced use cases
 - Support `base`, `variants`, `compoundVariants`, and `defaultVariants`
 
 ### 3. Code Quality
@@ -91,7 +90,6 @@ tests/
 ### Variant Handling
 - Support string, number, and boolean variant values
 - Handle `true`/`false` as string keys `'true'`/`'false'` internally
-- Map boolean values correctly in `classNames` access
 - Ensure type inference works for all variant types
 
 ### Error Handling

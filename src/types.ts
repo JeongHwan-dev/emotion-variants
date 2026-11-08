@@ -1,4 +1,4 @@
-import type { CSSObject } from '@emotion/react';
+import type { CSSObject, SerializedStyles } from '@emotion/react';
 
 /**
  * Valid types for variant values.
@@ -37,18 +37,6 @@ type KeyToValue<K> = K extends 'true'
       : K extends number
         ? K
         : never;
-
-/**
- * Helper type to convert value types back to string keys for classNames.
- * Converts boolean values back to string keys.
- */
-type ValueToKey<V> = V extends true
-  ? 'true'
-  : V extends false
-    ? 'false'
-    : V extends string | number
-      ? string
-      : never;
 
 /**
  * Type representing valid values for a specific variant key.
@@ -111,19 +99,18 @@ export type EvVariants<T extends VariantConfig<Record<string, Record<string, CSS
 /**
  * Function type returned by the ev function.
  *
- * This is a callable object that also has additional properties for accessing
- * variant information and generated class names.
+ * This is a callable object that also exposes the available variant keys.
  *
  * @typeParam T - The variant configuration type
  */
 export interface EvFunction<T extends VariantConfig<Record<string, Record<string, CSSObject>>>> {
   /**
-   * Main function that accepts variant values and returns Emotion Interpolation.
+   * Main function that accepts variant values and returns the matching styles.
    *
    * @param variants - Optional variant values to apply
-   * @returns Emotion Interpolation that can be used with the css prop
+   * @returns Array of SerializedStyles that can be passed to the css prop or `css()`
    */
-  (variants?: EvVariants<T>): import('@emotion/react').Interpolation<unknown>;
+  (variants?: EvVariants<T>): SerializedStyles[];
 
   /**
    * Returns an array of all available variant keys.
@@ -131,21 +118,4 @@ export interface EvFunction<T extends VariantConfig<Record<string, Record<string
    * @returns Array of variant key names
    */
   variants: () => Array<VariantKeys<T>>;
-
-  /**
-   * Provides access to generated class names for base styles and variants.
-   *
-   * Useful for accessing individual class names without applying styles,
-   * or for use in non-React contexts.
-   */
-  classNames: {
-    /** Class name for the base style */
-    base: string;
-    /** Class names for each variant value */
-    variants: {
-      [K in VariantKeys<T>]: {
-        [V in VariantValueFor<T, K> as ValueToKey<V>]: string;
-      };
-    };
-  };
 }

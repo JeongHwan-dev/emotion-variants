@@ -1,3 +1,4 @@
+import type { SerializedStyles } from '@emotion/react';
 import { describe, expectTypeOf, it } from 'vitest';
 import { ev } from '../src/ev';
 import type { EvFunction } from '../src/types';
@@ -107,23 +108,7 @@ describe('ev - Type Tests', () => {
 
     expectTypeOf(button).toMatchTypeOf<EvFunction<ButtonConfig>>();
     expectTypeOf(button.variants).toBeFunction();
-    expectTypeOf(button.classNames).toBeObject();
-  });
-
-  it('classNames type', () => {
-    const button = ev({
-      base: { padding: '10px' },
-      variants: {
-        size: {
-          small: { fontSize: '12px' },
-          large: { fontSize: '16px' },
-        },
-      },
-    });
-
-    expectTypeOf(button.classNames.base).toBeString();
-    expectTypeOf(button.classNames.variants.size.small).toBeString();
-    expectTypeOf(button.classNames.variants.size.large).toBeString();
+    expectTypeOf(button()).toEqualTypeOf<SerializedStyles[]>();
   });
 
   it('type-safe with empty variants', () => {

@@ -11,7 +11,6 @@ Type-safe variant API for Emotion. Create component styles with multiple variant
 - 🚀 **No `css()` calls needed** - Use plain CSSObject directly
 - 🎨 **Compound variants** - Define styles for complex variant combinations
 - 📦 **Default variants** - Set sensible defaults easily
-- 🔍 **classNames access** - Access individual variant class names
 - ⚡ **Emotion integration** - Works seamlessly with @emotion/react
 
 ## 📦 Installation
@@ -198,6 +197,8 @@ button({ size: 'large', color: 'primary' });
 button();
 ```
 
+The call returns an array of Emotion `SerializedStyles`. Pass it to the `css` prop or to `css()`.
+
 ##### `.variants()` method
 
 Returns array of variant keys.
@@ -211,26 +212,6 @@ const button = ev({
 });
 
 button.variants(); // ['size', 'color']
-```
-
-##### `.classNames` property
-
-Access individual class names for each variant.
-
-```typescript
-const button = ev({
-  base: { padding: '10px' },
-  variants: {
-    size: {
-      small: { fontSize: '12px' },
-      large: { fontSize: '16px' },
-    },
-  },
-});
-
-button.classNames.base; // Base class name
-button.classNames.variants.size.small; // Small size class name
-button.classNames.variants.size.large; // Large size class name
 ```
 
 ## 🎨 Examples

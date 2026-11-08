@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ev } from '../src/ev';
 
+const stylesOf = (result: ReturnType<ReturnType<typeof ev>>) => result.map((s) => s.styles);
+
 describe('ev - Basic Features', () => {
   it('applies base styles only', () => {
     const style = ev({
@@ -10,8 +12,7 @@ describe('ev - Basic Features', () => {
       },
     });
 
-    const result = style();
-    expect(result).toBeDefined();
+    expect(stylesOf(style())).toEqual(['padding:10px;margin:5px;']);
   });
 
   it('applies single variant', () => {
@@ -27,11 +28,10 @@ describe('ev - Basic Features', () => {
       },
     });
 
-    const result = button({ size: 'small' });
-    expect(result).toBeDefined();
+    expect(stylesOf(button({ size: 'small' }))).toEqual(['padding:10px;', 'font-size:12px;']);
   });
 
-  it('applies multiple variants simultaneously', () => {
+  it('applies multiple variants in definition order', () => {
     const button = ev({
       variants: {
         size: {
@@ -45,8 +45,10 @@ describe('ev - Basic Features', () => {
       },
     });
 
-    const result = button({ size: 'large', color: 'primary' });
-    expect(result).toBeDefined();
+    expect(stylesOf(button({ color: 'primary', size: 'large' }))).toEqual([
+      'font-size:16px;',
+      'background:blue;',
+    ]);
   });
 
   it('applies default variants', () => {
@@ -62,8 +64,7 @@ describe('ev - Basic Features', () => {
       },
     });
 
-    const result = button();
-    expect(result).toBeDefined();
+    expect(stylesOf(button())).toEqual(['font-size:12px;']);
   });
 
   it('explicit variant overrides default', () => {
@@ -79,137 +80,103 @@ describe('ev - Basic Features', () => {
       },
     });
 
-    const result = button({ size: 'large' });
-    expect(result).toBeDefined();
+    expect(stylesOf(button({ size: 'large' }))).toEqual(['font-size:16px;']);
+  });
+
+  it('falls back to default when the prop is undefined', () => {
+    const button = ev({
+      variants: {
+        size: {
+          small: { fontSize: '12px' },
+          large: { fontSize: '16px' },
+        },
+      },
+      defaultVariants: {
+        size: 'small',
+      },
+    });
+
+    expect(stylesOf(button({ size: undefined }))).toEqual(stylesOf(button()));
+  });
+
+  it('does not replace false or 0 with the default', () => {
+    const box = ev({
+      variants: {
+        outlined: {
+          true: { border: '1px solid' },
+          false: { border: 'none' },
+        },
+        level: {
+          0: { zIndex: 0 },
+          1: { zIndex: 1 },
+        },
+      },
+      defaultVariants: {
+        outlined: true,
+        level: 1,
+      },
+    });
+
+    expect(stylesOf(box({ outlined: false, level: 0 }))).toEqual(['border:none;', 'z-index:0;']);
   });
 });
 
 describe('ev - Compound Variants', () => {
-  it('applies compound variant when condition matches', () => {
-    const button = ev({
-      base: {
-        padding: '10px',
+  const button = ev({
+    base: {
+      padding: '10px',
+    },
+    variants: {
+      size: {
+        small: { fontSize: '12px' },
+        large: { fontSize: '16px' },
       },
-      variants: {
-        size: {
-          small: { fontSize: '12px' },
-          large: { fontSize: '16px' },
-        },
-        color: {
-          primary: { background: 'blue' },
-          secondary: { background: 'gray' },
-        },
+      color: {
+        primary: { background: 'blue' },
+        secondary: { background: 'gray' },
       },
-      compoundVariants: [
-        {
-          variants: { size: 'large', color: 'primary' },
-          style: { fontWeight: 'bold' },
-        },
-      ],
-    });
+    },
+    compoundVariants: [
+      {
+        variants: { size: 'large', color: 'primary' },
+        style: { fontWeight: 'bold' },
+      },
+      {
+        variants: { size: 'small', color: 'secondary' },
+        style: { fontStyle: 'italic' },
+      },
+    ],
+    defaultVariants: {
+      size: 'large',
+    },
+  });
 
-    const result = button({ size: 'large', color: 'primary' });
-    expect(result).toBeDefined();
+  it('appends compound styles after base and variants when the condition matches', () => {
+    expect(stylesOf(button({ size: 'large', color: 'primary' }))).toEqual([
+      'padding:10px;',
+      'font-size:16px;',
+      'background:blue;',
+      'font-weight:bold;',
+    ]);
   });
 
   it('does not apply compound variant when condition does not match', () => {
-    const button = ev({
-      variants: {
-        size: {
-          small: { fontSize: '12px' },
-          large: { fontSize: '16px' },
-        },
-        color: {
-          primary: { background: 'blue' },
-          secondary: { background: 'gray' },
-        },
-      },
-      compoundVariants: [
-        {
-          variants: { size: 'large', color: 'primary' },
-          style: { fontWeight: 'bold' },
-        },
-      ],
-    });
-
-    const result = button({ size: 'small', color: 'primary' });
-    expect(result).toBeDefined();
+    expect(stylesOf(button({ size: 'small', color: 'primary' }))).toEqual([
+      'padding:10px;',
+      'font-size:12px;',
+      'background:blue;',
+    ]);
   });
 
-  it('applies only matching compound variants', () => {
-    const button = ev({
-      variants: {
-        size: {
-          small: { fontSize: '12px' },
-          large: { fontSize: '16px' },
-        },
-        color: {
-          primary: { background: 'blue' },
-          secondary: { background: 'gray' },
-        },
-      },
-      compoundVariants: [
-        {
-          variants: { size: 'large', color: 'primary' },
-          style: { fontWeight: 'bold' },
-        },
-        {
-          variants: { size: 'small', color: 'secondary' },
-          style: { fontStyle: 'italic' },
-        },
-      ],
-    });
-
-    const result1 = button({ size: 'large', color: 'primary' });
-    expect(result1).toBeDefined();
-
-    const result2 = button({ size: 'small', color: 'secondary' });
-    expect(result2).toBeDefined();
-  });
-});
-
-describe('ev - classNames', () => {
-  it('generates base class name', () => {
-    const button = ev({
-      base: {
-        padding: '10px',
-      },
-    });
-
-    expect(button.classNames.base).toBeDefined();
-    expect(typeof button.classNames.base).toBe('string');
+  it('applies only the matching compound variant', () => {
+    expect(stylesOf(button({ size: 'small', color: 'secondary' }))).toContain('font-style:italic;');
+    expect(stylesOf(button({ size: 'small', color: 'secondary' }))).not.toContain(
+      'font-weight:bold;',
+    );
   });
 
-  it('generates variant class names', () => {
-    const button = ev({
-      variants: {
-        size: {
-          small: { fontSize: '12px' },
-          large: { fontSize: '16px' },
-        },
-        color: {
-          primary: { background: 'blue' },
-          secondary: { background: 'gray' },
-        },
-      },
-    });
-
-    expect(button.classNames.variants.size.small).toBeDefined();
-    expect(button.classNames.variants.size.large).toBeDefined();
-    expect(button.classNames.variants.color.primary).toBeDefined();
-    expect(button.classNames.variants.color.secondary).toBeDefined();
-  });
-
-  it('returns empty string when base is not provided', () => {
-    const button = ev({
-      variants: {
-        size: {
-          small: { fontSize: '12px' },
-        },
-      },
-    });
-
-    expect(button.classNames.base).toBe('');
+  it('matches compound variants against default values', () => {
+    expect(stylesOf(button({ color: 'primary' }))).toContain('font-weight:bold;');
   });
 });
 
@@ -228,10 +195,7 @@ describe('ev - variants method', () => {
       },
     });
 
-    const keys = button.variants();
-    expect(keys).toContain('size');
-    expect(keys).toContain('color');
-    expect(keys.length).toBe(2);
+    expect(button.variants()).toEqual(['size', 'color']);
   });
 
   it('returns empty array when no variants', () => {
@@ -241,16 +205,15 @@ describe('ev - variants method', () => {
       },
     });
 
-    const keys = button.variants();
-    expect(keys).toEqual([]);
+    expect(button.variants()).toEqual([]);
   });
 });
 
 describe('ev - Edge Cases', () => {
-  it('can be called with empty config', () => {
+  it('returns an empty array for an empty config', () => {
     const style = ev({});
-    const result = style();
-    expect(result).toBeDefined();
+
+    expect(style()).toEqual([]);
   });
 
   it('ignores non-existent variant values', () => {
@@ -264,12 +227,10 @@ describe('ev - Edge Cases', () => {
     });
 
     // @ts-expect-error - Invalid value for testing
-    const result = button({ size: 'nonexistent' });
-
-    expect(result).toBeDefined();
+    expect(button({ size: 'nonexistent' })).toEqual([]);
   });
 
-  it('ignores undefined variant values', () => {
+  it('ignores undefined variant values without defaults', () => {
     const button = ev({
       variants: {
         size: {
@@ -279,8 +240,7 @@ describe('ev - Edge Cases', () => {
       },
     });
 
-    const result = button({ size: undefined });
-    expect(result).toBeDefined();
+    expect(button({ size: undefined })).toEqual([]);
   });
 
   it('supports boolean variant values', () => {
@@ -293,10 +253,8 @@ describe('ev - Edge Cases', () => {
       },
     });
 
-    const result1 = button({ outlined: true });
-    const result2 = button({ outlined: false });
-    expect(result1).toBeDefined();
-    expect(result2).toBeDefined();
+    expect(stylesOf(button({ outlined: true }))).toEqual(['border:1px solid;']);
+    expect(stylesOf(button({ outlined: false }))).toEqual(['border:none;']);
   });
 
   it('supports number variant values', () => {
@@ -310,7 +268,6 @@ describe('ev - Edge Cases', () => {
       },
     });
 
-    const result = box({ level: 2 });
-    expect(result).toBeDefined();
+    expect(stylesOf(box({ level: 2 }))).toEqual(['z-index:2;']);
   });
 });
