@@ -25,7 +25,10 @@ export const ko = defineConfig({
             text: '변경 사항',
             link: 'https://github.com/JeongHwan-dev/emotion-variants/blob/main/CHANGELOG.md',
           },
-          { text: 'npm', link: 'https://www.npmjs.com/package/emotion-variants' },
+          {
+            text: 'npm',
+            link: 'https://www.npmjs.com/package/emotion-variants',
+          },
         ],
       },
     ],
@@ -34,22 +37,55 @@ export const ko = defineConfig({
         {
           text: '가이드',
           items: [
-            { text: '소개', link: '/ko/intro' },
-            { text: '설치', link: '/ko/installation' },
-            { text: '시작하기', link: '/ko/getting-started' },
-            { text: '핵심 개념', link: '/ko/core-concepts' },
-            { text: '복합 Variants', link: '/ko/recipes/compound-variants' },
-            { text: '기본 Variants', link: '/ko/recipes/default-variants' },
-            { text: '덮어쓰기', link: '/ko/recipes/overrides' },
-            { text: 'Props 타입 추출', link: '/ko/recipes/typed-props' },
+            {
+              text: '소개',
+              link: '/ko/intro',
+            },
+            {
+              text: '설치',
+              link: '/ko/installation',
+            },
+            {
+              text: '시작하기',
+              link: '/ko/getting-started',
+            },
+            {
+              text: '핵심 개념',
+              link: '/ko/core-concepts',
+            },
+            {
+              text: '복합 Variants',
+              link: '/ko/recipes/compound-variants',
+            },
+            {
+              text: '기본 Variants',
+              link: '/ko/recipes/default-variants',
+            },
+            {
+              text: '덮어쓰기',
+              link: '/ko/recipes/overrides',
+            },
+            {
+              text: 'Props 타입 추출',
+              link: '/ko/recipes/typed-props',
+            },
           ],
         },
         {
           text: '레퍼런스',
           items: [
-            { text: 'ev', link: '/ko/reference/ev' },
-            { text: '타입', link: '/ko/reference/types' },
-            { text: 'v2로 마이그레이션', link: '/ko/migration' },
+            {
+              text: 'ev',
+              link: '/ko/reference/ev',
+            },
+            {
+              text: '타입',
+              link: '/ko/reference/types',
+            },
+            {
+              text: 'v2로 마이그레이션',
+              link: '/ko/migration',
+            },
           ],
         },
       ],

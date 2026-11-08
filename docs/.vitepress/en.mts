@@ -23,7 +23,10 @@ export const en = defineConfig({
             text: 'Changelog',
             link: 'https://github.com/JeongHwan-dev/emotion-variants/blob/main/CHANGELOG.md',
           },
-          { text: 'npm', link: 'https://www.npmjs.com/package/emotion-variants' },
+          {
+            text: 'npm',
+            link: 'https://www.npmjs.com/package/emotion-variants',
+          },
         ],
       },
     ],
@@ -32,22 +35,55 @@ export const en = defineConfig({
         {
           text: 'Guide',
           items: [
-            { text: 'Introduction', link: '/intro' },
-            { text: 'Installation', link: '/installation' },
-            { text: 'Getting Started', link: '/getting-started' },
-            { text: 'Core Concepts', link: '/core-concepts' },
-            { text: 'Compound Variants', link: '/recipes/compound-variants' },
-            { text: 'Default Variants', link: '/recipes/default-variants' },
-            { text: 'Overrides', link: '/recipes/overrides' },
-            { text: 'Typed Props', link: '/recipes/typed-props' },
+            {
+              text: 'Introduction',
+              link: '/intro',
+            },
+            {
+              text: 'Installation',
+              link: '/installation',
+            },
+            {
+              text: 'Getting Started',
+              link: '/getting-started',
+            },
+            {
+              text: 'Core Concepts',
+              link: '/core-concepts',
+            },
+            {
+              text: 'Compound Variants',
+              link: '/recipes/compound-variants',
+            },
+            {
+              text: 'Default Variants',
+              link: '/recipes/default-variants',
+            },
+            {
+              text: 'Overrides',
+              link: '/recipes/overrides',
+            },
+            {
+              text: 'Typed Props',
+              link: '/recipes/typed-props',
+            },
           ],
         },
         {
           text: 'Reference',
           items: [
-            { text: 'ev', link: '/reference/ev' },
-            { text: 'Types', link: '/reference/types' },
-            { text: 'Migrating to v2', link: '/migration' },
+            {
+              text: 'ev',
+              link: '/reference/ev',
+            },
+            {
+              text: 'Types',
+              link: '/reference/types',
+            },
+            {
+              text: 'Migrating to v2',
+              link: '/migration',
+            },
           ],
         },
       ],

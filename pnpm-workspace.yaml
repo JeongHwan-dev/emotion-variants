@@ -15,8 +15,4 @@ allowBuilds:
 # critical advisories; force the fixed 2.x line until vitest is upgraded.
 overrides:
   tinypool: "^2.1.2"
-
-  # vitepress 1.6 pins vite ^5.4.14, but the vite 5 line has no release that
-  # clears GHSA-587h-7wmj-h5pm, so the pre-push audit blocks every push. The
-  # rest of the workspace is already on vite 6.
   vite: "^6.4.4"

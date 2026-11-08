@@ -1,11 +1,6 @@
 /**
- * Verifies every internal link in the built site resolves to a real file, and
- * every `#fragment` to a real element id.
- *
- * VitePress fails the build on dead *paths* but not on dead *anchors*, and its
- * slugifier normalizes headings with NFKD — which decomposes Hangul into jamo,
- * so a Korean anchor written in NFC silently never matches. That class of bug
- * is invisible until someone clicks the link.
+ * Checks every internal link and `#fragment` in the built site.
+ * VitePress fails the build on dead paths, but not on dead anchors.
  */
 import { glob, readFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
@@ -19,7 +14,6 @@ for await (const entry of glob('**/*.html', { cwd: DIST })) {
   pages.push(entry);
 }
 
-/** Element ids present on each page, keyed by page path relative to dist. */
 const ids = new Map();
 
 for (const page of pages) {
@@ -38,7 +32,6 @@ for (const page of pages) {
 
     const [rawPath, anchor] = href.split('#');
 
-    // Resolve the target page relative to the current one.
     let targetPage = page;
     if (rawPath) {
       const abs = rawPath.startsWith('/')
@@ -55,7 +48,6 @@ for (const page of pages) {
       const found = candidates.find((c) => ids.has(c));
 
       if (!found) {
-        // Non-HTML assets (css, svg, …) are emitted by Vite; only flag pages.
         if (!/\.[a-z0-9]+$/i.test(abs)) {
           errors.push(`${page}: dead link ${href}`);
         }
