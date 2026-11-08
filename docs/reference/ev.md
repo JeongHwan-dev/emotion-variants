@@ -1,0 +1,296 @@
+# ev
+
+Creates a type-safe style function from a single configuration object.
+
+```typescript
+const button = ev(config);
+```
+
+## Usage
+
+### `ev(config)` {#ev-config}
+
+Use `ev` when a component has more than one visual axis — size, color, fill, state — and you want all of them declared in one place. It returns a function you call with variant values; the result goes straight to Emotion's `css` prop.
+
+```typescript
+import { ev } from 'emotion-variants';
+
+const button = ev({
+  base: {
+    padding: '10px 20px',
+    borderRadius: 8,
+    cursor: 'pointer',
+  },
+  variants: {
+    size: {
+      small: {
+        fontSize: 12,
+      },
+      large: {
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        background: 'blue',
+        color: 'white',
+      },
+      secondary: {
+        background: 'gray',
+        color: 'white',
+      },
+    },
+  },
+  defaultVariants: {
+    size: 'small',
+    color: 'primary',
+  },
+});
+```
+
+The configuration object is required. Pass `ev({})` if you have nothing to declare yet.
+
+#### Parameters
+
+- `config.base` (`CSSObject`): Styles applied on every call. Serialized once when `ev()` runs, not per call.
+- `config.variants` (`Record<string, Record<string, CSSObject>>`): The variant axes. Each axis maps a value to its styles. Because values are object keys, write Boolean and number values as keys — `true`, `false`, `1` — and they are typed back to `boolean` and number literals.
+- `config.compoundVariants` (`Array<{ variants, style }>`): Styles applied only when every listed variant value matches. Note the key is `style`, singular.
+- `config.defaultVariants` (`Partial<Record<Axis, Value>>`): Values used when the caller omits an axis.
+
+#### Returns
+
+(`EvFunction<T>`): A callable object. Call it to get styles, or read [`className()`](#classname), [`classNames`](#classnames), and [`variants()`](#variants) off it.
+
+### `button(variants)` {#call}
+
+Call the variant function to get the styles for one combination. Pass the result to the `css` prop or to Emotion's `css()`.
+
+```tsx
+type ButtonProps = NonNullable<Parameters<typeof button>[0]> & {
+  children: React.ReactNode;
+};
+
+function Button({ size, color, children }: ButtonProps) {
+  return <button css={button({ size, color })}>{children}</button>;
+}
+```
+
+```tsx
+<Button>Uses defaultVariants</Button>
+<Button size="large" color="primary">Large primary</Button>
+```
+
+Values are resolved per key with `??`, so an omitted or `undefined` value falls back to `defaultVariants`. That is what lets `Button` above forward its optional props straight through without guarding them. `false` and `0` are real values and are used as-is.
+
+`null` also falls back at runtime, but `EvVariants` does not include it — under `strictNullChecks`, `button({ size: null })` is a type error. Convert `null` to `undefined` before calling.
+
+```typescript
+button({ size: undefined }); // identical to button()
+```
+
+An axis with neither a prop nor a default is skipped entirely.
+
+#### Parameters
+
+- `variants` (`EvVariants<T>`, optional): Variant values. Every key is optional.
+
+#### Returns
+
+(`SerializedStyles[]`): Always an array, even when a single style matches. Styles are ordered `base`, then matching `variants` entries in the order the axes were declared, then matching `compoundVariants` in array order. Later entries win on CSS conflicts, and the order of keys you pass in makes no difference.
+
+### `button.className(variants)` {#classname}
+
+Use `className()` when you need a plain class string instead of the `css` prop — a non-React surface, a third-party component that only accepts `className`, or a test assertion. It merges `base`, the matching variants, **and** the matching compound variants into one class.
+
+```tsx
+<button className={button.className({ size: 'large', color: 'primary' })}>Click me</button>;
+
+// defaultVariants apply exactly as they do for button().
+button.className();
+```
+
+#### Parameters
+
+- `variants` (`EvVariants<T>`, optional): Variant values. Every key is optional.
+
+#### Returns
+
+(`string`): One class name covering the whole combination.
+
+### `button.classNames` {#classnames}
+
+A lookup table of the individual class names — one for `base` and one per variant value. Useful for composing with code that builds its own class lists, or for inspecting what was generated.
+
+```typescript
+const button = ev({
+  base: {
+    padding: 10,
+  },
+  variants: {
+    size: {
+      small: {
+        fontSize: 12,
+      },
+      large: {
+        fontSize: 16,
+      },
+    },
+    outlined: {
+      true: {
+        border: '1px solid',
+      },
+    },
+    level: {
+      1: {
+        zIndex: 1,
+      },
+    },
+  },
+});
+
+button.classNames.base; // 'css-abc123'
+button.classNames.variants.size.small; // 'css-def456'
+```
+
+Keys use the string form of the value, so Boolean and number axes are read as `true` and `1`:
+
+```typescript
+button.classNames.variants.outlined.true;
+button.classNames.variants.level[1];
+```
+
+Nothing is injected into the document until you first touch `classNames`, and the result is memoized — code that only uses the `css` prop pays nothing for it.
+
+```typescript
+button.classNames === button.classNames; // true
+```
+
+::: warning
+`classNames` covers `base` and single variant values only. **Compound variants are not represented here** — there is no key for a combination. Use [`className()`](#classname) when compound styles matter.
+
+Concatenating these classes is not the same as calling the function. Each is a separate rule of equal specificity, so when `base` and a variant set the same property the winner is whichever Emotion inserted first, not the order you list them in. Use [`className()`](#classname) whenever a variant has to beat `base`.
+
+`base` is an empty string when the config has no `base`.
+:::
+
+#### Returns
+
+(`EvClassNames<T>`): `{ base, variants }`, where `variants[axis][value]` is a class name.
+
+### `button.variants()` {#variants}
+
+Returns the axis names, in the order they were declared. Handy for building Storybook argTypes or a props table.
+
+```typescript
+const button = ev({
+  variants: {
+    size: {
+      small: {},
+      large: {},
+    },
+    color: {
+      primary: {},
+      secondary: {},
+    },
+  },
+});
+
+button.variants(); // ['size', 'color']
+```
+
+A config without `variants` returns `[]`.
+
+#### Returns
+
+(`Array<VariantKeys<T>>`): The axis names. The same array instance is returned on every call, so treat it as read-only.
+
+## Try it out
+
+Edit the variant values and watch the button change.
+
+::: sandpack
+
+```tsx App.tsx
+/** @jsxImportSource @emotion/react */
+import { ev } from 'emotion-variants';
+
+const button = ev({
+  base: {
+    border: 'none',
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontWeight: 600,
+  },
+  variants: {
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        background: '#d36ac2',
+        color: 'white',
+      },
+      secondary: {
+        background: '#6c757d',
+        color: 'white',
+      },
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        size: 'large',
+        color: 'primary',
+      },
+      style: {
+        boxShadow: '0 4px 12px rgba(211, 106, 194, 0.4)',
+      },
+    },
+  ],
+  defaultVariants: {
+    size: 'small',
+    color: 'primary',
+  },
+});
+
+type ButtonProps = NonNullable<Parameters<typeof button>[0]> & {
+  children: React.ReactNode;
+};
+
+function Button({ size, color, children }: ButtonProps) {
+  return <button css={button({ size, color })}>{children}</button>;
+}
+
+export default function App() {
+  return (
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+      <Button>Default</Button>
+      <Button size="large">Large primary</Button>
+      <Button size="large" color="secondary">
+        Large secondary
+      </Button>
+    </div>
+  );
+}
+```
+
+:::
+
+## Types
+
+See [Types](./types) for `EvConfig`, `EvFunction`, `EvVariants`, and the rest of the exported type definitions.
+
+::: warning Working with `@emotion/css`
+`className()` and `classNames` go through [`@emotion/css`](https://emotion.sh/docs/@emotion/css), which keeps its own global cache separate from `@emotion/react`. That means it ignores `CacheProvider` options such as `key` and `nonce`, and server rendering needs [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach) to extract those styles.
+
+Avoid putting `css={button(...)}` and `className={button.className(...)}` on the same element. The two caches do not share an insertion order, so overrides may not resolve the way you expect.
+
+For server rendering this means two caches to extract, not one. Collecting only `@emotion/react`'s cache ships markup whose `className()` and `classNames` rules are missing, so the first paint is unstyled until hydration.
+:::

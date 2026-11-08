@@ -10,3 +10,6 @@ ignoreWorkspaceRootCheck: true
 # postinstall to place the platform binary.
 allowBuilds:
   esbuild: true
+
+overrides:
+  vite: "^6.4.4"

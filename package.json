@@ -15,7 +15,7 @@
     "type": "git",
     "url": "git+https://github.com/JeongHwan-dev/emotion-variants.git"
   },
-  "homepage": "https://github.com/JeongHwan-dev/emotion-variants#readme",
+  "homepage": "https://emotion-variants.org",
   "bugs": {
     "url": "https://github.com/JeongHwan-dev/emotion-variants/issues"
   },
@@ -56,6 +56,9 @@
     "check": "biome check .",
     "check:fix": "biome check --write .",
     "knip": "knip",
+    "docs:dev": "pnpm --filter emotion-variants-docs dev",
+    "docs:build": "pnpm --filter emotion-variants-docs build",
+    "docs:preview": "pnpm --filter emotion-variants-docs preview",
     "prepublishOnly": "pnpm build",
     "generate:labels": "node .github/scripts/generate-labels.mjs",
     "commit": "cz",

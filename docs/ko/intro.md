@@ -1,0 +1,155 @@
+# 소개
+
+`emotion-variants`는 [`@emotion/react`](https://emotion.sh/) 위에 얹는 얇은 레이어예요. 컴포넌트의 모든 시각적 조합(base 스타일, variants, 복합 variants, 기본값)을 **하나의 설정 객체**에 모아 정의하면, 타입이 완벽하게 추론되는 스타일 함수를 받아 쓸 수 있어요.
+
+## 풀고자 하는 문제
+
+실제 버튼 컴포넌트에는 보통 여러 시각 축이 있어요. size, color, 채움 방식, 상태 같은 것들이죠. 바닐라 Emotion으로 이걸 다 다루다 보면 스타일이 여기저기로 흩어져요. 룩업 테이블 따로, 조건부 spread 따로, prop 타입 따로요.
+
+```tsx
+// emotion-variants 없이
+import { css } from '@emotion/react';
+
+// 1. 룩업 테이블 — 컴포넌트와 따로 분리됨
+const sizeStyles = {
+  small: {
+    padding: '8px 16px',
+    fontSize: 12,
+  },
+  medium: {
+    padding: '10px 20px',
+    fontSize: 14,
+  },
+  large: {
+    padding: '12px 24px',
+    fontSize: 16,
+  },
+};
+
+const colorStyles = {
+  primary: {
+    background: 'blue',
+    color: 'white',
+  },
+  danger: {
+    background: 'red',
+    color: 'white',
+  },
+};
+
+// 2. prop 타입은 손으로 작성
+type ButtonProps = {
+  size?: 'small' | 'medium' | 'large';
+  color?: 'primary' | 'danger';
+};
+
+// 3. 컴포넌트가 기본값, 조합, 복합 조건까지 모두 떠안음
+function Button({ size = 'medium', color = 'primary' }: ButtonProps) {
+  return (
+    <button
+      css={css({
+        borderRadius: 8,
+        cursor: 'pointer',
+        ...sizeStyles[size],
+        ...colorStyles[color],
+        // 복합 규칙이 컴포넌트 안에 섞여 들어가요
+        ...(size === 'large' && color === 'primary' && {
+          fontWeight: 'bold',
+        }),
+      })}
+    >
+      Click
+    </button>
+  );
+}
+```
+
+새 `size` 값을 하나 추가하려면 룩업 테이블, prop 타입 union, 그리고 복합 규칙에 얽혀 있다면 컴포넌트까지 손대야 해요.
+
+## emotion-variants의 해결
+
+`emotion-variants`는 이 모든 걸 설정 객체 하나에 모아요.
+
+```tsx
+// emotion-variants 사용
+import { ev } from 'emotion-variants';
+
+const button = ev({
+  base: {
+    borderRadius: 8,
+    cursor: 'pointer',
+  },
+  variants: {
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        background: 'blue',
+        color: 'white',
+      },
+      danger: {
+        background: 'red',
+        color: 'white',
+      },
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        size: 'large',
+        color: 'primary',
+      },
+      style: {
+        fontWeight: 'bold',
+      },
+    },
+  ],
+  defaultVariants: {
+    size: 'medium',
+    color: 'primary',
+  },
+});
+
+type ButtonProps = NonNullable<Parameters<typeof button>[0]>;
+
+function Button({ size, color }: ButtonProps) {
+  return <button css={button({ size, color })}>Click</button>;
+}
+```
+
+새 `size` 값을 추가하고 싶나요? `variants.size`에 한 줄 추가하면 끝이에요. prop 타입은 자동으로 따라와요.
+
+## 한눈에 비교
+
+| | emotion-variants 없이 | emotion-variants 사용 |
+|---|---|---|
+| 스타일 정의 위치 | 룩업 테이블, 여러 파일에 흩어짐 | 설정 객체 한 곳 |
+| Variant prop 타입 | 손으로 union 작성 | 설정에서 자동 추론 |
+| 복합 규칙 | 컴포넌트 안 인라인 조건문 | `compoundVariants` 배열 |
+| 기본값 | 함수 인자 default 값 | `defaultVariants` |
+| variant 값 하나 추가 | 룩업, 타입, 컴포넌트 모두 수정 | `variants`만 수정 |
+| 생성된 class names | 외부에서 접근 불가 | `button.classNames` |
+| 코드를 처음 읽는 사람 | 파일 3개를 봐야 스타일을 이해 | 객체 하나로 끝 |
+
+## 적합하지 않은 경우
+
+- 컴포넌트에 variant가 없거나 하나뿐이라면, 그냥 `css()`를 쓰는 게 더 간단해요.
+- 렌더링마다 다른 CSS 변수를 해석해야 하는 런타임 테마가 필요하다면, `emotion-variants`도 동작하지만 Emotion의 `theme`을 직접 쓰는 편이 나을 수 있어요.
+
+## 다음 단계
+
+- 패키지와 peer dependency를 [설치](./installation)하세요.
+- [시작하기](./getting-started)에서 첫 컴포넌트를 만들어 보세요.
+- [핵심 개념](./core-concepts)에서 `base` / `variants` / `compoundVariants` / `defaultVariants`를 자세히 알아보세요.
