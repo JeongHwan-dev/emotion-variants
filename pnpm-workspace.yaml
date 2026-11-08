@@ -10,8 +10,3 @@ ignoreWorkspaceRootCheck: true
 # postinstall to place the platform binary.
 allowBuilds:
   esbuild: true
-
-# vitest 3 pins tinypool ^1.1.1, which has no patched 1.x release for its
-# critical advisories; force the fixed 2.x line until vitest is upgraded.
-overrides:
-  tinypool: "^2.1.2"
