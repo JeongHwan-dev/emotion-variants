@@ -5,6 +5,8 @@
 
 Type-safe variant API for Emotion. Create component styles with multiple variants without repetitive `css()` calls.
 
+📖 **[Documentation](https://jeonghwan-dev.github.io/emotion-variants/)** · **[한국어](https://jeonghwan-dev.github.io/emotion-variants/ko/)**
+
 ## ✨ Features
 
 - 🎯 **Type-safe variants** - Full TypeScript support with automatic type inference
@@ -29,7 +31,7 @@ yarn add emotion-variants @emotion/react @emotion/css
 
 ## 🚀 Quick Start
 
-```typescript
+```tsx
 import { ev } from 'emotion-variants';
 
 const button = ev({
@@ -55,317 +57,37 @@ const button = ev({
   },
 });
 
-// Usage
-function MyButton() {
-  return (
-    <button css={button({ size: 'large', color: 'primary' })}>Click me</button>
-  );
+type ButtonProps = NonNullable<Parameters<typeof button>[0]> & {
+  children: React.ReactNode;
+};
+
+function Button({ size, color, children }: ButtonProps) {
+  return <button css={button({ size, color })}>{children}</button>;
 }
 ```
 
-## 📖 API Reference
+Omitted props fall back to `defaultVariants`, so `<Button>` renders as `small` + `primary`.
 
-### `ev(config)`
+## 📖 Documentation
 
-Creates a type-safe variant function.
-
-#### Parameters
-
-##### `config.base`
-
-Base styles applied to all variants.
-
-```typescript
-const button = ev({
-  base: {
-    padding: '10px 20px',
-    borderRadius: '4px',
-  },
-});
-```
-
-##### `config.variants`
-
-Define different variants and their styles.
-
-```typescript
-const button = ev({
-  variants: {
-    size: {
-      small: { fontSize: '12px' },
-      medium: { fontSize: '14px' },
-      large: { fontSize: '16px' },
-    },
-    color: {
-      primary: { background: 'blue' },
-      secondary: { background: 'gray' },
-    },
-  },
-});
-```
-
-Supports `string`, `number`, and `boolean` variant values:
-
-```typescript
-const component = ev({
-  variants: {
-    // String variants
-    color: {
-      red: { color: 'red' },
-      blue: { color: 'blue' },
-    },
-    // Number variants
-    level: {
-      1: { zIndex: 1 },
-      2: { zIndex: 2 },
-    },
-    // Boolean variants
-    outlined: {
-      true: { border: '1px solid' },
-      false: { border: 'none' },
-    },
-  },
-});
-```
-
-##### `config.compoundVariants`
-
-Define styles for specific variant combinations.
-
-```typescript
-const button = ev({
-  variants: {
-    size: {
-      small: { fontSize: '12px' },
-      large: { fontSize: '16px' },
-    },
-    color: {
-      primary: { background: 'blue' },
-      danger: { background: 'red' },
-    },
-  },
-  compoundVariants: [
-    {
-      variants: { size: 'large', color: 'primary' },
-      style: {
-        fontWeight: 'bold',
-        boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-      },
-    },
-  ],
-});
-```
-
-##### `config.defaultVariants`
-
-Set default variant values.
-
-```typescript
-const button = ev({
-  variants: {
-    size: {
-      small: { fontSize: '12px' },
-      large: { fontSize: '16px' }
-    }
-  },
-  defaultVariants: {
-    size: 'small'
-  }
-});
-
-// Uses 'small' size by default
-<button css={button()}>Click me</button>
-
-// Override default
-<button css={button({ size: 'large' })}>Click me</button>
-```
-
-#### Return Value
-
-The `ev()` function returns an object with:
-
-##### Main function
-
-```typescript
-const button = ev({
-  /* config */
-});
-
-// Call with variants
-button({ size: 'large', color: 'primary' });
-
-// Or use defaults
-button();
-```
-
-The call returns an array of Emotion `SerializedStyles`. Pass it to the `css` prop or to `css()`.
-
-##### `.variants()` method
-
-Returns array of variant keys.
-
-```typescript
-const button = ev({
-  variants: {
-    size: { small: {}, large: {} },
-    color: { primary: {}, secondary: {} },
-  },
-});
-
-button.variants(); // ['size', 'color']
-```
-
-##### `.className()` method
-
-Returns a single class name for the given variants. Base, variant, and compound variant styles are merged and injected through `@emotion/css`.
-
-```typescript
-<button className={button.className({ size: 'large', color: 'primary' })}>Click me</button>
-
-// Defaults apply the same way as the main function
-button.className();
-```
-
-##### `.classNames` property
-
-Class names for the base style and each variant value. They are generated and injected on first access, so code that only uses the `css` prop never pays for them.
-
-```typescript
-const button = ev({
-  base: { padding: '10px' },
-  variants: {
-    size: {
-      small: { fontSize: '12px' },
-      large: { fontSize: '16px' },
-    },
-    outlined: {
-      true: { border: '1px solid' },
-    },
-  },
-});
-
-button.classNames.base; // 'css-abc123'
-button.classNames.variants.size.small; // 'css-def456'
-button.classNames.variants.outlined.true; // boolean and number keys use their string form
-```
-
-> **Note**
-> `className()` and `classNames` use `@emotion/css`, which keeps its own global cache. It does not pick up `CacheProvider` options (`key`, `nonce`), and for server rendering you need [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach) to extract those styles. Avoid mixing `css={button(...)}` and `className={button.className(...)}` on the same element: the two caches do not share insertion order, so overrides may not resolve the way you expect.
-
-## 🎨 Examples
-
-### Button Component
-
-```typescript
-import { ev } from 'emotion-variants';
-
-const button = ev({
-  base: {
-    padding: '10px 20px',
-    borderRadius: '8px',
-    border: 'none',
-    cursor: 'pointer',
-    fontWeight: '600',
-    transition: 'all 0.2s ease',
-
-    '&:hover': {
-      transform: 'translateY(-2px)',
-    },
-
-    '&:disabled': {
-      opacity: 0.6,
-      cursor: 'not-allowed',
-    },
-  },
-
-  variants: {
-    size: {
-      small: { padding: '8px 16px', fontSize: '12px' },
-      medium: { padding: '10px 20px', fontSize: '14px' },
-      large: { padding: '12px 24px', fontSize: '16px' },
-    },
-
-    color: {
-      primary: { background: '#007bff', color: 'white' },
-      secondary: { background: '#6c757d', color: 'white' },
-      danger: { background: '#dc3545', color: 'white' },
-    },
-
-    variant: {
-      solid: {},
-      outlined: {
-        background: 'transparent',
-        border: '2px solid currentColor',
-      },
-      ghost: {
-        background: 'transparent',
-      },
-    },
-  },
-
-  compoundVariants: [
-    {
-      variants: { size: 'large', color: 'primary' },
-      style: {
-        fontWeight: '700',
-        boxShadow: '0 4px 12px rgba(0, 123, 255, 0.3)',
-      },
-    },
-  ],
-
-  defaultVariants: {
-    size: 'medium',
-    color: 'primary',
-    variant: 'solid',
-  },
-});
-
-// Usage
-export function Button({ size, color, variant, children, ...props }) {
-  return (
-    <button css={button({ size, color, variant })} {...props}>
-      {children}
-    </button>
-  );
-}
-```
-
-### Card Component
-
-```typescript
-const card = ev({
-  base: {
-    borderRadius: '12px',
-    padding: '24px',
-    transition: 'all 0.3s ease',
-  },
-
-  variants: {
-    elevation: {
-      0: { boxShadow: 'none' },
-      1: { boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' },
-      2: { boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)' },
-      3: { boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)' },
-    },
-
-    padding: {
-      none: { padding: '0' },
-      small: { padding: '16px' },
-      medium: { padding: '24px' },
-      large: { padding: '32px' },
-    },
-  },
-
-  defaultVariants: {
-    elevation: 1,
-    padding: 'medium',
-  },
-});
-```
+- [Introduction](https://jeonghwan-dev.github.io/emotion-variants/intro) - what problem this solves
+- [Installation](https://jeonghwan-dev.github.io/emotion-variants/installation) - peer dependencies and the `css` prop
+- [Getting Started](https://jeonghwan-dev.github.io/emotion-variants/getting-started) - build a `Button` from scratch
+- [Core Concepts](https://jeonghwan-dev.github.io/emotion-variants/core-concepts) - `base`, `variants`, `compoundVariants`, `defaultVariants`
+- [API Reference](https://jeonghwan-dev.github.io/emotion-variants/reference/ev) - `ev()`, `className()`, `classNames`, `variants()`
 
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Working on the docs
+
+```bash
+pnpm docs:dev     # start the VitePress dev server
+pnpm docs:build   # production build
+```
+
+Pages live in `docs/` (English) and `docs/ko/` (Korean). Keep both in sync.
 
 ### Releasing
 
@@ -382,5 +104,6 @@ MIT © [Jeonghwan Park](LICENSE)
 
 ## 🔗 Links
 
+- [Documentation](https://jeonghwan-dev.github.io/emotion-variants/)
 - [GitHub Repository](https://github.com/JeongHwan-dev/emotion-variants)
-- [npm Package](https://www.npmjs.com/package/emotion-variants)
+- [npm](https://www.npmjs.com/package/emotion-variants)

@@ -1,0 +1,18 @@
+{
+  "name": "emotion-variants-docs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build && node scripts/check-links.mjs",
+    "preview": "vitepress preview",
+    "check-links": "node scripts/check-links.mjs"
+  },
+  "devDependencies": {
+    "markdown-it-container": "^3.0.0",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-sandpack": "^1.1.4",
+    "vue": "^3.5.13"
+  }
+}
