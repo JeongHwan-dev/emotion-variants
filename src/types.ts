@@ -97,9 +97,28 @@ export type EvVariants<T extends VariantConfig<Record<string, Record<string, CSS
   }>;
 
 /**
+ * Class names generated for the base style and each variant value.
+ *
+ * Styles are injected through `@emotion/css` when the class names are first accessed.
+ *
+ * @typeParam T - The variant configuration type
+ */
+export type EvClassNames<T extends VariantConfig<Record<string, Record<string, CSSObject>>>> = {
+  /** Class name for the base style, or an empty string when no base style is defined */
+  base: string;
+  /** Class names for each variant value, keyed by variant name and the value's string form */
+  variants: {
+    [K in VariantKeys<T>]: {
+      [V in VariantValueFor<T, K> as `${V}`]: string;
+    };
+  };
+};
+
+/**
  * Function type returned by the ev function.
  *
- * This is a callable object that also exposes the available variant keys.
+ * This is a callable object that also exposes the available variant keys and
+ * class-name helpers backed by `@emotion/css`.
  *
  * @typeParam T - The variant configuration type
  */
@@ -118,4 +137,22 @@ export interface EvFunction<T extends VariantConfig<Record<string, Record<string
    * @returns Array of variant key names
    */
   variants: () => Array<VariantKeys<T>>;
+
+  /**
+   * Returns a single class name for the given variant values.
+   *
+   * Base, variant, and compound variant styles are merged and injected through
+   * `@emotion/css`'s global cache. Use it for `className` props or outside React.
+   *
+   * @param variants - Optional variant values to apply
+   * @returns Generated class name
+   */
+  className: (variants?: EvVariants<T>) => string;
+
+  /**
+   * Class names for the base style and each variant value.
+   *
+   * Generated and injected on first access.
+   */
+  classNames: EvClassNames<T>;
 }

@@ -1,3 +1,4 @@
+import { cache } from '@emotion/css';
 import { describe, expect, it } from 'vitest';
 import { ev } from '../src/ev';
 
@@ -269,5 +270,123 @@ describe('ev - Edge Cases', () => {
     });
 
     expect(stylesOf(box({ level: 2 }))).toEqual(['z-index:2;']);
+  });
+});
+
+describe('ev - classNames', () => {
+  it('does not inject styles until classNames is accessed', () => {
+    const before = Object.keys(cache.inserted).length;
+    const box = ev({
+      base: { padding: '99px' },
+      variants: {
+        tone: {
+          loud: { fontWeight: 900 },
+        },
+      },
+    });
+
+    expect(Object.keys(cache.inserted).length).toBe(before);
+
+    expect(box.classNames).toBeDefined();
+
+    expect(Object.keys(cache.inserted).length).toBe(before + 2);
+  });
+
+  it('generates injected class names for base and variants', () => {
+    const button = ev({
+      base: {
+        padding: '10px',
+      },
+      variants: {
+        size: {
+          small: { fontSize: '12px' },
+          large: { fontSize: '16px' },
+        },
+      },
+    });
+
+    expect(button.classNames.base).toMatch(/^css-/);
+    expect(cache.registered[button.classNames.base]).toBe('padding:10px;');
+    expect(cache.registered[button.classNames.variants.size.small]).toBe('font-size:12px;');
+    expect(cache.registered[button.classNames.variants.size.large]).toBe('font-size:16px;');
+  });
+
+  it('keys boolean and number variants by their string form', () => {
+    const box = ev({
+      variants: {
+        outlined: {
+          true: { border: '1px solid' },
+          false: { border: 'none' },
+        },
+        level: {
+          1: { zIndex: 1 },
+        },
+      },
+    });
+
+    expect(cache.registered[box.classNames.variants.outlined.true]).toBe('border:1px solid;');
+    expect(cache.registered[box.classNames.variants.outlined.false]).toBe('border:none;');
+    expect(cache.registered[box.classNames.variants.level[1]]).toBe('z-index:1;');
+  });
+
+  it('returns an empty base class name when base is not provided', () => {
+    const box = ev({
+      variants: {
+        size: {
+          small: { fontSize: '12px' },
+        },
+      },
+    });
+
+    expect(box.classNames.base).toBe('');
+  });
+
+  it('returns the same object on repeated access', () => {
+    const box = ev({ base: { margin: 0 } });
+
+    expect(box.classNames).toBe(box.classNames);
+  });
+});
+
+describe('ev - className', () => {
+  const button = ev({
+    base: {
+      padding: '10px',
+    },
+    variants: {
+      size: {
+        small: { fontSize: '12px' },
+        large: { fontSize: '16px' },
+      },
+      color: {
+        primary: { background: 'blue' },
+      },
+    },
+    compoundVariants: [
+      {
+        variants: { size: 'large', color: 'primary' },
+        style: { fontWeight: 'bold' },
+      },
+    ],
+    defaultVariants: {
+      size: 'small',
+    },
+  });
+
+  it('returns one class name covering base, variants and compound variants', () => {
+    const className = button.className({ size: 'large', color: 'primary' });
+
+    expect(className).toMatch(/^css-/);
+    expect(cache.registered[className]).toContain('padding:10px;');
+    expect(cache.registered[className]).toContain('font-size:16px;');
+    expect(cache.registered[className]).toContain('background:blue;');
+    expect(cache.registered[className]).toContain('font-weight:bold;');
+  });
+
+  it('applies default variants', () => {
+    const className = button.className();
+
+    expect(cache.registered[className]).toContain('font-size:12px;');
+    expect(cache.registered[className]).not.toContain('font-weight:bold;');
   });
 });

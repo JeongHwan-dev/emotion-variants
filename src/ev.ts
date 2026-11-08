@@ -1,6 +1,14 @@
+import { css as cssClassName } from '@emotion/css';
 import type { CSSObject, SerializedStyles } from '@emotion/react';
 import { css } from '@emotion/react';
-import type { EvConfig, EvFunction, EvVariants, VariantConfig, VariantKeys } from './types';
+import type {
+  EvClassNames,
+  EvConfig,
+  EvFunction,
+  EvVariants,
+  VariantConfig,
+  VariantKeys,
+} from './types';
 
 /**
  * Creates a type-safe multi-variant style function for Emotion.
@@ -56,8 +64,11 @@ import type { EvConfig, EvFunction, EvVariants, VariantConfig, VariantKeys } fro
  *   }
  * });
  *
- * // Usage
+ * // css prop
  * <button css={button({ size: 'large', color: 'primary' })}>Click me</button>
+ *
+ * // className
+ * <button className={button.className({ size: 'large', color: 'primary' })}>Click me</button>
  * ```
  */
 export function ev<T extends VariantConfig<Record<string, Record<string, CSSObject>>>>({
@@ -127,7 +138,42 @@ export function ev<T extends VariantConfig<Record<string, Record<string, CSSObje
     return styles;
   }
 
-  evFunction.variants = () => variantKeys;
+  // Class names are injected into @emotion/css's global cache, so build them on first
+  // access instead of at definition time; css-prop-only users never pay for them.
+  let classNames: EvClassNames<T> | undefined;
 
-  return evFunction;
+  const createClassNames = (): EvClassNames<T> => {
+    const variantClassNames: Record<string, Record<string, string>> = {};
+
+    variantKeys.forEach((key) => {
+      variantClassNames[key as string] = {};
+
+      Object.entries(variantStyles[key as string] ?? {}).forEach(([value, style]) => {
+        variantClassNames[key as string][value] = cssClassName(style);
+      });
+    });
+
+    return {
+      base: baseStyle ? cssClassName(baseStyle) : '',
+      variants: variantClassNames as EvClassNames<T>['variants'],
+    };
+  };
+
+  const result = Object.assign(evFunction, {
+    variants: () => variantKeys,
+    className: (props?: EvVariants<T>) => cssClassName(evFunction(props)),
+  }) as EvFunction<T>;
+
+  Object.defineProperty(result, 'classNames', {
+    enumerable: true,
+    get: () => {
+      if (!classNames) {
+        classNames = createClassNames();
+      }
+
+      return classNames;
+    },
+  });
+
+  return result;
 }
