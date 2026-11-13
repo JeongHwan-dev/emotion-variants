@@ -54,7 +54,7 @@ const button = ev({
 
 - `config.base` (`CSSObject`): 모든 호출에 적용되는 스타일이에요. 호출할 때마다가 아니라 `ev()`가 실행될 때 한 번만 직렬화돼요.
 - `config.variants` (`Record<string, Record<string, CSSObject>>`): variant 축이에요. 각 축은 값과 그 값의 스타일을 짝지어요. 값이 객체 키라서 Boolean과 숫자 값은 `true`, `false`, `1`처럼 키로 쓰면 되고, 타입은 `boolean`과 숫자 literal로 되돌아와요.
-- `config.compoundVariants` (`Array<{ variants, style }>`): 나열한 variant 값이 **모두** 일치할 때만 적용되는 스타일이에요. 키 이름이 `style` 단수인 점을 눈여겨보세요.
+- `config.compoundVariants` (`Array<{ variants, style }>`): 나열한 variant 값이 **모두** 일치할 때만 적용되는 스타일이에요. 조건에 값의 배열을 쓰면 그중 어느 값이든 일치해요. 키 이름이 `style` 단수인 점을 눈여겨보세요.
 - `config.defaultVariants` (`Partial<Record<Axis, Value>>`): 호출하는 쪽에서 축을 생략했을 때 쓰이는 값이에요.
 
 #### 반환 값
@@ -66,7 +66,7 @@ const button = ev({
 variant 함수를 호출하면 그 조합의 스타일을 받아요. 결과는 `css` prop이나 Emotion의 `css()`에 넘기세요.
 
 ```tsx
-type ButtonProps = NonNullable<Parameters<typeof button>[0]> & {
+type ButtonProps = VariantProps<typeof button> & {
   children: React.ReactNode;
 };
 

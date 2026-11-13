@@ -72,7 +72,7 @@ Adding one new `size` value means touching the lookup table, the prop type union
 
 ```tsx
 // With emotion-variants
-import { ev } from 'emotion-variants';
+import { ev, type VariantProps } from 'emotion-variants';
 
 const button = ev({
   base: {
@@ -122,7 +122,7 @@ const button = ev({
   },
 });
 
-type ButtonProps = NonNullable<Parameters<typeof button>[0]>;
+type ButtonProps = VariantProps<typeof button>;
 
 function Button({ size, color }: ButtonProps) {
   return <button css={button({ size, color })}>Click</button>;

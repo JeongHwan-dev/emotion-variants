@@ -34,8 +34,9 @@ Give the component a prop for extra styles and append it in the same position. C
 
 ```tsx
 import type { Interpolation, Theme } from '@emotion/react';
+import type { VariantProps } from 'emotion-variants';
 
-type ButtonProps = NonNullable<Parameters<typeof button>[0]> & {
+type ButtonProps = VariantProps<typeof button> & {
   children: React.ReactNode;
   styleOverride?: Interpolation<Theme>;
 };

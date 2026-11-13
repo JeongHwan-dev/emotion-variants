@@ -72,7 +72,7 @@ function Button({ size = 'medium', color = 'primary' }: ButtonProps) {
 
 ```tsx
 // emotion-variants 사용
-import { ev } from 'emotion-variants';
+import { ev, type VariantProps } from 'emotion-variants';
 
 const button = ev({
   base: {
@@ -122,7 +122,7 @@ const button = ev({
   },
 });
 
-type ButtonProps = NonNullable<Parameters<typeof button>[0]>;
+type ButtonProps = VariantProps<typeof button>;
 
 function Button({ size, color }: ButtonProps) {
   return <button css={button({ size, color })}>Click</button>;

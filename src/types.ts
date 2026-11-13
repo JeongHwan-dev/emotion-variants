@@ -54,13 +54,14 @@ export type VariantValueFor<
  *
  * Compound variants allow you to apply styles when multiple variants have specific values.
  * For example, you can style a button differently when it's both "large" and "primary".
+ * A condition can also be an array of values, which matches when the variant has any of them.
  *
  * @typeParam T - The variant configuration type
  */
 export type CompoundVariant<T extends VariantConfig<Record<string, Record<string, CSSObject>>>> = {
   /** Variant values that must match for this compound variant to apply */
   variants: Partial<{
-    [K in VariantKeys<T>]: VariantValueFor<T, K>;
+    [K in VariantKeys<T>]: VariantValueFor<T, K> | ReadonlyArray<VariantValueFor<T, K>>;
   }>;
   /** CSS styles to apply when the variant conditions are met */
   style: CSSObject;
@@ -95,6 +96,19 @@ export type EvVariants<T extends VariantConfig<Record<string, Record<string, CSS
   Partial<{
     [K in VariantKeys<T>]: VariantValueFor<T, K>;
   }>;
+
+/**
+ * Extracts the variant props accepted by an `ev()` result.
+ *
+ * @typeParam T - The type of a function returned by `ev()`, e.g. `typeof button`
+ *
+ * @example
+ * ```typescript
+ * type ButtonVariants = VariantProps<typeof button>;
+ * // { size?: 'small' | 'large'; color?: 'primary' | 'secondary' }
+ * ```
+ */
+export type VariantProps<T> = T extends (variants?: infer P) => unknown ? NonNullable<P> : never;
 
 /**
  * Class names generated for the base style and each variant value.

@@ -160,6 +160,43 @@ const card = ev({
 
 Only the `lg + compact` corner overrides the size's natural padding.
 
+## Matching several values {#matching-several-values}
+
+A condition can be an array. It matches when the variant has **any** of the listed values, so one entry covers what would otherwise be a copy per value.
+
+```ts
+const button = ev({
+  variants: {
+    variant: {
+      filled: {},
+      outlined: {},
+      text: {},
+    },
+    color: {
+      primary: {},
+      danger: {},
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        variant: ['outlined', 'text'],
+        color: 'danger',
+      },
+      style: {
+        color: 'crimson',
+      },
+    },
+  ],
+});
+
+button({ variant: 'outlined', color: 'danger' }); // includes the compound style
+button({ variant: 'text', color: 'danger' }); // includes it too
+button({ variant: 'filled', color: 'danger' }); // does NOT include it
+```
+
+Axes are still combined with AND. Every listed axis has to match; an array only widens what counts as a match for its own axis. An empty array never matches.
+
 ## Order matters
 
 Compound variants are appended **after** simple variants for each call, in the order they appear in the array. If two compound variants both match and set the same property, the later one wins.

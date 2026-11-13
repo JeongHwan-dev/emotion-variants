@@ -34,8 +34,9 @@ Emotion이 중첩 배열을 펼쳐 주기 때문에 spread는 선택이에요. �
 
 ```tsx
 import type { Interpolation, Theme } from '@emotion/react';
+import type { VariantProps } from 'emotion-variants';
 
-type ButtonProps = NonNullable<Parameters<typeof button>[0]> & {
+type ButtonProps = VariantProps<typeof button> & {
   children: React.ReactNode;
   styleOverride?: Interpolation<Theme>;
 };

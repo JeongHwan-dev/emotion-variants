@@ -1,7 +1,7 @@
 import type { SerializedStyles } from '@emotion/react';
 import { describe, expectTypeOf, it } from 'vitest';
 import { ev } from '../src/ev';
-import type { EvFunction } from '../src/types';
+import type { EvFunction, VariantProps } from '../src/types';
 
 describe('ev - Type Tests', () => {
   it('infers basic variant types', () => {
@@ -139,6 +139,116 @@ describe('ev - Type Tests', () => {
     expectTypeOf(button.classNames.variants.level).toEqualTypeOf<{ 1: string; 2: string }>();
     expectTypeOf(button.className).parameter(0).toEqualTypeOf<Parameters<typeof button>[0]>();
     expectTypeOf(button.className()).toBeString();
+  });
+
+  it('VariantProps extracts the call props', () => {
+    const button = ev({
+      variants: {
+        size: {
+          small: {
+            fontSize: '12px',
+          },
+          large: {
+            fontSize: '16px',
+          },
+        },
+        outlined: {
+          true: {
+            border: '1px solid',
+          },
+          false: {
+            border: 'none',
+          },
+        },
+        level: {
+          1: {
+            zIndex: 1,
+          },
+          2: {
+            zIndex: 2,
+          },
+        },
+      },
+    });
+    const plain = ev({
+      base: {
+        padding: '10px',
+      },
+    });
+
+    expectTypeOf<VariantProps<typeof button>>().toEqualTypeOf<{
+      size?: 'small' | 'large';
+      outlined?: boolean;
+      level?: 1 | 2;
+    }>();
+    expectTypeOf<VariantProps<typeof button>>().toEqualTypeOf<
+      NonNullable<Parameters<typeof button>[0]>
+    >();
+    expectTypeOf<VariantProps<typeof plain>>().toEqualTypeOf<
+      NonNullable<Parameters<typeof plain>[0]>
+    >();
+    expectTypeOf<VariantProps<string>>().toBeNever();
+  });
+
+  it('compound variant conditions accept a value or an array of values', () => {
+    ev({
+      variants: {
+        size: {
+          small: {
+            fontSize: '12px',
+          },
+          large: {
+            fontSize: '16px',
+          },
+        },
+        outlined: {
+          true: {
+            border: '1px solid',
+          },
+          false: {
+            border: 'none',
+          },
+        },
+      },
+      compoundVariants: [
+        {
+          variants: {
+            size: ['small', 'large'],
+            outlined: [true, false],
+          },
+          style: {
+            fontWeight: 'bold',
+          },
+        },
+        {
+          variants: {
+            size: ['small', 'large'] as const,
+            outlined: true,
+          },
+          style: {
+            fontWeight: 'bold',
+          },
+        },
+        {
+          variants: {
+            // @ts-expect-error - 'medium' is not a size value
+            size: ['small', 'medium'],
+          },
+          style: {
+            fontWeight: 'bold',
+          },
+        },
+        {
+          variants: {
+            // @ts-expect-error - 'medium' is not a size value
+            size: 'medium',
+          },
+          style: {
+            fontWeight: 'bold',
+          },
+        },
+      ],
+    });
   });
 
   it('type-safe with empty variants', () => {

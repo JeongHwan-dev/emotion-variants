@@ -58,7 +58,7 @@ Emotion 패키지 두 개는 모두 peer dependency라서 `emotion-variants`와 
 작은 컴포넌트를 하나 만들어 렌더링해 보세요. `button({ ... })` 안에서 TypeScript가 `size`를 자동완성해 주면 잘 설정된 거예요.
 
 ```tsx
-import { ev } from 'emotion-variants';
+import { ev, type VariantProps } from 'emotion-variants';
 
 const button = ev({
   base: {
@@ -76,7 +76,7 @@ const button = ev({
   },
 });
 
-type ButtonProps = NonNullable<Parameters<typeof button>[0]> & {
+type ButtonProps = VariantProps<typeof button> & {
   children: React.ReactNode;
 };
 

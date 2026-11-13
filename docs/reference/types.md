@@ -11,6 +11,7 @@ import type {
   EvVariants,
   VariantConfig,
   VariantKeys,
+  VariantProps,
   VariantValue,
   VariantValueFor,
 } from 'emotion-variants';
@@ -19,7 +20,7 @@ import type {
 Most of the time you don't need any of them. Variant types are inferred from the configuration object, so reading props off the function you already have is shorter than naming the generic:
 
 ```typescript
-type ButtonVariants = NonNullable<Parameters<typeof button>[0]>;
+type ButtonVariants = VariantProps<typeof button>;
 ```
 
 See [Typed Props](../recipes/typed-props) for that pattern in full.
@@ -72,6 +73,19 @@ type Variants = EvVariants<{
 // { size?: 'small' | 'large' }
 ```
 
+### `VariantProps<T>`
+
+The variant props an `ev()` result accepts. Pass it the type of the function, not the configuration.
+
+```typescript
+import type { VariantProps } from 'emotion-variants';
+
+type ButtonVariants = VariantProps<typeof button>;
+// { size?: 'small' | 'large'; color?: 'primary' | 'secondary' }
+```
+
+It resolves to the same type as `EvVariants<T>` without you having to name `T`.
+
 ### `EvClassNames<T>`
 
 The shape of [`classNames`](./ev#classnames) — `base` plus a class name per variant value. Keys are the string form of each value.
@@ -85,7 +99,7 @@ type ClassNames = EvClassNames<{
 
 ### `CompoundVariant<T>`
 
-One entry of `compoundVariants`. Reach for it when you build compound rules in a separate array.
+One entry of `compoundVariants`. Reach for it when you build compound rules in a separate array. Each condition is a single value or [an array of values](../recipes/compound-variants#matching-several-values).
 
 ```typescript
 import type { CompoundVariant } from 'emotion-variants';

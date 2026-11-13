@@ -32,7 +32,7 @@ yarn add emotion-variants @emotion/react @emotion/css
 ## 🚀 Quick Start
 
 ```tsx
-import { ev } from 'emotion-variants';
+import { ev, type VariantProps } from 'emotion-variants';
 
 const button = ev({
   base: {
@@ -57,7 +57,7 @@ const button = ev({
   },
 });
 
-type ButtonProps = NonNullable<Parameters<typeof button>[0]> & {
+type ButtonProps = VariantProps<typeof button> & {
   children: React.ReactNode;
 };
 

@@ -78,14 +78,16 @@ Because `defaultVariants` is set, `<Button>Default</Button>` renders as `medium`
 
 ## 3. Derive props from the variant function
 
-You don't have to hand-roll the prop types. Pull them out of the variant function with TypeScript's built-in `Parameters` utility:
+You don't have to hand-roll the prop types. Pull them out of the variant function with the `VariantProps` type:
 
 ```tsx
+import { ev, type VariantProps } from 'emotion-variants';
+
 const button = ev({
   /* ... */
 });
 
-type ButtonVariants = NonNullable<Parameters<typeof button>[0]>;
+type ButtonVariants = VariantProps<typeof button>;
 
 type ButtonProps = ButtonVariants & {
   children: React.ReactNode;
@@ -96,7 +98,7 @@ type ButtonProps = ButtonVariants & {
 This keeps your component's prop types and styles in sync. Add a new variant value and `ButtonProps` updates automatically.
 :::
 
-See the [Typed Props](./recipes/typed-props) for a reusable `VariantProps` helper and patterns for combining with HTML element props.
+See [Typed Props](./recipes/typed-props) for patterns that combine it with HTML element props.
 
 ## What's next
 

@@ -11,6 +11,7 @@ import type {
   EvVariants,
   VariantConfig,
   VariantKeys,
+  VariantProps,
   VariantValue,
   VariantValueFor,
 } from 'emotion-variants';
@@ -19,7 +20,7 @@ import type {
 대부분의 경우 이 타입들을 쓸 일이 없어요. variant 타입은 설정 객체에서 추론되기 때문에, generic을 직접 적는 것보다 이미 가지고 있는 함수에서 props를 꺼내는 쪽이 훨씬 짧아요.
 
 ```typescript
-type ButtonVariants = NonNullable<Parameters<typeof button>[0]>;
+type ButtonVariants = VariantProps<typeof button>;
 ```
 
 이 패턴은 [Props 타입 추출](../recipes/typed-props)에서 자세히 다뤄요.
@@ -72,6 +73,19 @@ type Variants = EvVariants<{
 // { size?: 'small' | 'large' }
 ```
 
+### `VariantProps<T>`
+
+`ev()` 결과가 받는 variant props예요. 설정이 아니라 함수의 타입을 넘겨요.
+
+```typescript
+import type { VariantProps } from 'emotion-variants';
+
+type ButtonVariants = VariantProps<typeof button>;
+// { size?: 'small' | 'large'; color?: 'primary' | 'secondary' }
+```
+
+`EvVariants<T>`와 같은 타입으로 풀리지만, `T`를 직접 적지 않아도 돼요.
+
 ### `EvClassNames<T>`
 
 [`classNames`](./ev#classnames)의 모양이에요. `base` 하나와 variant 값마다 class name이 하나씩 있어요. 키는 각 값을 문자열로 바꾼 형태예요.
@@ -85,7 +99,7 @@ type ClassNames = EvClassNames<{
 
 ### `CompoundVariant<T>`
 
-`compoundVariants` 배열의 한 항목이에요. compound 규칙을 별도 배열로 만들어 둘 때 꺼내 쓰세요.
+`compoundVariants` 배열의 한 항목이에요. compound 규칙을 별도 배열로 만들어 둘 때 꺼내 쓰세요. 각 조건에는 값 하나 또는 [값의 배열](../recipes/compound-variants#matching-several-values)을 쓸 수 있어요.
 
 ```typescript
 import type { CompoundVariant } from 'emotion-variants';

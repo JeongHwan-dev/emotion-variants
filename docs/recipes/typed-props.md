@@ -2,21 +2,12 @@
 
 `emotion-variants` already infers variant types from your configuration. This recipe shows how to **derive React component props** from an `ev()` result so your component's prop types and styles stay in sync.
 
-## A reusable `VariantProps` helper
+## The `VariantProps` type
 
-`emotion-variants` doesn't ship a `VariantProps` helper — it's a one-liner you can keep in your project:
-
-```ts
-// types.ts (in your app or design system)
-export type VariantProps<T extends (...args: any) => any> =
-  NonNullable<Parameters<T>[0]>;
-```
-
-Now any `ev()` result can hand you its variants:
+`emotion-variants` exports `VariantProps`. Give it the type of any `ev()` result and it hands you the variants:
 
 ```ts
-import { ev } from 'emotion-variants';
-import type { VariantProps } from './types';
+import { ev, type VariantProps } from 'emotion-variants';
 
 const button = ev({
   variants: {

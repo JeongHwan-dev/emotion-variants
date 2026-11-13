@@ -78,14 +78,16 @@ export function Button({ size, color, children }: ButtonProps) {
 
 ## 3. variant 함수에서 props 타입 추출
 
-prop 타입을 손으로 작성할 필요는 없어요. TypeScript의 `Parameters` 유틸리티를 쓰면 variant 함수에서 바로 끌어낼 수 있어요.
+prop 타입을 손으로 작성할 필요는 없어요. `VariantProps` 타입을 쓰면 variant 함수에서 바로 끌어낼 수 있어요.
 
 ```tsx
+import { ev, type VariantProps } from 'emotion-variants';
+
 const button = ev({
   /* ... */
 });
 
-type ButtonVariants = NonNullable<Parameters<typeof button>[0]>;
+type ButtonVariants = VariantProps<typeof button>;
 
 type ButtonProps = ButtonVariants & {
   children: React.ReactNode;
@@ -96,7 +98,7 @@ type ButtonProps = ButtonVariants & {
 이 패턴을 쓰면 컴포넌트의 prop 타입과 스타일이 항상 동기화돼요. `variants.size`에 새 값을 추가하면 `ButtonProps`도 자동으로 따라와요.
 :::
 
-재사용할 수 있는 `VariantProps` 헬퍼와, HTML 요소 props와 결합하는 패턴은 [Props 타입 추출](./recipes/typed-props)를 참고해 주세요.
+HTML 요소 props와 결합하는 패턴은 [Props 타입 추출](./recipes/typed-props)을 참고해 주세요.
 
 ## 다음으로
 

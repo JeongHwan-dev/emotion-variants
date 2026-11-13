@@ -79,13 +79,15 @@ export function ev<T extends VariantConfig<Record<string, Record<string, CSSObje
 }: EvConfig<T>): EvFunction<T> {
   const variantKeys = Object.keys(variants) as Array<VariantKeys<T>>;
   const baseStyle = base ? css(base) : null;
-  const variantStyles: Record<string, Record<string, SerializedStyles>> = {};
+  // Null-prototype lookups: a runtime value such as 'constructor' must not resolve
+  // to an inherited Object.prototype member.
+  const variantStyles: Record<string, Record<string, SerializedStyles>> = Object.create(null);
 
   variantKeys.forEach((key) => {
     const variantConfig = variants[key];
 
     if (variantConfig) {
-      variantStyles[key as string] = {};
+      variantStyles[key as string] = Object.create(null);
 
       Object.keys(variantConfig).forEach((value) => {
         variantStyles[key as string][value] = css(variantConfig[value]);
@@ -94,10 +96,10 @@ export function ev<T extends VariantConfig<Record<string, Record<string, CSSObje
   });
 
   const compoundVariantStyles = compoundVariants.map((compoundVariant) => {
-    const condition: Record<string, string> = {};
+    const condition: Record<string, string[]> = {};
 
     Object.entries(compoundVariant.variants).forEach(([key, value]) => {
-      condition[key] = String(value);
+      condition[key] = [value].flat().map(String);
     });
 
     return {
@@ -128,7 +130,9 @@ export function ev<T extends VariantConfig<Record<string, Record<string, CSSObje
     });
 
     compoundVariantStyles.forEach(({ condition, style }) => {
-      const isMatch = Object.entries(condition).every(([key, value]) => resolved[key] === value);
+      const isMatch = Object.entries(condition).every(([key, values]) =>
+        values.includes(resolved[key]),
+      );
 
       if (isMatch) {
         styles.push(style);

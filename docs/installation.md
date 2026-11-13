@@ -57,7 +57,7 @@ See [Emotion's installation guide](https://emotion.sh/docs/css-prop) for other s
 Create a tiny component and render it. If TypeScript autocompletes `size` inside `button({ ... })`, you're good to go.
 
 ```tsx
-import { ev } from 'emotion-variants';
+import { ev, type VariantProps } from 'emotion-variants';
 
 const button = ev({
   base: {
@@ -75,7 +75,7 @@ const button = ev({
   },
 });
 
-type ButtonProps = NonNullable<Parameters<typeof button>[0]> & {
+type ButtonProps = VariantProps<typeof button> & {
   children: React.ReactNode;
 };
 
