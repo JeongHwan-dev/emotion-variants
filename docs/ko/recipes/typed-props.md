@@ -2,21 +2,12 @@
 
 `emotion-variants`는 설정에서 variant 타입을 알아서 추론해요. 이 레시피에서는 `ev()` 결과에서 **React 컴포넌트 props**를 끌어내, 컴포넌트의 prop 타입과 스타일이 항상 같이 움직이도록 만드는 방법을 다뤄요.
 
-## 재사용할 수 있는 `VariantProps` 헬퍼
+## `VariantProps` 타입
 
-`emotion-variants`는 `VariantProps` 헬퍼를 기본 제공하지 않아요. 하지만 프로젝트 안에 한 줄로 정의해 두면 돼요.
-
-```ts
-// types.ts (앱 또는 디자인 시스템 내부)
-export type VariantProps<T extends (...args: any) => any> =
-  NonNullable<Parameters<T>[0]>;
-```
-
-이제 어떤 `ev()` 결과에서도 variant 타입을 끌어낼 수 있어요.
+`emotion-variants`는 `VariantProps`를 export해요. `ev()` 결과의 타입을 넘기면 variant 타입을 끌어낼 수 있어요.
 
 ```ts
-import { ev } from 'emotion-variants';
-import type { VariantProps } from './types';
+import { ev, type VariantProps } from 'emotion-variants';
 
 const button = ev({
   variants: {

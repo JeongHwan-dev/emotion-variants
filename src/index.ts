@@ -7,6 +7,7 @@ export type {
   EvVariants,
   VariantConfig,
   VariantKeys,
+  VariantProps,
   VariantValue,
   VariantValueFor,
 } from './types';

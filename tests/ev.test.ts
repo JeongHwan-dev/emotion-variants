@@ -179,6 +179,98 @@ describe('ev - Compound Variants', () => {
   it('matches compound variants against default values', () => {
     expect(stylesOf(button({ color: 'primary' }))).toContain('font-weight:bold;');
   });
+
+  describe('array conditions', () => {
+    const box = ev({
+      variants: {
+        size: {
+          small: {
+            fontSize: '12px',
+          },
+          medium: {
+            fontSize: '14px',
+          },
+          large: {
+            fontSize: '16px',
+          },
+        },
+        outlined: {
+          true: {
+            border: '1px solid',
+          },
+          false: {
+            border: 'none',
+          },
+        },
+        level: {
+          1: {
+            zIndex: 1,
+          },
+          2: {
+            zIndex: 2,
+          },
+          3: {
+            zIndex: 3,
+          },
+        },
+      },
+      compoundVariants: [
+        {
+          variants: {
+            size: ['small', 'medium'],
+            outlined: true,
+          },
+          style: {
+            fontWeight: 'bold',
+          },
+        },
+        {
+          variants: {
+            outlined: [true, false],
+            level: [1, 2],
+          },
+          style: {
+            fontStyle: 'italic',
+          },
+        },
+        {
+          variants: {
+            size: [],
+          },
+          style: {
+            color: 'red',
+          },
+        },
+        {
+          variants: {},
+          style: {
+            margin: 0,
+          },
+        },
+      ],
+    });
+
+    it('matches when the variant has any value in the array', () => {
+      expect(stylesOf(box({ size: 'small', outlined: true }))).toContain('font-weight:bold;');
+      expect(stylesOf(box({ size: 'medium', outlined: true }))).toContain('font-weight:bold;');
+    });
+
+    it('does not match a value outside the array or a failing sibling condition', () => {
+      expect(stylesOf(box({ size: 'large', outlined: true }))).not.toContain('font-weight:bold;');
+      expect(stylesOf(box({ size: 'small', outlined: false }))).not.toContain('font-weight:bold;');
+      expect(stylesOf(box({ outlined: true }))).not.toContain('font-weight:bold;');
+    });
+
+    it('matches boolean and number values in arrays', () => {
+      expect(stylesOf(box({ outlined: false, level: 2 }))).toContain('font-style:italic;');
+      expect(stylesOf(box({ outlined: true, level: 3 }))).not.toContain('font-style:italic;');
+    });
+
+    it('never matches an empty array and always matches an empty condition', () => {
+      expect(stylesOf(box({ size: 'small' }))).not.toContain('color:red;');
+      expect(stylesOf(box())).toEqual(['margin:0;']);
+    });
+  });
 });
 
 describe('ev - variants method', () => {
@@ -229,6 +321,23 @@ describe('ev - Edge Cases', () => {
 
     // @ts-expect-error - Invalid value for testing
     expect(button({ size: 'nonexistent' })).toEqual([]);
+  });
+
+  it('ignores values that only exist on Object.prototype', () => {
+    const button = ev({
+      variants: {
+        size: {
+          small: {
+            fontSize: '12px',
+          },
+        },
+      },
+    });
+
+    // @ts-expect-error - Invalid value for testing
+    expect(button({ size: 'constructor' })).toEqual([]);
+    // @ts-expect-error - Invalid value for testing
+    expect(button({ size: 'toString' })).toEqual([]);
   });
 
   it('ignores undefined variant values without defaults', () => {

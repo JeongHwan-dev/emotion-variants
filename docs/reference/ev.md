@@ -54,7 +54,7 @@ The configuration object is required. Pass `ev({})` if you have nothing to decla
 
 - `config.base` (`CSSObject`): Styles applied on every call. Serialized once when `ev()` runs, not per call.
 - `config.variants` (`Record<string, Record<string, CSSObject>>`): The variant axes. Each axis maps a value to its styles. Because values are object keys, write Boolean and number values as keys — `true`, `false`, `1` — and they are typed back to `boolean` and number literals.
-- `config.compoundVariants` (`Array<{ variants, style }>`): Styles applied only when every listed variant value matches. Note the key is `style`, singular.
+- `config.compoundVariants` (`Array<{ variants, style }>`): Styles applied only when every listed variant value matches. A condition can also be an array of values, which matches any of them. Note the key is `style`, singular.
 - `config.defaultVariants` (`Partial<Record<Axis, Value>>`): Values used when the caller omits an axis.
 
 #### Returns
@@ -66,7 +66,9 @@ The configuration object is required. Pass `ev({})` if you have nothing to decla
 Call the variant function to get the styles for one combination. Pass the result to the `css` prop or to Emotion's `css()`.
 
 ```tsx
-type ButtonProps = NonNullable<Parameters<typeof button>[0]> & {
+import type { VariantProps } from 'emotion-variants';
+
+type ButtonProps = VariantProps<typeof button> & {
   children: React.ReactNode;
 };
 

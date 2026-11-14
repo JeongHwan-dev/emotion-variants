@@ -1,25 +1,28 @@
+import type { VariantProps } from 'emotion-variants';
 import type { ComponentPropsWithoutRef } from 'react';
-import type { PaletteColor } from '@/theme';
+import type { buttonStyles } from './button.styles';
+
+type ButtonVariants = Required<VariantProps<typeof buttonStyles>>;
 
 /**
  * Button style variant.
  */
-export type ButtonVariant = 'fill' | 'outline' | 'text';
+export type ButtonVariant = ButtonVariants['variant'];
 
 /**
  * Button display mode.
  */
-export type ButtonDisplay = 'inline' | 'block' | 'full';
+export type ButtonDisplay = ButtonVariants['display'];
 
 /**
  * Button size.
  */
-export type ButtonSize = 'small' | 'medium' | 'large' | 'xlarge';
+export type ButtonSize = ButtonVariants['size'];
 
 /**
  * Button color variant.
  */
-export type ButtonColor = PaletteColor;
+export type ButtonColor = ButtonVariants['color'];
 
 /**
  * Button component props.

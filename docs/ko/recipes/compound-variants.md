@@ -160,6 +160,43 @@ const card = ev({
 
 `lg + compact` 조합에서만 size가 정한 기본 padding을 덮어써요.
 
+## 여러 값에 일치시키기 {#matching-several-values}
+
+조건에는 배열을 쓸 수 있어요. variant가 나열한 값 중 **어느 하나**이면 일치하기 때문에, 값마다 복사해 두어야 했던 항목을 하나로 줄일 수 있어요.
+
+```ts
+const button = ev({
+  variants: {
+    variant: {
+      filled: {},
+      outlined: {},
+      text: {},
+    },
+    color: {
+      primary: {},
+      danger: {},
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        variant: ['outlined', 'text'],
+        color: 'danger',
+      },
+      style: {
+        color: 'crimson',
+      },
+    },
+  ],
+});
+
+button({ variant: 'outlined', color: 'danger' }); // 복합 스타일이 포함돼요
+button({ variant: 'text', color: 'danger' }); // 여기에도 포함돼요
+button({ variant: 'filled', color: 'danger' }); // 복합 스타일은 빠져요
+```
+
+축끼리는 여전히 AND로 묶여요. 나열한 축이 모두 일치해야 하고, 배열은 자기 축에서 일치로 치는 값의 범위만 넓혀요. 빈 배열은 어떤 값과도 일치하지 않아요.
+
 ## 순서가 중요해요
 
 각 호출에서 복합 variant는 단순 variant **뒤에**, 배열에 적힌 순서대로 추가돼요. 두 복합 variant가 같은 속성을 설정하고 둘 다 일치하면, 뒤에 오는 게 이겨요.
