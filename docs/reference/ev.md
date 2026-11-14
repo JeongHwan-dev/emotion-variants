@@ -97,7 +97,7 @@ An axis with neither a prop nor a default is skipped entirely.
 
 #### Parameters
 
-- `variants` (`EvVariants<T>`, optional): Variant values. Every key is optional.
+- `variants` (`EvVariants<T>`, optional): Variant values. Every key is optional. With an `ev` from [`createEv`](./create-ev), a value can also be [responsive](./create-ev#responsive-values).
 
 #### Returns
 

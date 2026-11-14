@@ -1,6 +1,6 @@
 import type { SerializedStyles } from '@emotion/react';
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import { ev } from '../src/ev';
+import { createEv, ev } from '../src/ev';
 import type { EvFunction, VariantProps } from '../src/types';
 
 describe('ev - Type Tests', () => {
@@ -640,6 +640,135 @@ describe('ev - Type Tests', () => {
         extend: {},
       }),
     ).toThrow();
+  });
+
+  it('createEv accepts responsive values for its breakpoints', () => {
+    const { ev: responsive } = createEv({
+      breakpoints: {
+        md: '@media (min-width: 768px)',
+        lg: '@media (min-width: 1024px)',
+      },
+    });
+    const button = responsive({
+      variants: {
+        size: {
+          small: {
+            fontSize: '12px',
+          },
+          large: {
+            fontSize: '16px',
+          },
+        },
+      },
+      defaultVariants: {
+        // @ts-expect-error - a default is a single value
+        size: {
+          initial: 'small',
+        },
+      },
+    });
+
+    type Size = 'small' | 'large';
+
+    expectTypeOf<VariantProps<typeof button>>().toEqualTypeOf<{
+      size?:
+        | Size
+        | {
+            initial?: Size;
+            md?: Size;
+            lg?: Size;
+          };
+    }>();
+    expectTypeOf(button).toEqualTypeOf<
+      EvFunction<
+        {
+          size: {
+            small: {
+              fontSize: string;
+            };
+            large: {
+              fontSize: string;
+            };
+          };
+        },
+        'md' | 'lg'
+      >
+    >();
+
+    button({
+      size: {
+        initial: 'small',
+        // @ts-expect-error - 'medium' is not a size value
+        md: 'medium',
+      },
+    });
+    button({
+      size: {
+        // @ts-expect-error - 'xl' is not a declared breakpoint
+        xl: 'large',
+      },
+    });
+
+    const card = responsive({
+      slots: {
+        root: {
+          padding: '8px',
+        },
+      },
+      variants: {
+        size: {
+          small: {},
+          large: {
+            root: {
+              padding: '16px',
+            },
+          },
+        },
+      },
+    });
+
+    card({
+      size: {
+        md: 'large',
+      },
+    }).root({
+      size: {
+        lg: 'small',
+      },
+    });
+    responsive({
+      extend: button,
+    })({
+      size: {
+        md: 'large',
+      },
+    });
+  });
+
+  it('responsive values need declared breakpoints', () => {
+    const button = ev({
+      variants: {
+        size: {
+          small: {},
+          large: {},
+        },
+      },
+    });
+
+    button({
+      // @ts-expect-error - the default ev has no breakpoints
+      size: {
+        initial: 'small',
+      },
+    });
+
+    createEv({
+      breakpoints: {
+        // @ts-expect-error - 'initial' is reserved for the value below every breakpoint
+        initial: '@media (min-width: 0)',
+        md: '@media (min-width: 768px)',
+      },
+    });
   });
 
   it('type-safe with empty variants', () => {

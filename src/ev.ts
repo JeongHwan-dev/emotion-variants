@@ -2,20 +2,18 @@ import { css as cssClassName } from '@emotion/css';
 import type { CSSObject, SerializedStyles } from '@emotion/react';
 import { css } from '@emotion/react';
 import type {
-  AnyEv,
+  Ev,
   EvClassNames,
-  EvConfig,
   EvFunction,
   EvSlotsFunction,
-  Merged,
-  NoInfer_,
-  ParentSlots,
   VariantConfig,
   VariantValue,
 } from './types';
 
 type Plain = VariantConfig<Record<string, Record<string, CSSObject>>>;
-type Props = Record<string, VariantValue | undefined>;
+type Values = Record<string, VariantValue | undefined>;
+// A prop is a value, or values keyed by `initial` and breakpoint names.
+type Props = Record<string, VariantValue | Values | undefined>;
 type Condition = Record<string, VariantValue | ReadonlyArray<VariantValue> | undefined>;
 type SlotStyles = Record<string, SerializedStyles>;
 
@@ -34,7 +32,7 @@ interface Config {
     variants?: Condition;
     style: CSSObject;
   }>;
-  defaultVariants?: Props;
+  defaultVariants?: Values;
 }
 
 // Without `slots`, a config is handled as a single slot under this private name.
@@ -57,7 +55,7 @@ interface Internals {
     condition: Record<string, string[]>;
     styles: SlotStyles;
   }>;
-  defaultVariants: Props;
+  defaultVariants: Values;
 }
 
 const ROOT_INTERNALS: Internals = {
@@ -70,86 +68,19 @@ const ROOT_INTERNALS: Internals = {
 // Keyed by the functions ev() returns, so nothing is attached to the public object.
 const registry = new WeakMap<object, Internals>();
 
-/**
- * Creates a type-safe multi-variant style function for Emotion.
- *
- * This function generates a style function that applies different CSS styles based on
- * variant combinations. It supports base styles, multiple variants, compound variants,
- * and default variant values. All styles are applied without requiring explicit `css()`
- * calls - you can pass CSSObject directly.
- *
- * @param config - Configuration object for the ev function
- * @param config.extend - Another ev() result whose styles and variants this one builds on
- * @param config.base - Base styles applied to all variants
- * @param config.variants - Object defining variant-specific styles
- * @param config.compoundVariants - Array of styles for specific variant combinations
- * @param config.defaultVariants - Default values for variants
- * @returns A function that accepts variant values and returns an array of SerializedStyles
- *
- * @example
- * ```typescript
- * const button = ev({
- *   base: {
- *     padding: '10px 20px',
- *     borderRadius: '4px',
- *   },
- *   variants: {
- *     size: {
- *       small: {
- *         fontSize: '12px',
- *       },
- *       large: {
- *         fontSize: '16px',
- *       },
- *     },
- *     color: {
- *       primary: {
- *         background: 'blue',
- *       },
- *       secondary: {
- *         background: 'gray',
- *       },
- *     }
- *   },
- *   compoundVariants: [
- *     {
- *       variants: { size: 'large', color: 'primary' },
- *       style: {
- *         fontWeight: 'bold',
- *       },
- *     }
- *   ],
- *   defaultVariants: {
- *     size: 'small',
- *     color: 'primary'
- *   }
- * });
- *
- * // css prop
- * <button css={button({ size: 'large', color: 'primary' })}>Click me</button>
- *
- * // className
- * <button className={button.className({ size: 'large', color: 'primary' })}>Click me</button>
- * ```
- */
-export function ev<
-  T extends Plain,
-  N extends string = never,
-  E extends AnyEv | undefined = undefined,
->(
-  config: EvConfig<T, N, E>,
-): [N | ParentSlots<E>] extends [never]
-  ? EvFunction<Merged<T, E>>
-  : EvSlotsFunction<NoInfer_<N> | ParentSlots<E>, Merged<T, E>>;
-export function ev({
-  extend,
-  base,
-  slots,
-  variants = {},
-  compoundVariants = [],
-  compoundSlots = [],
-  defaultVariants: ownDefaultVariants = {},
-}: Config): EvFunction<Plain> | EvSlotsFunction<string, Plain> {
+// Builds an ev() result. `breakpoints` are the ones declared with createEv(), in order.
+function define(
+  {
+    extend,
+    base,
+    slots,
+    variants = {},
+    compoundVariants = [],
+    compoundSlots = [],
+    defaultVariants: ownDefaultVariants = {},
+  }: Config,
+  breakpoints: Array<[name: string, query: string]>,
+): EvFunction<Plain> | EvSlotsFunction<string, Plain> {
   const parent = extend ? registry.get(extend) : ROOT_INTERNALS;
 
   if (!parent) {
@@ -237,6 +168,30 @@ export function ev({
     }),
   ];
 
+  const cellsOf = (key: string, valueKey: string, slot: string) =>
+    layers
+      .map((layer) => layer.variants[key]?.[valueKey]?.[slot])
+      .filter((style) => style !== undefined);
+
+  // Breakpoint styles depend on call-time values, so they are serialized on first use.
+  const breakpointStyles = new Map<string, SerializedStyles>();
+
+  const atBreakpoint = (query: string, key: string, valueKey: string, slot: string) => {
+    const cacheKey = JSON.stringify([query, key, valueKey, slot]);
+    const cells = cellsOf(key, valueKey, slot);
+
+    if (cells.length && !breakpointStyles.has(cacheKey)) {
+      breakpointStyles.set(
+        cacheKey,
+        css({
+          [query]: cells,
+        }),
+      );
+    }
+
+    return breakpointStyles.get(cacheKey);
+  };
+
   function resolve(slot: string, props: Props, slotProps: Props = {}): SerializedStyles[] {
     const styles: SerializedStyles[] = [];
     const resolved: Record<string, string> = {};
@@ -257,12 +212,28 @@ export function ev({
         return;
       }
 
+      // A responsive value is left out of `resolved`: no single value holds at every
+      // breakpoint, so the axis cannot satisfy a compound condition.
+      if (typeof value === 'object') {
+        const initial = value.initial ?? defaultVariants[key];
+
+        if (initial !== undefined) {
+          styles.push(...cellsOf(key, String(initial), slot));
+        }
+
+        breakpoints.forEach(([name, query]) => {
+          if (value[name] !== undefined) {
+            push(atBreakpoint(query, key, String(value[name]), slot));
+          }
+        });
+
+        return;
+      }
+
       const valueKey = String(value);
 
       resolved[key] = valueKey;
-      layers.forEach((layer) => {
-        push(layer.variants[key]?.[valueKey]?.[slot]);
-      });
+      styles.push(...cellsOf(key, valueKey, slot));
     });
 
     compoundStyles.forEach(({ condition, styles: compound }) => {
@@ -357,3 +328,45 @@ export function ev({
 
   return register(result);
 }
+
+/**
+ * Creates an `ev` function that accepts responsive variant values.
+ *
+ * Declare the breakpoints once, mobile first, and every variant prop of the returned
+ * `ev` also takes an object keyed by `initial` and the breakpoint names.
+ *
+ * @param options.breakpoints - Media queries keyed by breakpoint name, smallest first
+ * @returns An object holding the configured `ev` function
+ *
+ * @example
+ * ```typescript
+ * export const { ev } = createEv({
+ *   breakpoints: {
+ *     md: '@media (min-width: 768px)',
+ *     lg: '@media (min-width: 1024px)',
+ *   },
+ * });
+ *
+ * button({
+ *   size: {
+ *     initial: 'small',
+ *     md: 'large',
+ *   },
+ * });
+ * ```
+ */
+export function createEv<B extends string = never>({
+  breakpoints = {},
+}: {
+  breakpoints?: Partial<Record<B, string>> & { initial?: never };
+} = {}): { ev: Ev<B> } {
+  const queries = Object.entries<string | undefined>(breakpoints).filter(
+    (entry): entry is [string, string] => entry[1] !== undefined,
+  );
+
+  return {
+    ev: ((config: Config) => define(config, queries)) as Ev<B>,
+  };
+}
+
+export const { ev } = createEv();

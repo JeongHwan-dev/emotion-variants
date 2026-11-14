@@ -75,6 +75,10 @@ export const en = defineConfig({
               text: 'Extend',
               link: '/recipes/extend',
             },
+            {
+              text: 'Responsive',
+              link: '/recipes/responsive',
+            },
           ],
         },
         {
@@ -83,6 +87,10 @@ export const en = defineConfig({
             {
               text: 'ev',
               link: '/reference/ev',
+            },
+            {
+              text: 'createEv',
+              link: '/reference/create-ev',
             },
             {
               text: 'Types',

@@ -1,6 +1,7 @@
-export { ev } from './ev';
+export { createEv, ev } from './ev';
 export type {
   CompoundVariant,
+  Ev,
   EvClassNames,
   EvConfig,
   EvFunction,

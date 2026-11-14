@@ -97,7 +97,7 @@ prop도 기본값도 없는 축은 아예 건너뛰어요.
 
 #### 파라미터
 
-- `variants` (`EvVariants<T>`, 선택): variant 값이에요. 모든 키가 선택이에요.
+- `variants` (`EvVariants<T>`, 선택): variant 값이에요. 모든 키가 선택이에요. [`createEv`](./create-ev)로 만든 `ev`에서는 [반응형 값](./create-ev#responsive-values)도 넘길 수 있어요.
 
 #### 반환 값
 
