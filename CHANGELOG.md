@@ -1,5 +1,11 @@
 # emotion-variants
 
+## 2.1.1
+
+### Patch Changes
+
+- [#56](https://github.com/JeongHwan-dev/emotion-variants/pull/56) [`821c511`](https://github.com/JeongHwan-dev/emotion-variants/commit/821c5114b5329edd1025762e1d27cd76ba3620e4) Thanks [@JeongHwan-dev](https://github.com/JeongHwan-dev)! - docs(core): refresh the README for slots, extend, and responsive variants, and link the new docs site at emotion-variants.org
+
 ## 2.1.0
 
 ### Minor Changes
