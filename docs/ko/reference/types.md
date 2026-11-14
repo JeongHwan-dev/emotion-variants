@@ -5,6 +5,7 @@
 ```typescript
 import type {
   CompoundVariant,
+  Ev,
   EvClassNames,
   EvConfig,
   EvFunction,
@@ -52,32 +53,50 @@ const config: EvConfig<{ size: { small: { fontSize: number } } }> = {
 
 `E`는 `extend`에 넘긴 `ev()` 결과의 타입이에요. 기본값은 `undefined`이고, 아무것도 extend하지 않는 설정을 뜻해요.
 
-### `EvFunction<T>`
+### `EvFunction<T, B>`
 
 [`ev()`](./ev)가 반환하는 값의 타입이에요. 호출 가능하고, 여기에 `variants()` · `className()` · `classNames`가 붙어 있어요.
 
 ```typescript
-interface EvFunction<T> {
-  (variants?: EvVariants<T>): SerializedStyles[];
+interface EvFunction<T, B extends string = never> {
+  (variants?: EvVariants<T, B>): SerializedStyles[];
   variants: () => Array<VariantKeys<T>>;
-  className: (variants?: EvVariants<T>) => string;
+  className: (variants?: EvVariants<T, B>) => string;
   classNames: EvClassNames<T>;
 }
 ```
 
-### `EvSlotsFunction<N, T>`
+`B`는 [`createEv`](./create-ev)로 선언한 breakpoint 이름의 union이에요. 기본값은 `never`이고, 일반 값만 받는 함수를 뜻해요. `EvSlotsFunction`과 `EvVariants`도 같은 매개변수를 받아요.
+
+### `EvSlotsFunction<N, T, B>`
 
 설정에 `slots`를 선언했을 때 [`ev()`](./ev#slots)가 반환하는 타입이에요. `N`은 slot 이름의 union이에요.
 
 ```typescript
-interface EvSlotsFunction<N extends string, T> {
-  (variants?: EvVariants<T>): { [K in N]: (slotVariants?: EvVariants<T>) => SerializedStyles[] };
+interface EvSlotsFunction<N extends string, T, B extends string = never> {
+  (variants?: EvVariants<T, B>): { [K in N]: (slotVariants?: EvVariants<T, B>) => SerializedStyles[] };
   variants: () => Array<VariantKeys<T>>;
-  className: (variants?: EvVariants<T>) => { [K in N]: string };
+  className: (variants?: EvVariants<T, B>) => { [K in N]: string };
 }
 ```
 
-### `EvVariants<T>`
+### `Ev<B>`
+
+`ev` 함수 자체의 타입이에요. [`createEv`](./create-ev)는 `Ev<B>`를 반환하고, 그 결과는 breakpoint `B`에 대한 반응형 값을 받아요. 패키지에서 export하는 `ev`는 `Ev<never>`예요.
+
+```typescript
+import { createEv } from 'emotion-variants';
+import type { Ev } from 'emotion-variants';
+
+const { ev }: { ev: Ev<'md' | 'lg'> } = createEv({
+  breakpoints: {
+    md: '@media (min-width: 768px)',
+    lg: '@media (min-width: 1024px)',
+  },
+});
+```
+
+### `EvVariants<T, B>`
 
 variant 함수의 인자 타입이에요. 모든 축이 선택이고, 선언한 값으로 좁혀져 있어요. 컴포넌트 props를 직접 작성할 때 쓰면 좋아요.
 
@@ -88,6 +107,15 @@ type Variants = EvVariants<{
   size: { small: {}; large: {} };
 }>;
 // { size?: 'small' | 'large' }
+
+// breakpoint 이름을 넘기면 값을 breakpoint마다 줄 수도 있어요.
+type ResponsiveVariants = EvVariants<
+  {
+    size: { small: {}; large: {} };
+  },
+  'md' | 'lg'
+>;
+// { size?: 'small' | 'large' | { initial?: 'small' | 'large'; md?: 'small' | 'large'; lg?: 'small' | 'large' } }
 ```
 
 ### `VariantProps<T>`
@@ -101,7 +129,7 @@ type ButtonVariants = VariantProps<typeof button>;
 // { size?: 'small' | 'large'; color?: 'primary' | 'secondary' }
 ```
 
-`EvVariants<T>`와 같은 타입으로 풀리지만, `T`를 직접 적지 않아도 돼요.
+`EvVariants<T, B>`와 같은 타입으로 풀리지만, `T`와 `B`를 직접 적지 않아도 돼요.
 
 ### `EvClassNames<T>`
 

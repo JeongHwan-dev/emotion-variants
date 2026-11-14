@@ -86,6 +86,10 @@ export const ko = defineConfig({
               text: 'Extend',
               link: '/ko/recipes/extend',
             },
+            {
+              text: 'Responsive',
+              link: '/ko/recipes/responsive',
+            },
           ],
         },
         {
@@ -94,6 +98,10 @@ export const ko = defineConfig({
             {
               text: 'ev',
               link: '/ko/reference/ev',
+            },
+            {
+              text: 'createEv',
+              link: '/ko/reference/create-ev',
             },
             {
               text: '타입',

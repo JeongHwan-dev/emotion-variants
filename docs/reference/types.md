@@ -5,6 +5,7 @@ Every type `emotion-variants` exports, and when you would reach for it.
 ```typescript
 import type {
   CompoundVariant,
+  Ev,
   EvClassNames,
   EvConfig,
   EvFunction,
@@ -52,32 +53,50 @@ Every field is optional: `base`, `variants`, `compoundVariants`, `defaultVariant
 
 `E` is the type of the `ev()` result passed as `extend`. It defaults to `undefined`, which is a config that extends nothing.
 
-### `EvFunction<T>`
+### `EvFunction<T, B>`
 
 The type of the value [`ev()`](./ev) returns — callable, plus `variants()`, `className()`, and `classNames`.
 
 ```typescript
-interface EvFunction<T> {
-  (variants?: EvVariants<T>): SerializedStyles[];
+interface EvFunction<T, B extends string = never> {
+  (variants?: EvVariants<T, B>): SerializedStyles[];
   variants: () => Array<VariantKeys<T>>;
-  className: (variants?: EvVariants<T>) => string;
+  className: (variants?: EvVariants<T, B>) => string;
   classNames: EvClassNames<T>;
 }
 ```
 
-### `EvSlotsFunction<N, T>`
+`B` is the union of breakpoint names declared with [`createEv`](./create-ev). It defaults to `never`, which is a function that accepts plain values only. `EvSlotsFunction` and `EvVariants` take the same parameter.
+
+### `EvSlotsFunction<N, T, B>`
 
 The type [`ev()`](./ev#slots) returns when the configuration declares `slots`. `N` is the union of slot names.
 
 ```typescript
-interface EvSlotsFunction<N extends string, T> {
-  (variants?: EvVariants<T>): { [K in N]: (slotVariants?: EvVariants<T>) => SerializedStyles[] };
+interface EvSlotsFunction<N extends string, T, B extends string = never> {
+  (variants?: EvVariants<T, B>): { [K in N]: (slotVariants?: EvVariants<T, B>) => SerializedStyles[] };
   variants: () => Array<VariantKeys<T>>;
-  className: (variants?: EvVariants<T>) => { [K in N]: string };
+  className: (variants?: EvVariants<T, B>) => { [K in N]: string };
 }
 ```
 
-### `EvVariants<T>`
+### `Ev<B>`
+
+The type of the `ev` function itself. [`createEv`](./create-ev) returns an `Ev<B>` whose results accept responsive values for the breakpoints `B`, and the `ev` exported from the package is an `Ev<never>`.
+
+```typescript
+import { createEv } from 'emotion-variants';
+import type { Ev } from 'emotion-variants';
+
+const { ev }: { ev: Ev<'md' | 'lg'> } = createEv({
+  breakpoints: {
+    md: '@media (min-width: 768px)',
+    lg: '@media (min-width: 1024px)',
+  },
+});
+```
+
+### `EvVariants<T, B>`
 
 The argument type of the variant function: every axis, optional, narrowed to its declared values. This is what you want when writing a component's props by hand.
 
@@ -88,6 +107,15 @@ type Variants = EvVariants<{
   size: { small: {}; large: {} };
 }>;
 // { size?: 'small' | 'large' }
+
+// With breakpoint names, each value can also be given per breakpoint.
+type ResponsiveVariants = EvVariants<
+  {
+    size: { small: {}; large: {} };
+  },
+  'md' | 'lg'
+>;
+// { size?: 'small' | 'large' | { initial?: 'small' | 'large'; md?: 'small' | 'large'; lg?: 'small' | 'large' } }
 ```
 
 ### `VariantProps<T>`
@@ -101,7 +129,7 @@ type ButtonVariants = VariantProps<typeof button>;
 // { size?: 'small' | 'large'; color?: 'primary' | 'secondary' }
 ```
 
-It resolves to the same type as `EvVariants<T>` without you having to name `T`.
+It resolves to the same type as `EvVariants<T, B>` without you having to name `T` or `B`.
 
 ### `EvClassNames<T>`
 

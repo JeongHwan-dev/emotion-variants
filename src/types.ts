@@ -71,7 +71,7 @@ export type CompoundVariant<T extends VariantConfig<Record<string, Record<string
  * Stops a type parameter from being inferred from the position it wraps, so slot names
  * are inferred from `slots` alone. The built-in `NoInfer` would require TypeScript 5.4.
  */
-export type NoInfer_<T> = [T][T extends unknown ? 0 : never];
+type NoInfer_<T> = [T][T extends unknown ? 0 : never];
 
 /**
  * Style accepted by a compound variant: one style per slot when `slots` is declared,
@@ -94,21 +94,22 @@ type OnlySlots<T, N extends string> = [N] extends [never]
  * Anything `ev()` returns, which is what `extend` accepts.
  */
 // biome-ignore lint/suspicious/noExplicitAny: matches an ev() result of any config
-export type AnyEv = EvFunction<any> | EvSlotsFunction<any, any>;
+type AnyEv = EvFunction<any, any> | EvSlotsFunction<any, any, any>;
 
 /**
  * The slot names of the config being extended, or `never` when it has none.
  */
 // biome-ignore lint/suspicious/noExplicitAny: only the slot names are read
-export type ParentSlots<E> = [E] extends [EvSlotsFunction<infer N, any>] ? N : never;
+type ParentSlots<E> = [E] extends [EvSlotsFunction<infer N, any, any>] ? N : never;
 
 /**
  * The variant configuration of the config being extended.
  */
-type ParentVariants<E> = [E] extends [EvFunction<infer P>]
+// biome-ignore lint/suspicious/noExplicitAny: only the variants are read
+type ParentVariants<E> = [E] extends [EvFunction<infer P, any>]
   ? P
   : // biome-ignore lint/suspicious/noExplicitAny: only the variants are read
-    [E] extends [EvSlotsFunction<any, infer P>]
+    [E] extends [EvSlotsFunction<any, infer P, any>]
     ? P
     : never;
 
@@ -116,7 +117,7 @@ type ParentVariants<E> = [E] extends [EvFunction<infer P>]
  * The variants of a config together with the ones it inherits through `extend`.
  * An axis declared on both sides accepts the values of either.
  */
-export type Merged<T, E> = Extract<
+type Merged<T, E> = Extract<
   [E] extends [undefined]
     ? T
     : string extends keyof T
@@ -150,7 +151,7 @@ export interface EvConfig<
    * one with `slots`
    */
   // biome-ignore lint/suspicious/noExplicitAny: matches a slot function of any config
-  extend?: E & ([N] extends [never] ? unknown : EvSlotsFunction<any, any>);
+  extend?: E & ([N] extends [never] ? unknown : EvSlotsFunction<any, any, any>);
   /** Base styles applied to all variants. Use `slots` instead when it is declared */
   base?: [N | ParentSlots<E>] extends [never] ? CSSObject : never;
   /** Named parts of a component and their base styles */
@@ -175,9 +176,15 @@ export interface EvConfig<
         /** CSS styles to apply to every listed slot */
         style: CSSObject;
       }>;
-  /** Default values for variants */
+  /** Default values for variants. A default is a single value, never a responsive one */
   defaultVariants?: EvVariants<Merged<T, E>>;
 }
+
+/**
+ * A variant value, or one value per breakpoint when breakpoints are declared.
+ * `initial` is the value below every breakpoint.
+ */
+type Responsive<V, B extends string> = [B] extends [never] ? V : V | { [K in 'initial' | B]?: V };
 
 /**
  * Type for variant values passed to the ev function.
@@ -185,11 +192,14 @@ export interface EvConfig<
  * All variant keys are optional, allowing partial variant application.
  *
  * @typeParam T - The variant configuration type
+ * @typeParam B - The breakpoint names declared with `createEv`
  */
-export type EvVariants<T extends VariantConfig<Record<string, Record<string, CSSObject>>>> =
-  Partial<{
-    [K in VariantKeys<T>]: VariantValueFor<T, K>;
-  }>;
+export type EvVariants<
+  T extends VariantConfig<Record<string, Record<string, CSSObject>>>,
+  B extends string = never,
+> = Partial<{
+  [K in VariantKeys<T>]: Responsive<VariantValueFor<T, K>, B>;
+}>;
 
 /**
  * Extracts the variant props accepted by an `ev()` result.
@@ -229,15 +239,19 @@ export type EvClassNames<T extends VariantConfig<Record<string, Record<string, C
  * class-name helpers backed by `@emotion/css`.
  *
  * @typeParam T - The variant configuration type
+ * @typeParam B - The breakpoint names declared with `createEv`
  */
-export interface EvFunction<T extends VariantConfig<Record<string, Record<string, CSSObject>>>> {
+export interface EvFunction<
+  T extends VariantConfig<Record<string, Record<string, CSSObject>>>,
+  B extends string = never,
+> {
   /**
    * Main function that accepts variant values and returns the matching styles.
    *
    * @param variants - Optional variant values to apply
    * @returns Array of SerializedStyles that can be passed to the css prop or `css()`
    */
-  (variants?: EvVariants<T>): SerializedStyles[];
+  (variants?: EvVariants<T, B>): SerializedStyles[];
 
   /**
    * Returns an array of all available variant keys.
@@ -255,7 +269,7 @@ export interface EvFunction<T extends VariantConfig<Record<string, Record<string
    * @param variants - Optional variant values to apply
    * @returns Generated class name
    */
-  className: (variants?: EvVariants<T>) => string;
+  className: (variants?: EvVariants<T, B>) => string;
 
   /**
    * Class names for the base style and each variant value.
@@ -270,10 +284,12 @@ export interface EvFunction<T extends VariantConfig<Record<string, Record<string
  *
  * @typeParam N - The slot names
  * @typeParam T - The variant configuration type
+ * @typeParam B - The breakpoint names declared with `createEv`
  */
 export interface EvSlotsFunction<
   N extends string,
   T extends VariantConfig<Record<string, Record<string, CSSObject>>>,
+  B extends string = never,
 > {
   /**
    * Main function that accepts variant values and returns one style function per slot.
@@ -285,9 +301,9 @@ export interface EvSlotsFunction<
    * @returns Style functions keyed by slot name
    */
   (
-    variants?: EvVariants<T>,
+    variants?: EvVariants<T, B>,
   ): {
-    [K in N]: (slotVariants?: EvVariants<T>) => SerializedStyles[];
+    [K in N]: (slotVariants?: EvVariants<T, B>) => SerializedStyles[];
   };
 
   /**
@@ -303,5 +319,85 @@ export interface EvSlotsFunction<
    * @param variants - Optional variant values to apply
    * @returns Generated class names keyed by slot name
    */
-  className: (variants?: EvVariants<T>) => { [K in N]: string };
+  className: (variants?: EvVariants<T, B>) => { [K in N]: string };
+}
+
+/**
+ * The `ev` function. `createEv` returns one that accepts responsive variant values.
+ *
+ * @typeParam B - The breakpoint names declared with `createEv`
+ */
+export interface Ev<B extends string = never> {
+  /**
+   * Creates a type-safe multi-variant style function for Emotion.
+   *
+   * This function generates a style function that applies different CSS styles based on
+   * variant combinations. It supports base styles, multiple variants, compound variants,
+   * and default variant values. All styles are applied without requiring explicit `css()`
+   * calls - you can pass CSSObject directly.
+   *
+   * @param config - Configuration object for the ev function
+   * @param config.extend - Another ev() result whose styles and variants this one builds on
+   * @param config.base - Base styles applied to all variants
+   * @param config.variants - Object defining variant-specific styles
+   * @param config.compoundVariants - Array of styles for specific variant combinations
+   * @param config.defaultVariants - Default values for variants
+   * @returns A function that accepts variant values and returns an array of SerializedStyles
+   *
+   * @example
+   * ```typescript
+   * const button = ev({
+   *   base: {
+   *     padding: '10px 20px',
+   *     borderRadius: '4px',
+   *   },
+   *   variants: {
+   *     size: {
+   *       small: {
+   *         fontSize: '12px',
+   *       },
+   *       large: {
+   *         fontSize: '16px',
+   *       },
+   *     },
+   *     color: {
+   *       primary: {
+   *         background: 'blue',
+   *       },
+   *       secondary: {
+   *         background: 'gray',
+   *       },
+   *     }
+   *   },
+   *   compoundVariants: [
+   *     {
+   *       variants: { size: 'large', color: 'primary' },
+   *       style: {
+   *         fontWeight: 'bold',
+   *       },
+   *     }
+   *   ],
+   *   defaultVariants: {
+   *     size: 'small',
+   *     color: 'primary'
+   *   }
+   * });
+   *
+   * // css prop
+   * <button css={button({ size: 'large', color: 'primary' })}>Click me</button>
+   *
+   * // className
+   * <button className={button.className({ size: 'large', color: 'primary' })}>Click me</button>
+   * ```
+   */
+  // biome-ignore lint/style/useShorthandFunctionType: a call signature keeps the JSDoc on hover
+  <
+    T extends VariantConfig<Record<string, Record<string, CSSObject>>>,
+    N extends string = never,
+    E extends AnyEv | undefined = undefined,
+  >(
+    config: EvConfig<T, N, E>,
+  ): [N | ParentSlots<E>] extends [never]
+    ? EvFunction<Merged<T, E>, B>
+    : EvSlotsFunction<NoInfer_<N> | ParentSlots<E>, Merged<T, E>, B>;
 }

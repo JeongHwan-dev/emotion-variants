@@ -1,7 +1,7 @@
 import { cache } from '@emotion/css';
 import type { SerializedStyles } from '@emotion/react';
 import { describe, expect, it } from 'vitest';
-import { ev } from '../src/ev';
+import { createEv, ev } from '../src/ev';
 
 const stylesOf = (result: SerializedStyles[]) => result.map((s) => s.styles);
 
@@ -937,5 +937,255 @@ describe('ev - extend', () => {
         },
       }),
     ).toThrow(/slots/);
+  });
+});
+
+describe('createEv - responsive variants', () => {
+  const { ev: responsive } = createEv({
+    breakpoints: {
+      md: '@media (min-width: 768px)',
+      lg: '@media (min-width: 1024px)',
+    },
+  });
+  const button = responsive({
+    base: {
+      padding: '8px',
+    },
+    variants: {
+      size: {
+        small: {
+          fontSize: '12px',
+        },
+        large: {
+          fontSize: '16px',
+        },
+      },
+      tone: {
+        neutral: {
+          color: 'gray',
+        },
+        danger: {
+          color: 'red',
+        },
+      },
+    },
+    compoundVariants: [
+      {
+        variants: {
+          size: 'large',
+          tone: 'danger',
+        },
+        style: {
+          fontWeight: 'bold',
+        },
+      },
+      {
+        variants: {
+          tone: 'danger',
+        },
+        style: {
+          textDecoration: 'underline',
+        },
+      },
+    ],
+    defaultVariants: {
+      size: 'small',
+      tone: 'neutral',
+    },
+  });
+
+  it('applies the initial value, then each breakpoint in declared order', () => {
+    expect(
+      stylesOf(
+        button({
+          size: {
+            lg: 'small',
+            initial: 'large',
+            md: 'small',
+          },
+        }),
+      ),
+    ).toEqual([
+      'padding:8px;',
+      'font-size:16px;',
+      '@media (min-width: 768px){font-size:12px;;;}',
+      '@media (min-width: 1024px){font-size:12px;;;}',
+      'color:gray;',
+    ]);
+  });
+
+  it('falls back to the default when initial is omitted', () => {
+    expect(
+      stylesOf(
+        button({
+          size: {
+            md: 'large',
+          },
+        }),
+      ),
+    ).toEqual([
+      'padding:8px;',
+      'font-size:12px;',
+      '@media (min-width: 768px){font-size:16px;;;}',
+      'color:gray;',
+    ]);
+  });
+
+  it('serializes a breakpoint style once', () => {
+    const first = button({
+      size: {
+        md: 'large',
+      },
+    });
+    const second = button({
+      size: {
+        md: 'large',
+      },
+    });
+
+    expect(first[2]).toBe(second[2]);
+  });
+
+  it('ignores breakpoints that were not declared', () => {
+    expect(
+      stylesOf(
+        button({
+          size: {
+            initial: 'large',
+            xl: 'small',
+          } as never,
+        }),
+      ),
+    ).toEqual(['padding:8px;', 'font-size:16px;', 'color:gray;']);
+  });
+
+  it('does not match compounds on an axis given a responsive value', () => {
+    const styles = stylesOf(
+      button({
+        size: {
+          initial: 'large',
+        },
+        tone: 'danger',
+      }),
+    );
+
+    expect(styles).toContain('font-size:16px;');
+    expect(styles).toContain('text-decoration:underline;');
+    expect(styles).not.toContain('font-weight:bold;');
+  });
+
+  it('includes the media rules in className()', () => {
+    const className = button.className({
+      size: {
+        md: 'large',
+      },
+    });
+
+    const rules = Array.from(document.querySelectorAll('style')).map((style) => style.textContent);
+
+    expect(rules).toContain(`@media (min-width: 768px){.${className}{font-size:16px;}}`);
+  });
+
+  it('lets a breakpoint style win over later plain styles for the same property', () => {
+    const className = button.className({
+      size: {
+        md: 'large',
+      },
+      tone: 'danger',
+    });
+    const rules = Array.from(document.querySelectorAll('style')).map((style) => style.textContent);
+    const plain = rules.findIndex((rule) => rule?.startsWith(`.${className}{`));
+    const media = rules.findIndex((rule) =>
+      rule?.startsWith(`@media (min-width: 768px){.${className}{`),
+    );
+
+    expect(plain).toBeGreaterThan(-1);
+    expect(media).toBeGreaterThan(plain);
+  });
+
+  it('puts every layer of an extended value inside the breakpoint', () => {
+    const base = ev({
+      variants: {
+        size: {
+          small: {},
+          large: {
+            fontSize: '16px',
+          },
+        },
+      },
+    });
+    const iconButton = responsive({
+      extend: base,
+      variants: {
+        size: {
+          large: {
+            width: '48px',
+          },
+        },
+      },
+    });
+
+    expect(
+      stylesOf(
+        iconButton({
+          size: {
+            md: 'large',
+          },
+        }),
+      ),
+    ).toEqual(['@media (min-width: 768px){font-size:16px;;;width:48px;;;}']);
+  });
+
+  it('lets a slot prop replace the whole responsive value', () => {
+    const card = responsive({
+      slots: {
+        root: {
+          padding: '8px',
+        },
+        title: {
+          fontWeight: 'bold',
+        },
+      },
+      variants: {
+        size: {
+          small: {
+            title: {
+              fontSize: '12px',
+            },
+          },
+          large: {
+            root: {
+              padding: '16px',
+            },
+            title: {
+              fontSize: '20px',
+            },
+          },
+        },
+      },
+    });
+    const { root, title } = card({
+      size: {
+        initial: 'small',
+        md: 'large',
+      },
+    });
+
+    expect(stylesOf(root())).toEqual([
+      'padding:8px;',
+      '@media (min-width: 768px){padding:16px;;;}',
+    ]);
+    expect(stylesOf(title())).toEqual([
+      'font-weight:bold;',
+      'font-size:12px;',
+      '@media (min-width: 768px){font-size:20px;;;}',
+    ]);
+    expect(
+      stylesOf(
+        title({
+          size: 'large',
+        }),
+      ),
+    ).toEqual(['font-weight:bold;', 'font-size:20px;']);
   });
 });

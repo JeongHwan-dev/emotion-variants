@@ -1,0 +1,76 @@
+# createEv
+
+variant prop이 breakpoint마다 값을 하나씩 받는 `ev` 함수를 만들어요.
+
+```typescript
+const { ev } = createEv(options);
+```
+
+## 사용법
+
+### `createEv(options)` {#create-ev-options}
+
+variant가 화면 너비에 따라 바뀌어야 할 때 `createEv`를 쓰세요. breakpoint를 한 번 선언하고, 반환된 `ev`를 export해서 앱 전체에서 쓰면 돼요.
+
+```typescript
+import { createEv } from 'emotion-variants';
+
+export const { ev } = createEv({
+  breakpoints: {
+    md: '@media (min-width: 768px)',
+    lg: '@media (min-width: 1024px)',
+  },
+});
+```
+
+#### 파라미터
+
+- `options.breakpoints` (`Record<string, string>`, 선택): breakpoint 이름을 키로 하는 media query예요. 너비가 작은 것부터 큰 순서로 적어요. `initial`은 이름으로 쓸 수 없고, 숫자로 읽히는 이름도 쓰면 안 돼요.
+
+#### 반환 값
+
+(`{ ev: Ev<B> }`): `ev` 함수가 담긴 객체예요. [`ev`](./ev)와 같은 설정을 받고, 이 `ev`가 반환하는 함수는 [반응형 값](#responsive-values)을 받아요. `breakpoints`가 없으면 패키지에서 export하는 `ev`와 똑같이 동작해요. 그 `ev`가 바로 `createEv().ev`예요.
+
+### 반응형 값 {#responsive-values}
+
+이 `ev`로 만든 함수의 모든 variant prop은 값 하나를 받거나, breakpoint마다 값을 하나씩 담은 객체를 받아요.
+
+```typescript
+const button = ev({
+  variants: {
+    size: {
+      small: {
+        fontSize: 12,
+      },
+      large: {
+        fontSize: 16,
+      },
+    },
+  },
+  defaultVariants: {
+    size: 'small',
+  },
+});
+
+button({
+  size: {
+    initial: 'small',
+    md: 'large',
+  },
+});
+```
+
+- `initial`: media query 밖에 놓이는 값이에요. 생략하면 그 축의 기본 variant가 쓰여요.
+- breakpoint 이름: 그 breakpoint의 media query 안에 놓이는 값이에요. 생략한 breakpoint는 아무것도 더하지 않아요.
+
+스타일은 평소 순서에서 그 축이 놓이는 자리에 들어가요. `initial`의 스타일이 먼저 오고, 그 뒤에 breakpoint를 선언한 순서대로 breakpoint마다 스타일이 하나씩 와요. breakpoint 스타일은 그 값이 처음 쓰일 때 직렬화하고, 그 뒤로는 다시 써요.
+
+반응형 값을 받은 축은 그 호출에서 어떤 복합 variant와도 일치하지 않아요. 객체에 `initial`만 있어도 마찬가지예요.
+
+`className()`도 같은 값을 받고, [slots](./ev#slots)에서는 각 slot 함수도 같은 값을 받아요. `defaultVariants`는 받지 않아요.
+
+순서 규칙과 제약은 [Responsive](../recipes/responsive)에서 다뤄요.
+
+## 타입
+
+`Ev`, `EvFunction`, `EvVariants`는 [타입](./types)에서 확인하세요. 모두 마지막 타입 매개변수로 breakpoint 이름을 받아요.
