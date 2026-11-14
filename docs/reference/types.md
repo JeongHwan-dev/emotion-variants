@@ -28,7 +28,7 @@ See [Typed Props](../recipes/typed-props) for that pattern in full.
 
 ## Usage
 
-### `EvConfig<T, N>`
+### `EvConfig<T, N, E>`
 
 The shape of the object you pass to [`ev()`](./ev). Useful for extracting a configuration into its own variable or a factory.
 
@@ -46,9 +46,11 @@ const config: EvConfig<{ size: { small: { fontSize: number } } }> = {
 };
 ```
 
-Every field is optional: `base`, `variants`, `compoundVariants`, `defaultVariants`, and for [slots](./ev#slots), `slots` and `compoundSlots`.
+Every field is optional: `base`, `variants`, `compoundVariants`, `defaultVariants`, [`extend`](./ev#extend), and for [slots](./ev#slots), `slots` and `compoundSlots`.
 
 `N` is the union of slot names. It defaults to `never`, which is the plain form without `slots`.
+
+`E` is the type of the `ev()` result passed as `extend`. It defaults to `undefined`, which is a config that extends nothing.
 
 ### `EvFunction<T>`
 

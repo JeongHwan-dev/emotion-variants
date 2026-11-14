@@ -71,6 +71,10 @@ export const en = defineConfig({
               text: 'Slots',
               link: '/recipes/slots',
             },
+            {
+              text: 'Extend',
+              link: '/recipes/extend',
+            },
           ],
         },
         {

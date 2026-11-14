@@ -2,11 +2,14 @@ import { css as cssClassName } from '@emotion/css';
 import type { CSSObject, SerializedStyles } from '@emotion/react';
 import { css } from '@emotion/react';
 import type {
+  AnyEv,
   EvClassNames,
   EvConfig,
   EvFunction,
   EvSlotsFunction,
+  Merged,
   NoInfer_,
+  ParentSlots,
   VariantConfig,
   VariantValue,
 } from './types';
@@ -18,6 +21,7 @@ type SlotStyles = Record<string, SerializedStyles>;
 
 // The implementation's view of EvConfig, with the generics erased.
 interface Config {
+  extend?: object;
   base?: CSSObject;
   slots?: Record<string, CSSObject>;
   variants?: Record<string, Record<string, CSSObject>>;
@@ -40,6 +44,32 @@ const ROOT = '';
 // to an inherited Object.prototype member.
 const table = <V>(): Record<string, V> => Object.create(null);
 
+// What a config passes on through `extend`. Each config in the chain keeps its own
+// layer of styles: merging them with css() would serialize them again under new names.
+interface Internals {
+  slotNames?: string[];
+  variantKeys: string[];
+  layers: Array<{
+    base: SlotStyles;
+    variants: Record<string, Record<string, SlotStyles>>;
+  }>;
+  compoundStyles: Array<{
+    condition: Record<string, string[]>;
+    styles: SlotStyles;
+  }>;
+  defaultVariants: Props;
+}
+
+const ROOT_INTERNALS: Internals = {
+  variantKeys: [],
+  layers: [],
+  compoundStyles: [],
+  defaultVariants: {},
+};
+
+// Keyed by the functions ev() returns, so nothing is attached to the public object.
+const registry = new WeakMap<object, Internals>();
+
 /**
  * Creates a type-safe multi-variant style function for Emotion.
  *
@@ -49,6 +79,7 @@ const table = <V>(): Record<string, V> => Object.create(null);
  * calls - you can pass CSSObject directly.
  *
  * @param config - Configuration object for the ev function
+ * @param config.extend - Another ev() result whose styles and variants this one builds on
  * @param config.base - Base styles applied to all variants
  * @param config.variants - Object defining variant-specific styles
  * @param config.compoundVariants - Array of styles for specific variant combinations
@@ -101,18 +132,44 @@ const table = <V>(): Record<string, V> => Object.create(null);
  * <button className={button.className({ size: 'large', color: 'primary' })}>Click me</button>
  * ```
  */
-export function ev<T extends Plain, N extends string = never>(
-  config: EvConfig<T, N>,
-): [N] extends [never] ? EvFunction<T> : EvSlotsFunction<NoInfer_<N>, T>;
+export function ev<
+  T extends Plain,
+  N extends string = never,
+  E extends AnyEv | undefined = undefined,
+>(
+  config: EvConfig<T, N, E>,
+): [N | ParentSlots<E>] extends [never]
+  ? EvFunction<Merged<T, E>>
+  : EvSlotsFunction<NoInfer_<N> | ParentSlots<E>, Merged<T, E>>;
 export function ev({
+  extend,
   base,
   slots,
   variants = {},
   compoundVariants = [],
   compoundSlots = [],
-  defaultVariants = {},
+  defaultVariants: ownDefaultVariants = {},
 }: Config): EvFunction<Plain> | EvSlotsFunction<string, Plain> {
-  const variantKeys = Object.keys(variants);
+  const parent = extend ? registry.get(extend) : ROOT_INTERNALS;
+
+  if (!parent) {
+    throw new Error(
+      '[emotion-variants] `extend` must be a function returned by `ev()`. If it is one, two copies of emotion-variants may be installed.',
+    );
+  }
+
+  if (slots && extend && !parent.slotNames) {
+    throw new Error('[emotion-variants] A config with `slots` cannot extend one without `slots`.');
+  }
+
+  const slotNames = (slots ?? parent.slotNames) && [
+    ...new Set([...(parent.slotNames ?? []), ...Object.keys(slots ?? {})]),
+  ];
+  const variantKeys = [...new Set([...parent.variantKeys, ...Object.keys(variants)])];
+  const defaultVariants = {
+    ...parent.defaultVariants,
+    ...ownDefaultVariants,
+  };
 
   const serialize = (styles: Record<string, CSSObject>): SlotStyles => {
     const serialized = table<SerializedStyles>();
@@ -124,7 +181,7 @@ export function ev({
     return serialized;
   };
   const bySlot = (style: CSSObject) =>
-    slots
+    slotNames
       ? (style as Record<string, CSSObject>)
       : {
           [ROOT]: style,
@@ -133,13 +190,21 @@ export function ev({
   const baseStyles = serialize(slots ?? (base ? bySlot(base) : {}));
   const variantStyles = table<Record<string, SlotStyles>>();
 
-  variantKeys.forEach((key) => {
+  Object.entries(variants).forEach(([key, values]) => {
     variantStyles[key] = table();
 
-    Object.entries(variants[key] ?? {}).forEach(([value, style]) => {
+    Object.entries(values ?? {}).forEach(([value, style]) => {
       variantStyles[key][value] = serialize(bySlot(style));
     });
   });
+
+  const layers = [
+    ...parent.layers,
+    {
+      base: baseStyles,
+      variants: variantStyles,
+    },
+  ];
 
   const toCondition = (condition: Condition = {}) => {
     const normalized: Record<string, string[]> = {};
@@ -152,6 +217,7 @@ export function ev({
   };
 
   const compoundStyles = [
+    ...parent.compoundStyles,
     ...compoundVariants.map((compoundVariant) => ({
       condition: toCondition(compoundVariant.variants),
       styles: serialize(bySlot(compoundVariant.style)),
@@ -180,7 +246,9 @@ export function ev({
       }
     };
 
-    push(baseStyles[slot]);
+    layers.forEach((layer) => {
+      push(layer.base[slot]);
+    });
 
     variantKeys.forEach((key) => {
       const value = slotProps[key] ?? props[key] ?? defaultVariants[key];
@@ -192,7 +260,9 @@ export function ev({
       const valueKey = String(value);
 
       resolved[key] = valueKey;
-      push(variantStyles[key][valueKey]?.[slot]);
+      layers.forEach((layer) => {
+        push(layer.variants[key]?.[valueKey]?.[slot]);
+      });
     });
 
     compoundStyles.forEach(({ condition, styles: compound }) => {
@@ -208,18 +278,32 @@ export function ev({
     return styles;
   }
 
-  if (slots) {
-    const slotNames = Object.keys(slots);
+  const register = <F extends object>(result: F): F => {
+    registry.set(result, {
+      slotNames,
+      variantKeys,
+      layers,
+      compoundStyles,
+      defaultVariants,
+    });
+
+    return result;
+  };
+
+  if (slotNames) {
     const forEachSlot = <V>(callback: (slot: string) => V): Record<string, V> =>
       Object.fromEntries(slotNames.map((slot) => [slot, callback(slot)]));
 
-    return Object.assign(
-      (props: Props = {}) =>
-        forEachSlot((slot) => (slotProps?: Props) => resolve(slot, props, slotProps)),
-      {
-        variants: () => variantKeys,
-        className: (props: Props = {}) => forEachSlot((slot) => cssClassName(resolve(slot, props))),
-      },
+    return register(
+      Object.assign(
+        (props: Props = {}) =>
+          forEachSlot((slot) => (slotProps?: Props) => resolve(slot, props, slotProps)),
+        {
+          variants: () => variantKeys,
+          className: (props: Props = {}) =>
+            forEachSlot((slot) => cssClassName(resolve(slot, props))),
+        },
+      ),
     );
   }
 
@@ -231,17 +315,26 @@ export function ev({
 
   const createClassNames = (): EvClassNames<Plain> => {
     const variantClassNames: Record<string, Record<string, string>> = {};
+    const classNameOf = (styles: Array<SerializedStyles | undefined>) => {
+      const defined = styles.filter((style) => style !== undefined);
+
+      return defined.length ? cssClassName(...defined) : '';
+    };
 
     variantKeys.forEach((key) => {
       variantClassNames[key] = {};
 
-      Object.entries(variantStyles[key]).forEach(([value, styles]) => {
-        variantClassNames[key][value] = cssClassName(styles[ROOT]);
-      });
+      layers
+        .flatMap((layer) => Object.keys(layer.variants[key] ?? {}))
+        .forEach((value) => {
+          variantClassNames[key][value] = classNameOf(
+            layers.map((layer) => layer.variants[key]?.[value]?.[ROOT]),
+          );
+        });
     });
 
     return {
-      base: baseStyles[ROOT] ? cssClassName(baseStyles[ROOT]) : '',
+      base: classNameOf(layers.map((layer) => layer.base[ROOT])),
       variants: variantClassNames,
     };
   };
@@ -262,5 +355,5 @@ export function ev({
     },
   });
 
-  return result;
+  return register(result);
 }

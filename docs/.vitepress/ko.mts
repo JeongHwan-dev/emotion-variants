@@ -82,6 +82,10 @@ export const ko = defineConfig({
               text: 'Slots',
               link: '/ko/recipes/slots',
             },
+            {
+              text: 'Extend',
+              link: '/ko/recipes/extend',
+            },
           ],
         },
         {

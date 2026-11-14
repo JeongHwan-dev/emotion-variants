@@ -91,43 +91,92 @@ type OnlySlots<T, N extends string> = [N] extends [never]
     };
 
 /**
+ * Anything `ev()` returns, which is what `extend` accepts.
+ */
+// biome-ignore lint/suspicious/noExplicitAny: matches an ev() result of any config
+export type AnyEv = EvFunction<any> | EvSlotsFunction<any, any>;
+
+/**
+ * The slot names of the config being extended, or `never` when it has none.
+ */
+// biome-ignore lint/suspicious/noExplicitAny: only the slot names are read
+export type ParentSlots<E> = [E] extends [EvSlotsFunction<infer N, any>] ? N : never;
+
+/**
+ * The variant configuration of the config being extended.
+ */
+type ParentVariants<E> = [E] extends [EvFunction<infer P>]
+  ? P
+  : // biome-ignore lint/suspicious/noExplicitAny: only the variants are read
+    [E] extends [EvSlotsFunction<any, infer P>]
+    ? P
+    : never;
+
+/**
+ * The variants of a config together with the ones it inherits through `extend`.
+ * An axis declared on both sides accepts the values of either.
+ */
+export type Merged<T, E> = Extract<
+  [E] extends [undefined]
+    ? T
+    : string extends keyof T
+      ? ParentVariants<E>
+      : string extends keyof ParentVariants<E>
+        ? T
+        : {
+            [K in keyof ParentVariants<E> | keyof T]: (K extends keyof ParentVariants<E>
+              ? ParentVariants<E>[K]
+              : unknown) &
+              (K extends keyof T ? T[K] : unknown);
+          },
+  VariantConfig<Record<string, Record<string, CSSObject>>>
+>;
+
+/**
  * Configuration object for the ev function.
  *
  * @typeParam T - The variant configuration type
  * @typeParam N - The slot names, inferred from `slots`
+ * @typeParam E - The type of the ev() result passed as `extend`
  */
 export interface EvConfig<
   T extends VariantConfig<Record<string, Record<string, CSSObject>>>,
   N extends string = never,
+  E extends AnyEv | undefined = undefined,
 > {
+  /**
+   * Another ev() result to build on. Its styles come first and its variants, compound
+   * variants, and default variants are inherited. A config with `slots` can only extend
+   * one with `slots`
+   */
+  // biome-ignore lint/suspicious/noExplicitAny: matches a slot function of any config
+  extend?: E & ([N] extends [never] ? unknown : EvSlotsFunction<any, any>);
   /** Base styles applied to all variants. Use `slots` instead when it is declared */
-  base?: [N] extends [never] ? CSSObject : never;
+  base?: [N | ParentSlots<E>] extends [never] ? CSSObject : never;
   /** Named parts of a component and their base styles */
   slots?: Record<N, CSSObject>;
   /** Variant-specific style definitions, keyed by slot when `slots` is declared */
-  variants?: T & OnlySlots<T, NoInfer_<N>>;
+  variants?: T & OnlySlots<T, NoInfer_<N> | ParentSlots<E>>;
   /** Styles for specific variant combinations */
   compoundVariants?: Array<{
     /** Variant values that must match for this compound variant to apply */
-    variants: CompoundVariant<T>['variants'];
+    variants: CompoundVariant<Merged<T, E>>['variants'];
     /** CSS styles to apply, keyed by slot when `slots` is declared */
-    style: SlotStyle<NoInfer_<N>>;
+    style: SlotStyle<NoInfer_<N> | ParentSlots<E>>;
   }>;
   /** Styles applied to several slots at once, optionally only for a variant combination */
-  compoundSlots?: [N] extends [never]
+  compoundSlots?: [N | ParentSlots<E>] extends [never]
     ? never
     : Array<{
         /** Slots that receive the style */
-        slots: ReadonlyArray<NoInfer_<N>>;
+        slots: ReadonlyArray<NoInfer_<N> | ParentSlots<E>>;
         /** Variant values that must match. Always applies when omitted */
-        variants?: CompoundVariant<T>['variants'];
+        variants?: CompoundVariant<Merged<T, E>>['variants'];
         /** CSS styles to apply to every listed slot */
         style: CSSObject;
       }>;
   /** Default values for variants */
-  defaultVariants?: Partial<{
-    [K in VariantKeys<T>]: VariantValueFor<T, K>;
-  }>;
+  defaultVariants?: EvVariants<Merged<T, E>>;
 }
 
 /**

@@ -1,5 +1,5 @@
 import type { SerializedStyles } from '@emotion/react';
-import { describe, expectTypeOf, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { ev } from '../src/ev';
 import type { EvFunction, VariantProps } from '../src/types';
 
@@ -398,6 +398,248 @@ describe('ev - Type Tests', () => {
       // @ts-expect-error - compoundSlots needs `slots`
       compoundSlots: [],
     });
+  });
+
+  it('extend merges the parent variants into the child', () => {
+    const button = ev({
+      base: {
+        padding: '8px',
+      },
+      variants: {
+        size: {
+          small: {
+            fontSize: '12px',
+          },
+          large: {
+            fontSize: '16px',
+          },
+        },
+        tone: {
+          neutral: {
+            color: 'gray',
+          },
+          danger: {
+            color: 'red',
+          },
+        },
+      },
+    });
+    const iconButton = ev({
+      extend: button,
+      variants: {
+        size: {
+          large: {
+            width: '48px',
+          },
+          huge: {
+            fontSize: '24px',
+          },
+        },
+        round: {
+          true: {
+            borderRadius: '50%',
+          },
+        },
+      },
+      compoundVariants: [
+        {
+          variants: {
+            tone: 'danger',
+            size: ['small', 'huge'],
+            round: true,
+          },
+          style: {
+            fontWeight: 'bold',
+          },
+        },
+        {
+          variants: {
+            // @ts-expect-error - 'loud' is not a tone value of the parent
+            tone: 'loud',
+          },
+          style: {
+            fontWeight: 'bold',
+          },
+        },
+      ],
+      defaultVariants: {
+        tone: 'neutral',
+        size: 'huge',
+      },
+    });
+
+    expectTypeOf<VariantProps<typeof iconButton>>().toEqualTypeOf<{
+      size?: 'small' | 'large' | 'huge';
+      tone?: 'neutral' | 'danger';
+      round?: true;
+    }>();
+    expectTypeOf(iconButton()).toEqualTypeOf<SerializedStyles[]>();
+    expectTypeOf(iconButton.variants()).toEqualTypeOf<Array<'size' | 'tone' | 'round'>>();
+    expectTypeOf(iconButton.classNames.variants.size.huge).toBeString();
+    expectTypeOf(iconButton.classNames.variants.tone.danger).toBeString();
+
+    const fab = ev({
+      extend: iconButton,
+      base: {
+        position: 'fixed',
+      },
+      defaultVariants: {
+        round: true,
+        // @ts-expect-error - 'medium' is not a size value anywhere in the chain
+        size: 'medium',
+      },
+    });
+
+    expectTypeOf<VariantProps<typeof fab>>().toEqualTypeOf<VariantProps<typeof iconButton>>();
+
+    const link = ev({
+      extend: ev({
+        base: {
+          cursor: 'pointer',
+        },
+      }),
+      variants: {
+        underline: {
+          true: {
+            textDecoration: 'underline',
+          },
+          false: {
+            textDecoration: 'none',
+          },
+        },
+      },
+    });
+
+    expectTypeOf<VariantProps<typeof link>>().toEqualTypeOf<{
+      underline?: boolean;
+    }>();
+  });
+
+  it('extend keeps the slots of the parent', () => {
+    const card = ev({
+      slots: {
+        root: {
+          padding: '8px',
+        },
+        title: {
+          fontWeight: 'bold',
+        },
+      },
+      variants: {
+        size: {
+          small: {},
+          large: {
+            root: {
+              padding: '16px',
+            },
+          },
+        },
+      },
+    });
+    const mediaCard = ev({
+      extend: card,
+      slots: {
+        footer: {
+          display: 'flex',
+        },
+      },
+      variants: {
+        size: {
+          large: {
+            title: {
+              fontSize: '20px',
+            },
+            footer: {
+              gap: '8px',
+            },
+          },
+        },
+      },
+      compoundSlots: [
+        {
+          slots: ['root', 'footer'],
+          style: {
+            margin: '0',
+          },
+        },
+      ],
+    });
+
+    type Variants = {
+      size?: 'small' | 'large';
+    };
+    type SlotFunction = (slotVariants?: Variants) => SerializedStyles[];
+
+    expectTypeOf(mediaCard()).toEqualTypeOf<{
+      root: SlotFunction;
+      title: SlotFunction;
+      footer: SlotFunction;
+    }>();
+    expectTypeOf(mediaCard).not.toHaveProperty('classNames');
+
+    const toneCard = ev({
+      extend: card,
+      variants: {
+        tone: {
+          danger: {
+            title: {
+              color: 'red',
+            },
+            // @ts-expect-error - 'footer' is not a slot of the parent
+            footer: {
+              color: 'red',
+            },
+          },
+        },
+      },
+    });
+
+    expectTypeOf(toneCard.className()).toEqualTypeOf<{
+      root: string;
+      title: string;
+    }>();
+  });
+
+  it('extend rejects mixing a config with slots and one without', () => {
+    const button = ev({
+      base: {
+        padding: '8px',
+      },
+    });
+    const card = ev({
+      slots: {
+        root: {
+          padding: '8px',
+        },
+      },
+    });
+
+    expect(() =>
+      ev({
+        // @ts-expect-error - a config with slots can only extend one with slots
+        extend: button,
+        slots: {
+          root: {
+            padding: '8px',
+          },
+        },
+      }),
+    ).toThrow();
+
+    ev({
+      extend: card,
+      // @ts-expect-error - use `slots` for base styles when the parent declares slots
+      base: {
+        padding: '8px',
+      },
+    });
+
+    expect(() =>
+      ev({
+        // @ts-expect-error - extend takes an ev() result
+        extend: {},
+      }),
+    ).toThrow();
   });
 
   it('type-safe with empty variants', () => {

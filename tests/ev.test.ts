@@ -670,3 +670,272 @@ describe('ev - Slots', () => {
     expect('classNames' in card).toBe(false);
   });
 });
+
+describe('ev - extend', () => {
+  const button = ev({
+    base: {
+      padding: '8px',
+    },
+    variants: {
+      size: {
+        small: {
+          fontSize: '12px',
+        },
+        large: {
+          fontSize: '16px',
+        },
+      },
+      tone: {
+        neutral: {
+          color: 'gray',
+        },
+        danger: {
+          color: 'red',
+        },
+      },
+    },
+    compoundVariants: [
+      {
+        variants: {
+          size: 'large',
+          tone: 'danger',
+        },
+        style: {
+          fontWeight: 'bold',
+        },
+      },
+    ],
+    defaultVariants: {
+      size: 'small',
+      tone: 'neutral',
+    },
+  });
+  const iconButton = ev({
+    extend: button,
+    base: {
+      display: 'inline-flex',
+    },
+    variants: {
+      size: {
+        large: {
+          width: '48px',
+        },
+        huge: {
+          fontSize: '24px',
+        },
+      },
+      round: {
+        true: {
+          borderRadius: '50%',
+        },
+      },
+    },
+    compoundVariants: [
+      {
+        variants: {
+          size: 'large',
+          round: true,
+        },
+        style: {
+          height: '48px',
+        },
+      },
+    ],
+    defaultVariants: {
+      size: 'large',
+    },
+  });
+
+  it('layers parent styles before the child styles, with child defaults winning', () => {
+    expect(stylesOf(iconButton())).toEqual([
+      'padding:8px;',
+      'display:inline-flex;',
+      'font-size:16px;',
+      'width:48px;',
+      'color:gray;',
+    ]);
+  });
+
+  it('keeps inherited values and adds new values and axes after the inherited ones', () => {
+    expect(iconButton.variants()).toEqual(['size', 'tone', 'round']);
+    expect(
+      stylesOf(
+        iconButton({
+          size: 'small',
+        }),
+      ),
+    ).toEqual(['padding:8px;', 'display:inline-flex;', 'font-size:12px;', 'color:gray;']);
+    expect(
+      stylesOf(
+        iconButton({
+          size: 'huge',
+          round: true,
+        }),
+      ),
+    ).toEqual([
+      'padding:8px;',
+      'display:inline-flex;',
+      'font-size:24px;',
+      'color:gray;',
+      'border-radius:50%;',
+    ]);
+  });
+
+  it('applies parent compounds after the child variant styles, then child compounds', () => {
+    expect(
+      stylesOf(
+        iconButton({
+          tone: 'danger',
+          round: true,
+        }),
+      ),
+    ).toEqual([
+      'padding:8px;',
+      'display:inline-flex;',
+      'font-size:16px;',
+      'width:48px;',
+      'color:red;',
+      'border-radius:50%;',
+      'font-weight:bold;',
+      'height:48px;',
+    ]);
+  });
+
+  it('does not change the parent', () => {
+    expect(button.variants()).toEqual(['size', 'tone']);
+    expect(stylesOf(button())).toEqual(['padding:8px;', 'font-size:12px;', 'color:gray;']);
+  });
+
+  it('extends an extended function', () => {
+    const fab = ev({
+      extend: iconButton,
+      base: {
+        position: 'fixed',
+      },
+      defaultVariants: {
+        round: true,
+      },
+    });
+
+    expect(stylesOf(fab())).toEqual([
+      'padding:8px;',
+      'display:inline-flex;',
+      'position:fixed;',
+      'font-size:16px;',
+      'width:48px;',
+      'color:gray;',
+      'border-radius:50%;',
+      'height:48px;',
+    ]);
+  });
+
+  it('merges layers in className() and classNames', () => {
+    expect(cache.registered[iconButton.className()]).toContain('padding:8px;');
+    expect(cache.registered[iconButton.className()]).toContain('width:48px;');
+    expect(cache.registered[iconButton.classNames.base]).toContain('padding:8px;');
+    expect(cache.registered[iconButton.classNames.base]).toContain('display:inline-flex;');
+    expect(cache.registered[iconButton.classNames.variants.size.large]).toContain(
+      'font-size:16px;',
+    );
+    expect(cache.registered[iconButton.classNames.variants.size.large]).toContain('width:48px;');
+    expect(iconButton.classNames.variants.size.small).toBe(button.classNames.variants.size.small);
+    expect(Object.keys(iconButton.classNames.variants.size)).toEqual(['small', 'large', 'huge']);
+  });
+
+  describe('slots', () => {
+    const card = ev({
+      slots: {
+        root: {
+          padding: '8px',
+        },
+        title: {
+          fontWeight: 'bold',
+        },
+      },
+      variants: {
+        size: {
+          small: {},
+          large: {
+            root: {
+              padding: '16px',
+            },
+          },
+        },
+      },
+    });
+
+    it('adds slots and layers styles onto inherited ones', () => {
+      const mediaCard = ev({
+        extend: card,
+        slots: {
+          root: {
+            margin: '0',
+          },
+          footer: {
+            display: 'flex',
+          },
+        },
+        variants: {
+          size: {
+            large: {
+              footer: {
+                gap: '8px',
+              },
+            },
+          },
+        },
+      });
+      const { root, title, footer } = mediaCard({
+        size: 'large',
+      });
+
+      expect(Object.keys(mediaCard())).toEqual(['root', 'title', 'footer']);
+      expect(stylesOf(root())).toEqual(['padding:8px;', 'margin:0;', 'padding:16px;']);
+      expect(stylesOf(title())).toEqual(['font-weight:bold;']);
+      expect(stylesOf(footer())).toEqual(['display:flex;', 'gap:8px;']);
+    });
+
+    it('inherits the slots when the child declares none', () => {
+      const toneCard = ev({
+        extend: card,
+        variants: {
+          tone: {
+            danger: {
+              title: {
+                color: 'red',
+              },
+            },
+          },
+        },
+      });
+      const { title } = toneCard({
+        tone: 'danger',
+      });
+
+      expect(Object.keys(toneCard())).toEqual(['root', 'title']);
+      expect(stylesOf(title())).toEqual(['font-weight:bold;', 'color:red;']);
+    });
+  });
+
+  it('throws when extend is not an ev() result', () => {
+    expect(() =>
+      ev({
+        extend: (() => []) as unknown as typeof button,
+      }),
+    ).toThrow(/extend/);
+  });
+
+  it('throws when a config with slots extends one without', () => {
+    expect(() =>
+      ev({
+        // @ts-expect-error - a config with slots can only extend one with slots
+        extend: button,
+        slots: {
+          root: {
+            padding: '8px',
+          },
+        },
+      }),
+    ).toThrow(/slots/);
+  });
+});

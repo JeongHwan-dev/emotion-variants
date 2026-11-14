@@ -58,6 +58,7 @@ const button = ev({
 - `config.defaultVariants` (`Partial<Record<Axis, Value>>`): 호출하는 쪽에서 축을 생략했을 때 쓰이는 값이에요.
 - `config.slots` (`Record<string, CSSObject>`): 여러 요소로 이루어진 컴포넌트의 각 부분과 그 기본 스타일이에요. `base`를 대신하고, variant 값과 compound의 `style`을 모두 slot 이름으로 나눠 적게 돼요. [Slots](#slots)를 참고하세요.
 - `config.compoundSlots` (`Array<{ slots, variants?, style }>`): 스타일 하나를 여러 slot에 적용해요. 항상 적용하거나, `variants`가 일치할 때만 적용할 수 있어요. `slots`가 있어야 쓸 수 있어요.
+- `config.extend` (`EvFunction | EvSlotsFunction`): 바탕으로 삼을 다른 `ev()` 결과예요. 그 스타일, variants, 복합 variant, 기본값을 물려받아요. [extend](#extend)를 참고하세요.
 
 #### 반환 값
 
@@ -275,6 +276,75 @@ const { root, title } = card({
 (`EvSlotsFunction<N, T>`): 호출하면 `{ [slot]: (slotVariants?) => SerializedStyles[] }`를 반환해요.
 
 자세한 설명은 [Slots](../recipes/slots)에서 볼 수 있어요.
+
+### extend {#extend}
+
+`config.extend`에 다른 `ev()` 결과를 넘기면 그 위에 쌓을 수 있어요. 새 함수는 부모의 스타일, variants, 복합 variant, 기본값을 물려받아요. 부모는 바뀌지 않아요.
+
+```ts
+const button = ev({
+  base: {
+    padding: '10px 20px',
+  },
+  variants: {
+    size: {
+      small: {
+        fontSize: 12,
+      },
+      large: {
+        fontSize: 16,
+      },
+    },
+  },
+  defaultVariants: {
+    size: 'small',
+  },
+});
+
+const iconButton = ev({
+  extend: button,
+  base: {
+    display: 'inline-flex',
+  },
+  variants: {
+    size: {
+      large: {
+        width: 48,
+      },
+    },
+    round: {
+      true: {
+        borderRadius: '50%',
+      },
+    },
+  },
+});
+
+iconButton({
+  size: 'large',
+  round: true,
+});
+// padding, display, font-size, width, border-radius
+```
+
+단계마다 부모의 스타일이 자식의 스타일보다 먼저 와요. 전체 순서는 이래요.
+
+1. `base` (부모, 자식 순서)
+2. 일치하는 `variants` 항목 (축 순서대로, 값마다 부모 다음 자식)
+3. 일치하는 `compoundVariants` 항목 (부모, 자식 순서)
+
+물려받은 축은 제자리를 지키고 자식이 추가한 축이 그 뒤에 와요. `iconButton.variants()`도 이 순서예요. `defaultVariants`는 축마다 합쳐지고 자식의 값이 이겨요. 자식의 `compoundVariants`와 `defaultVariants`에는 물려받은 축과 값을 쓸 수 있어요.
+
+복합 variant는 모두 variant 스타일보다 뒤에 와요. 그래서 자식이 같은 variant 값에 스타일을 선언해도 부모의 복합 variant가 여전히 이겨요.
+
+[slots](#slots)를 쓸 때는 부모와 자식이 모두 slot 함수여야 해요. 자식의 `slots`는 부모의 slot에 더해지고, 자식에 `slots`가 없으면 부모의 slot을 그대로 써요. `compoundSlots`도 `compoundVariants`와 함께 물려받아요.
+
+`extend`는 두 경우에 `ev()`가 실행될 때 에러를 던져요.
+
+- 값이 `ev()` 결과가 아닐 때예요. `ev()`에서 나온 값이 맞다면 `emotion-variants`가 두 벌 설치됐을 가능성이 높아요.
+- `slots`가 있는 설정이 `slots`가 없는 설정을 extend할 때예요. 이 경우는 타입 에러도 나요. 부모에 `slots`가 있는데 자식이 `config.base`를 쓰는 것도 타입 에러예요.
+
+자세한 설명은 [Extend](../recipes/extend)에서 볼 수 있어요.
 
 ## 사용해보기
 
