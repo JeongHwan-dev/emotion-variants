@@ -1,5 +1,42 @@
 # emotion-variants
 
+## 2.1.0
+
+### Minor Changes
+
+- [#53](https://github.com/JeongHwan-dev/emotion-variants/pull/53) [`2e7f5b4`](https://github.com/JeongHwan-dev/emotion-variants/commit/2e7f5b41e637130a84c5c83e7dbc4714b734e6bb) Thanks [@JeongHwan-dev](https://github.com/JeongHwan-dev)! - feat(core): add `extend` to build one `ev()` result on another
+  
+  - `ev({ extend: button, ... })` inherits the parent's `base`, `variants`, `compoundVariants`, and `defaultVariants`; the parent is not changed
+  - the parent's styles come before the child's at every step: `base`, then each matching variant value, then compound variants
+  - a child can add values to an inherited axis, add styles to an inherited value, and declare new axes; `defaultVariants` are merged per axis with the child's value winning
+  - with `slots`, a child can add slots and style inherited ones; a config with `slots` can only extend one with `slots`
+  - `extend` throws at definition time when the value is not an `ev()` result, or when a config with `slots` extends one without
+  - add a third type parameter to `EvConfig<T, N, E>` for the type of the `extend` value (defaults to `undefined`)
+
+- [#54](https://github.com/JeongHwan-dev/emotion-variants/pull/54) [`36c2199`](https://github.com/JeongHwan-dev/emotion-variants/commit/36c2199ae2d18b8331288fd39b6cbf649e84ebcb) Thanks [@JeongHwan-dev](https://github.com/JeongHwan-dev)! - feat(core): add `createEv` for responsive variant values
+  
+  - `createEv({ breakpoints })` returns `{ ev }`; breakpoints are media queries keyed by a name, declared smallest first
+  - every variant prop of that `ev` also accepts `{ initial, [breakpoint]: value }`; `initial` falls back to the default variant, and each breakpoint's styles are wrapped in its media query, in declared order
+  - an axis that received a responsive value matches no compound variant in that call
+  - `className()` and slot functions accept the same values; `defaultVariants` does not
+  - the exported `ev` is `createEv().ev` and behaves as before
+  - add the `Ev<B>` type, and a trailing breakpoint-name parameter `B` (defaults to `never`) to `EvVariants<T, B>`, `EvFunction<T, B>`, and `EvSlotsFunction<N, T, B>`
+
+- [#51](https://github.com/JeongHwan-dev/emotion-variants/pull/51) [`768ad08`](https://github.com/JeongHwan-dev/emotion-variants/commit/768ad08b66773b89461068353903bc67905d537b) Thanks [@JeongHwan-dev](https://github.com/JeongHwan-dev)! - feat(core): add `slots` and `compoundSlots` for multi-part components
+  
+  - `ev({ slots })` styles every part of a component from one config. Variant values and compound `style` are keyed by slot name, and the call returns one style function per slot: `const { root, title } = card({ size })`, then `css={root()}`
+  - a slot function accepts the same variants as the call, resolved per axis as slot props, then call props, then `defaultVariants`; compound entries are matched per slot against the resolved values
+  - `compoundSlots` applies one style to several slots, always or only when `variants` match
+  - with `slots`, `className()` returns one class name per slot and there is no `classNames`; `base` cannot be combined with `slots`
+  - export the `EvSlotsFunction` type, and add a second type parameter to `EvConfig<T, N>` for the slot names (defaults to `never`)
+  - `ReturnType<ReturnType<typeof ev>>` no longer resolves to `SerializedStyles[]`, because `ev` now returns either form; use `SerializedStyles[]` from `@emotion/react` directly
+
+- [#50](https://github.com/JeongHwan-dev/emotion-variants/pull/50) [`83838ab`](https://github.com/JeongHwan-dev/emotion-variants/commit/83838abe785eb3525ee3d26d678fe236eba6a73d) Thanks [@JeongHwan-dev](https://github.com/JeongHwan-dev)! - feat(core): add the `VariantProps` type and array conditions in `compoundVariants`
+  
+  - export `VariantProps<T>`, which extracts the variant props from an `ev()` result: `type ButtonVariants = VariantProps<typeof button>`
+  - a `compoundVariants` condition can now be an array of values, which matches when the variant has any of them: `{ variants: { size: ['small', 'medium'] }, style }`
+  - fix a variant value that only exists on `Object.prototype`, such as `'constructor'`, pushing a non-style value into the result; unknown values are now ignored
+
 ## 2.0.0
 
 ### Major Changes
