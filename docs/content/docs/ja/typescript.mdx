@@ -1,0 +1,111 @@
+---
+title: TypeScript
+description: 'emotion-variants は、設定から variant の型をあらかじめ推論します。'
+---
+
+`emotion-variants` は、設定から variant の型をあらかじめ推論します。このページでは、`ev()` の結果から **React コンポーネントの props を導出**し、コンポーネントの props 型とスタイルを同期させる方法を紹介します。
+
+## `VariantProps` 型
+
+`emotion-variants` は `VariantProps` を export しています。任意の `ev()` の結果の型を渡すと、その variants が得られます。
+
+```ts
+import { ev, type VariantProps } from 'emotion-variants';
+
+const button = ev({
+  variants: {
+    size: {
+      small: {},
+      medium: {},
+      large: {},
+    },
+    color: {
+      primary: {},
+      danger: {},
+    },
+  },
+});
+
+type ButtonVariants = VariantProps<typeof button>;
+// { size?: 'small' | 'medium' | 'large'; color?: 'primary' | 'danger' }
+```
+
+`variants.size` に新しい値を追加すると、`ButtonVariants['size']` も自動で更新されます。
+
+## HTML 要素の props と組み合わせる
+
+ボタンのようなポリモーフィックなコンポーネントでは、`ComponentPropsWithoutRef` と交差型にします。
+
+```tsx
+import type { ComponentPropsWithoutRef } from 'react';
+
+export type ButtonProps = ComponentPropsWithoutRef<'button'> & ButtonVariants;
+
+export function Button({ size, color, ...rest }: ButtonProps) {
+  return <button css={button({ size, color })} {...rest} />;
+}
+```
+
+## 妥当なデフォルト値とともに
+
+デフォルト値は `defaultVariants` で一度だけ宣言し、props はそのまま渡しましょう。省略された prop は `undefined` として届き、それでもデフォルト値に解決されます。prop の境界でもう一組デフォルト値を書いても、両者がずれる原因になるだけです。
+
+```tsx
+const button = ev({
+  variants: {
+    /* ... */
+  },
+  defaultVariants: {
+    size: 'medium',
+    color: 'primary',
+  },
+});
+
+export function Button({ size, color, ...rest }: ButtonProps) {
+  return <button css={button({ size, color })} {...rest} />;
+}
+```
+
+解決のルールについては [Default Variants](./default-variants.mdx) を参照してください。
+
+## ref を転送する
+
+```tsx
+import { forwardRef, type ComponentPropsWithoutRef } from 'react';
+
+export type ButtonProps = ComponentPropsWithoutRef<'button'> & ButtonVariants;
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ size, color, ...rest }, ref) => (
+    <button ref={ref} css={button({ size, color })} {...rest} />
+  ),
+);
+```
+
+## 一部だけを取り出す
+
+一部の軸だけを props として公開したい場合（たとえば公開 API から `density` を隠したい場合）は、`Pick` を使います。
+
+```ts
+type PublicButtonProps =
+  ComponentPropsWithoutRef<'button'> &
+  Pick<ButtonVariants, 'size' | 'color'>;
+```
+
+## デザインシステムから再 export する
+
+内部で `emotion-variants` を使うデザインシステムのパッケージを管理している場合は、props 型を export しておきましょう。利用者が内部のスタイルファイルを import する必要がなくなります。
+
+```ts
+// design-system/src/button/index.ts
+export { Button } from './button';
+export type { ButtonProps } from './button';
+```
+
+利用者はパッケージから `ButtonProps` を import するだけで、内部の `ev()` の設定に触れる必要はありません。
+
+## 関連項目
+
+
+- [Types](./types.mdx)
+- [Default Variants](./default-variants.mdx)

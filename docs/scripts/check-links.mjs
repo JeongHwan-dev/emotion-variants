@@ -1,11 +1,11 @@
 /**
- * Checks every internal link and `#fragment` in the built site.
- * VitePress fails the build on dead paths, but not on dead anchors.
+ * Checks every internal link and `#fragment` in the built site, and every redirect target in
+ * `404.html`. Next.js fails the build on neither.
  */
 import { glob, readFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 
-const DIST = resolve(import.meta.dirname, '../.vitepress/dist');
+const DIST = resolve(import.meta.dirname, '../out');
 
 const pages = [];
 
@@ -47,7 +47,8 @@ for (const page of pages) {
       const found = candidates.find((c) => ids.has(c));
 
       if (!found) {
-        if (!/\.[a-z0-9]+$/i.test(abs)) {
+        // Other extensions are assets; `.mdx` is a page link Fumadocs failed to resolve.
+        if (!/\.[a-z0-9]+$/i.test(abs) || abs.endsWith('.mdx')) {
           errors.push(`${page}: dead link ${href}`);
         }
         continue;
@@ -67,6 +68,15 @@ for (const page of pages) {
         errors.push(`${page}: dead anchor ${href} (no id="${anchor}" in ${targetPage})`);
       }
     }
+  }
+}
+
+// `404.html` redirects pre-Fumadocs URLs to `/docs/<slug>/`; each slug must still be a page.
+const redirects = await readFile(resolve(import.meta.dirname, '../404.html'), 'utf8');
+
+for (const [, slug] of redirects.matchAll(/^\s*'\/[\w/-]+': '([\w-]+)',$/gm)) {
+  if (!ids.has(`docs/${slug}/index.html`)) {
+    errors.push(`404.html: redirect to missing page /docs/${slug}/`);
   }
 }
 

@@ -17,6 +17,11 @@
       "quoteStyle": "single"
     }
   },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
   "linter": {
     "rules": {
       "complexity": {
@@ -31,17 +36,6 @@
         "rules": {
           "suspicious": {
             "noExplicitAny": "off"
-          }
-        }
-      }
-    },
-    {
-      "includes": ["**/*.vue"],
-      "linter": {
-        "rules": {
-          "correctness": {
-            "noUnusedImports": "off",
-            "noUnusedVariables": "off"
           }
         }
       }

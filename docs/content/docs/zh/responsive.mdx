@@ -1,0 +1,223 @@
+---
+title: Responsive
+description: 'variant 经常需要在不同宽度下取不同的值：手机上用小按钮，桌面上用大按钮。'
+---
+
+variant 经常需要在不同宽度下取不同的值：手机上用小按钮，桌面上用大按钮。`createEv` 让你只声明一次 breakpoint，之后每个 variant prop 都能为每个 breakpoint 接收一个值。
+
+## 声明 breakpoint
+
+调用一次 `createEv`，并导出它返回的 `ev`。之后从这个文件导入 `ev`，而不是从 `emotion-variants` 导入。
+
+```ts
+// ev.ts
+import { createEv } from 'emotion-variants';
+
+export const { ev } = createEv({
+  breakpoints: {
+    md: '@media (min-width: 768px)',
+    lg: '@media (min-width: 1024px)',
+  },
+});
+```
+
+每个键是你自己取的名字，每个值是它代表的媒体查询。请按宽度从小到大列出。
+
+配置保持不变，组件的样式无需任何修改。
+
+```ts
+import { ev } from './ev';
+
+const button = ev({
+  base: {
+    border: '1px solid transparent',
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontWeight: 600,
+    transition: 'all 0.2s ease',
+  },
+  variants: {
+    variant: {
+      filled: {
+        background: 'var(--button-color)',
+        color: 'white',
+      },
+      outlined: {
+        background: 'transparent',
+        borderColor: 'var(--button-color)',
+        color: 'var(--button-color)',
+      },
+      text: {
+        background: 'transparent',
+        color: 'var(--button-color)',
+      },
+    },
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        '--button-color': '#d36ac2',
+      },
+      secondary: {
+        '--button-color': '#475569',
+      },
+    },
+  },
+  defaultVariants: {
+    variant: 'filled',
+    size: 'medium',
+    color: 'primary',
+  },
+});
+```
+
+## 为每个 breakpoint 传值
+
+variant prop 既可以像以前一样接收单个值，也可以接收一个以 `initial` 和 breakpoint 名为键的对象。
+
+<Preview name="responsive">
+
+```tsx
+<button
+  css={button({
+    size: {
+      initial: 'small',
+      md: 'large',
+    },
+  })}
+>
+  Small below 768px, large above
+</button>
+```
+
+</Preview>
+
+`initial` 在所有宽度下生效，不包在任何媒体查询中。`md` 会把 `large` 的样式放进 `md` 查询里，因此从 768px 起由它接管。返回结果仍然是传给 `css` prop 的样式数组。
+
+- 省略的 breakpoint 不添加任何样式，前一个 breakpoint 的值会延续下去。
+- 省略 `initial` 时，由该维度的默认 variant 代替。如果没有默认值，那么在你传入的第一个 breakpoint 之下，该维度没有任何样式。
+
+```ts
+button({
+  size: {
+    lg: 'large',
+  },
+}); // 1024px 以下为 medium（默认值），从 1024px 起为 large
+```
+
+## 在组件中使用
+
+[`VariantProps`](./typescript.mdx) 已包含响应式写法，直接透传 prop 即可。
+
+```tsx
+import type { ComponentPropsWithoutRef } from 'react';
+import type { VariantProps } from 'emotion-variants';
+
+type ButtonProps = ComponentPropsWithoutRef<'button'> & VariantProps<typeof button>;
+
+function Button({ variant, size, color, ...rest }: ButtonProps) {
+  return <button css={button({ variant, size, color })} {...rest} />;
+}
+```
+
+```tsx
+<Button
+  size={{
+    initial: 'small',
+    md: 'large',
+  }}
+>
+  Save
+</Button>
+```
+
+## 顺序
+
+无论你传入键的顺序如何，breakpoint 样式都按 breakpoint 声明的顺序添加。这也是为什么要从小到大声明：两个查询同时匹配时，后者生效。
+
+<Callout type="warn">
+
+在样式表中，媒体查询内的规则排在普通样式规则之后。因此在其 breakpoint 范围内，breakpoint 样式会胜过同一属性的所有普通样式，包括来自后声明维度的样式和来自 compound variant 的样式。
+
+当两个维度都在媒体查询中设置同一属性时，在两个查询都匹配的范围内，后声明的维度生效。
+
+</Callout>
+
+## Compound variants
+
+compound variant 要求每个维度只有一个值，而响应式值包含多个值。因此，在一次调用中收到响应式值的维度不会匹配任何 compound variant。不涉及该维度的 compound variants 仍然会生效。
+
+```ts
+button({
+  size: 'large',
+  color: 'primary',
+}); // large + primary 的 compound 生效
+
+button({
+  size: {
+    initial: 'large',
+  },
+  color: 'primary',
+}); // 它不生效，但只针对 primary 的 compound 仍然生效
+```
+
+即使对象中只有 `initial` 也是如此。只有一个值时，请直接传普通值。
+
+## 与 slots 一起使用
+
+使用 [slots](./slots.mdx) 时，整体调用和每个 slot 函数都接收响应式值。slot 的 prop 会整体替换调用时该维度的值，两者不会按 breakpoint 合并。
+
+```ts
+const { root, title } = card({
+  size: {
+    initial: 'small',
+    md: 'large',
+  },
+});
+
+root(); // small，从 md 起为 large
+title({
+  size: 'small',
+}); // 所有宽度下都是 small
+```
+
+## class name
+
+`className()` 接收响应式值，返回的 class 中包含媒体查询规则。
+
+```ts
+button.className({
+  size: {
+    initial: 'small',
+    md: 'large',
+  },
+});
+```
+
+`classNames` 为每个 variant 值保存一个 class，不包含 breakpoint 相关的条目。
+
+## 规则
+
+- `defaultVariants` 只接收单个值。响应式默认值会报类型错误。
+- `initial` 是保留字，不能用作 breakpoint 名。这会报类型错误。
+- 未声明为 breakpoint 的键会报类型错误，运行时会被忽略。
+- breakpoint 名不能看起来像数字，例如 `'768'`。JavaScript 会把这类键移到对象最前面，从而打乱你声明的顺序。
+- 从 `emotion-variants` 导出的 `ev` 没有 breakpoint，只接收普通值。
+- 由一个 `ev` 创建的函数可以被另一个 `ev` [扩展](./extending.mdx)。生效的 breakpoint 取决于创建你所调用函数的那个 `ev`。
+
+## 另请参阅
+
+- [TypeScript](./typescript.mdx)
+- [API 参考 → createEv](./create-ev.mdx)

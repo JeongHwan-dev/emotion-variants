@@ -1,0 +1,371 @@
+---
+title: ev
+description: '用一个配置对象创建类型安全的样式函数。'
+---
+
+用一个配置对象创建类型安全的样式函数。
+
+```typescript
+const button = ev(config);
+```
+
+## 用法
+
+### `ev(config)` [#ev-config]
+
+当组件有多个视觉维度（尺寸、颜色、填充、状态），并且你希望把它们都声明在一处时，使用 `ev`。它返回一个函数，传入 variant 值调用后，结果可以直接交给 Emotion 的 `css` prop。
+
+```typescript
+import { ev } from 'emotion-variants';
+
+const button = ev({
+  base: {
+    padding: '10px 20px',
+    borderRadius: 8,
+    cursor: 'pointer',
+  },
+  variants: {
+    size: {
+      small: {
+        fontSize: 12,
+      },
+      large: {
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        background: 'blue',
+        color: 'white',
+      },
+      secondary: {
+        background: 'gray',
+        color: 'white',
+      },
+    },
+  },
+  defaultVariants: {
+    size: 'small',
+    color: 'primary',
+  },
+});
+```
+
+配置对象是必需的。如果暂时没有要声明的内容，传入 `ev({})` 即可。
+
+#### 参数
+
+- `config.base` (`CSSObject`)：每次调用都会应用的样式。在 `ev()` 运行时序列化一次，而不是每次调用都序列化。
+- `config.variants` (`Record<string, Record<string, CSSObject>>`)：variant 维度。每个维度把值映射到对应的样式。由于值是对象的键，Boolean 和数字值要写成键，如 `true`、`false`、`1`，它们的类型会还原为 `boolean` 和数字字面量。
+- `config.compoundVariants` (`Array<{ variants, style }>`)：只在列出的所有 variant 值都匹配时才应用的样式。条件也可以是一个值数组，匹配其中任意一个即可。注意键名是单数形式的 `style`。
+- `config.defaultVariants` (`Partial<Record<Axis, Value>>`)：调用方省略某个维度时使用的值。
+- `config.slots` (`Record<string, CSSObject>`)：多元素组件的各个部分及其 base 样式。它替代 `base`，并让每个 variant 值和 compound 的 `style` 都以 slot 名为键。参阅 [Slots](#slots)。
+- `config.compoundSlots` (`Array<{ slots, variants?, style }>`)：应用到多个 slot 的同一样式，可以始终生效，也可以只在 `variants` 匹配时生效。必须配合 `slots` 使用。
+- `config.extend` (`EvFunction | EvSlotsFunction`)：作为基础的另一个 `ev()` 结果。它的样式、variants、compound variants 和 default variants 都会被继承。参阅 [extend](#extend)。
+
+#### 返回值
+
+(`EvFunction<T>`)：一个可调用对象。调用它可以得到样式，也可以从中读取 [`className()`](#classname)、[`classNames`](#classnames) 和 [`variants()`](#variants)。如果提供了 `config.slots`，返回的则是 `EvSlotsFunction<N, T>`，详见 [Slots](#slots)。
+
+### `button(variants)` [#call]
+
+调用 variant 函数，得到某个组合的样式。把结果传给 `css` prop 或 Emotion 的 `css()`。
+
+```tsx
+import type { ComponentPropsWithoutRef } from 'react';
+import type { VariantProps } from 'emotion-variants';
+
+type ButtonProps = ComponentPropsWithoutRef<'button'> & VariantProps<typeof button>;
+
+function Button({ size, color, ...rest }: ButtonProps) {
+  return <button css={button({ size, color })} {...rest} />;
+}
+```
+
+```tsx
+<Button>Uses defaultVariants</Button>
+<Button size="large" color="primary">Large primary</Button>
+```
+
+值按键用 `??` 解析，所以省略或为 `undefined` 的值会回退到 `defaultVariants`。正因如此，上面的 `Button` 可以不加判断地直接透传可选 props。`false` 和 `0` 是真正的值，会被原样使用。
+
+运行时 `null` 也会回退，但 `EvVariants` 不包含它：在 `strictNullChecks` 下，`button({ size: null })` 会报类型错误。请在调用前把 `null` 转换为 `undefined`。
+
+```typescript
+button({ size: undefined }); // 与 button() 相同
+```
+
+既没有 prop 也没有默认值的维度会被完全跳过。
+
+#### 参数
+
+- `variants` (`EvVariants<T>`，可选)：variant 值。每个键都是可选的。使用 [`createEv`](./create-ev.mdx) 创建的 `ev` 时，值也可以是[响应式的](./create-ev.mdx#responsive-values)。
+
+#### 返回值
+
+(`SerializedStyles[]`)：始终是数组，即使只匹配一个样式。样式的顺序是：`base`，然后是按维度声明顺序排列的匹配 `variants` 项，最后是按数组顺序排列的匹配 `compoundVariants`。发生 CSS 冲突时后者生效，传入键的顺序没有影响。
+
+### `button.className(variants)` [#classname]
+
+当你需要普通的 class 字符串而不是 `css` prop 时，使用 `className()`，例如非 React 环境、只接受 `className` 的第三方组件，或测试断言。它会把 `base`、匹配的 variants **以及**匹配的 compound variants 合并成一个 class。
+
+```tsx
+<button className={button.className({ size: 'large', color: 'primary' })}>Click me</button>;
+
+// defaultVariants 的应用方式与 button() 完全相同。
+button.className();
+```
+
+#### 参数
+
+- `variants` (`EvVariants<T>`，可选)：variant 值。每个键都是可选的。
+
+#### 返回值
+
+(`string`)：覆盖整个组合的一个 class name。
+
+### `button.classNames` [#classnames]
+
+各个 class name 的查找表：`base` 一个，每个 variant 值各一个。适合与自行构建 class 列表的代码组合使用，或用来查看生成了什么。
+
+```typescript
+const button = ev({
+  base: {
+    padding: 10,
+  },
+  variants: {
+    size: {
+      small: {
+        fontSize: 12,
+      },
+      large: {
+        fontSize: 16,
+      },
+    },
+    outlined: {
+      true: {
+        border: '1px solid',
+      },
+    },
+    level: {
+      1: {
+        zIndex: 1,
+      },
+    },
+  },
+});
+
+button.classNames.base; // 'css-abc123'
+button.classNames.variants.size.small; // 'css-def456'
+```
+
+键使用值的字符串形式，所以 Boolean 和数字维度要以 `true` 和 `1` 读取：
+
+```typescript
+button.classNames.variants.outlined.true;
+button.classNames.variants.level[1];
+```
+
+在你第一次访问 `classNames` 之前，不会向文档注入任何样式，并且结果会被缓存：只使用 `css` prop 的代码不会为此付出任何开销。
+
+```typescript
+button.classNames === button.classNames; // true
+```
+
+<Callout type="warn">
+
+`classNames` 只覆盖 `base` 和单个 variant 值。**这里不包含 compound variants**，因为组合没有对应的键。需要 compound 样式时，请使用 [`className()`](#classname)。
+
+拼接这些 class 与调用函数并不等价。每个 class 都是特异性相同的独立规则，所以当 `base` 和某个 variant 设置同一属性时，生效的是 Emotion 先插入的那个，而不是你列出的顺序。只要 variant 需要胜过 `base`，就请使用 [`className()`](#classname)。
+
+配置中没有 `base` 时，`base` 为空字符串。
+
+</Callout>
+
+#### 返回值
+
+(`EvClassNames<T>`)：`{ base, variants }`，其中 `variants[axis][value]` 是一个 class name。
+
+### `button.variants()` [#variants]
+
+按声明顺序返回维度名称。用来生成 Storybook 的 argTypes 或 props 表格很方便。
+
+```typescript
+const button = ev({
+  variants: {
+    size: {
+      small: {},
+      large: {},
+    },
+    color: {
+      primary: {},
+      secondary: {},
+    },
+  },
+});
+
+button.variants(); // ['size', 'color']
+```
+
+没有 `variants` 的配置返回 `[]`。
+
+#### 返回值
+
+(`Array<VariantKeys<T>>`)：维度名称。每次调用都返回同一个数组实例，请把它当作只读。
+
+### Slots [#slots]
+
+当组件由多个元素组成时，用 `config.slots` 代替 `config.base`。此时 variant 值和 compound 的 `style` 都以 slot 名为键，调用会为每个 slot 返回一个样式函数。
+
+```tsx
+const card = ev({
+  slots: {
+    root: {
+      padding: 16,
+    },
+    title: {
+      fontWeight: 600,
+    },
+  },
+  variants: {
+    size: {
+      small: {},
+      large: {
+        root: {
+          padding: 24,
+        },
+        title: {
+          fontSize: 20,
+        },
+      },
+    },
+  },
+  compoundSlots: [
+    {
+      slots: ['root', 'title'],
+      style: {
+        margin: 0,
+      },
+    },
+  ],
+  defaultVariants: {
+    size: 'small',
+  },
+});
+
+const { root, title } = card({
+  size: 'large',
+});
+
+<section css={root()}>
+  <h3 css={title()}>Title</h3>
+</section>;
+```
+
+每个 slot 函数接收与整体调用相同的 variants。每个维度的值依次从 slot 的 props、调用时的 props、`defaultVariants` 中解析，compound 条目则按每个 slot 解析出的值分别匹配。
+
+一个 slot 的样式顺序是：它在 `slots` 中的条目、匹配的 `variants` 项、匹配的 `compoundVariants`，最后是匹配的 `compoundSlots`。
+
+返回对象的其余部分与普通形式有两处不同：
+
+- `card.className(variants)` 为每个 slot 返回一个 class name，形如 `{ root: string, title: string }`。
+- 没有 `card.classNames`。
+
+`card.variants()` 保持不变。
+
+`config.base` 不能与 `config.slots` 同时使用，并且凡是引用 slot 的地方都只接受已声明的 slot 名。两者都会报类型错误。
+
+#### 返回值
+
+(`EvSlotsFunction<N, T>`)：调用后返回 `{ [slot]: (slotVariants?) => SerializedStyles[] }`。
+
+完整讲解请参阅 [Slots](./slots.mdx)。
+
+### extend [#extend]
+
+把另一个 `ev()` 结果传给 `config.extend`，即可在其基础上构建。新函数会继承父函数的样式、variants、compound variants 和 default variants，父函数本身不会改变。
+
+```ts
+const button = ev({
+  base: {
+    padding: '10px 20px',
+  },
+  variants: {
+    size: {
+      small: {
+        fontSize: 12,
+      },
+      large: {
+        fontSize: 16,
+      },
+    },
+  },
+  defaultVariants: {
+    size: 'small',
+  },
+});
+
+const iconButton = ev({
+  extend: button,
+  base: {
+    display: 'inline-flex',
+  },
+  variants: {
+    size: {
+      large: {
+        width: 48,
+      },
+    },
+    round: {
+      true: {
+        borderRadius: '50%',
+      },
+    },
+  },
+});
+
+iconButton({
+  size: 'large',
+  round: true,
+});
+// padding, display, font-size, width, border-radius
+```
+
+在每一步中，父函数的样式都排在子函数之前，所以完整顺序是：
+
+1. `base`：先父后子
+2. 匹配的 `variants` 项：逐个维度处理，每个值先父后子
+3. 匹配的 `compoundVariants` 项：先父后子
+
+继承的维度保持原有位置，子函数的新维度排在后面，这也是 `iconButton.variants()` 返回的顺序。`defaultVariants` 按维度合并，子函数的值优先。子函数的 `compoundVariants` 和 `defaultVariants` 可以引用继承的维度和值。
+
+所有 compound variant 都排在所有 variant 样式之后，所以父函数的 compound variant 仍会胜过子函数为同一 variant 值声明的样式。
+
+使用 [slots](#slots) 时，父函数和子函数都必须是 slot 函数。子函数的 `slots` 会追加到父函数的 slots 上，没有 `slots` 的子函数则沿用父函数的。`compoundSlots` 会与 `compoundVariants` 一起被继承。
+
+以下两种情况下，`ev()` 运行时 `extend` 会抛出错误：
+
+- 传入的值不是 `ev()` 结果。如果它确实来自 `ev()`，很可能是安装了两份 `emotion-variants`。
+- 带 `slots` 的配置扩展了不带 `slots` 的函数。这同样会报类型错误；父函数有 `slots` 时子函数使用 `config.base` 也会报类型错误。
+
+完整讲解请参阅 [Extend](./extending.mdx)。
+
+## 试一试
+
+修改 variant 值，看看按钮如何变化。
+
+<EvPlayground />
+
+## 类型
+
+`EvConfig`、`EvFunction`、`EvVariants` 以及其他导出的类型定义，请参阅[类型](./types.mdx)。
+
+<Callout type="warn" title="与 @emotion/css 配合使用">
+
+`className()` 和 `classNames` 通过 [`@emotion/css`](https://emotion.sh/docs/@emotion/css) 实现，而它拥有独立于 `@emotion/react` 的全局 cache。这意味着它会忽略 `CacheProvider` 的 `key`、`nonce` 等选项，并且在服务端渲染时需要 [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach) 来提取这些样式。
+
+避免在同一个元素上同时使用 `css={button(...)}` 和 `className={button.className(...)}`。两个 cache 不共享插入顺序，覆盖结果可能不符合预期。
+
+对服务端渲染来说，这意味着要提取两个 cache，而不是一个。如果只收集 `@emotion/react` 的 cache，输出的 HTML 会缺少 `className()` 和 `classNames` 的规则，首次绘制在 hydration 之前都没有样式。
+
+</Callout>

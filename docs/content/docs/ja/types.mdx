@@ -1,0 +1,218 @@
+---
+title: 型
+description: 'emotion-variants が export するすべての型と、それぞれの使いどころをまとめました。'
+---
+
+`emotion-variants` が export するすべての型と、それぞれの使いどころをまとめました。
+
+```typescript
+import type {
+  CompoundVariant,
+  Ev,
+  EvClassNames,
+  EvConfig,
+  EvFunction,
+  EvSlotsFunction,
+  EvVariants,
+  VariantConfig,
+  VariantKeys,
+  VariantProps,
+  VariantValue,
+  VariantValueFor,
+} from 'emotion-variants';
+```
+
+ほとんどの場合、これらの型はどれも必要ありません。variant の型は設定オブジェクトから推論されるので、ジェネリクスを明示するより、手元の関数から props を読み取るほうが簡潔です。
+
+```typescript
+type ButtonVariants = VariantProps<typeof button>;
+```
+
+このパターンの詳細は [TypeScript](./typescript.mdx) を参照してください。
+
+## 使い方
+
+### `EvConfig<T, N, E>`
+
+[`ev()`](./ev.mdx) に渡すオブジェクトの形です。設定を独立した変数やファクトリーに切り出すときに便利です。
+
+```typescript
+import type { EvConfig } from 'emotion-variants';
+
+const config: EvConfig<{ size: { small: { fontSize: number } } }> = {
+  variants: {
+    size: {
+      small: {
+        fontSize: 12,
+      },
+    },
+  },
+};
+```
+
+すべてのフィールドは省略可能です。`base`、`variants`、`compoundVariants`、`defaultVariants`、[`extend`](./ev.mdx#extend)、そして [slots](./ev.mdx#slots) を使う場合は `slots` と `compoundSlots` があります。
+
+`N` は slot 名の union です。デフォルトは `never` で、これは `slots` を使わない通常の形です。
+
+`E` は `extend` として渡す `ev()` の結果の型です。デフォルトは `undefined` で、これは何も extend しない設定です。
+
+### `EvFunction<T, B>`
+
+[`ev()`](./ev.mdx) が返す値の型です。呼び出し可能で、`variants()`、`className()`、`classNames` を持ちます。
+
+```typescript
+interface EvFunction<T, B extends string = never> {
+  (variants?: EvVariants<T, B>): SerializedStyles[];
+  variants: () => Array<VariantKeys<T>>;
+  className: (variants?: EvVariants<T, B>) => string;
+  classNames: EvClassNames<T>;
+}
+```
+
+`B` は [`createEv`](./create-ev.mdx) で宣言した breakpoint 名の union です。デフォルトは `never` で、これは通常の値しか受け付けない関数です。`EvSlotsFunction` と `EvVariants` も同じパラメーターを受け取ります。
+
+### `EvSlotsFunction<N, T, B>`
+
+設定で `slots` を宣言したときに [`ev()`](./ev.mdx#slots) が返す型です。`N` は slot 名の union です。
+
+```typescript
+interface EvSlotsFunction<N extends string, T, B extends string = never> {
+  (variants?: EvVariants<T, B>): { [K in N]: (slotVariants?: EvVariants<T, B>) => SerializedStyles[] };
+  variants: () => Array<VariantKeys<T>>;
+  className: (variants?: EvVariants<T, B>) => { [K in N]: string };
+}
+```
+
+### `Ev<B>`
+
+`ev` 関数そのものの型です。[`createEv`](./create-ev.mdx) は、結果が breakpoint `B` のレスポンシブ値を受け付ける `Ev<B>` を返します。パッケージから export される `ev` は `Ev<never>` です。
+
+```typescript
+import { createEv } from 'emotion-variants';
+import type { Ev } from 'emotion-variants';
+
+const { ev }: { ev: Ev<'md' | 'lg'> } = createEv({
+  breakpoints: {
+    md: '@media (min-width: 768px)',
+    lg: '@media (min-width: 1024px)',
+  },
+});
+```
+
+### `EvVariants<T, B>`
+
+variant 関数の引数の型です。すべての軸が省略可能で、宣言された値に絞り込まれます。コンポーネントの props を手書きするときに使う型です。
+
+```typescript
+import type { EvVariants } from 'emotion-variants';
+
+type Variants = EvVariants<{
+  size: { small: {}; large: {} };
+}>;
+// { size?: 'small' | 'large' }
+
+// breakpoint 名を渡すと、各値を breakpoint ごとに指定することもできる。
+type ResponsiveVariants = EvVariants<
+  {
+    size: { small: {}; large: {} };
+  },
+  'md' | 'lg'
+>;
+// { size?: 'small' | 'large' | { initial?: 'small' | 'large'; md?: 'small' | 'large'; lg?: 'small' | 'large' } }
+```
+
+### `VariantProps<T>`
+
+`ev()` の結果が受け付ける variant props です。設定ではなく、関数の型を渡します。
+
+```typescript
+import type { VariantProps } from 'emotion-variants';
+
+type ButtonVariants = VariantProps<typeof button>;
+// { size?: 'small' | 'large'; color?: 'primary' | 'secondary' }
+```
+
+`T` や `B` を明示しなくても、`EvVariants<T, B>` と同じ型に解決されます。
+
+### `EvClassNames<T>`
+
+[`classNames`](./ev.mdx#classnames) の形です。`base` と、variant の値ごとの class name を持ちます。キーは各値を文字列にしたものです。
+
+```typescript
+type ClassNames = EvClassNames<{
+  outlined: { true: {}; false: {} };
+}>;
+// { base: string; variants: { outlined: { true: string; false: string } } }
+```
+
+### `CompoundVariant<T>`
+
+`compoundVariants` のエントリひとつ分です。compound のルールを別の配列として組み立てるときに使います。各条件には、単一の値または[値の配列](./compound-variants.mdx#matching-several-values)を指定できます。
+
+```typescript
+import type { CompoundVariant } from 'emotion-variants';
+
+const variants = {
+  size: {
+    small: {},
+    large: {},
+  },
+  color: {
+    primary: {},
+    danger: {},
+  },
+};
+
+const compounds: Array<CompoundVariant<typeof variants>> = [
+  {
+    variants: {
+      size: 'large',
+      color: 'primary',
+    },
+    style: {
+      fontWeight: 'bold',
+    },
+  },
+];
+```
+
+### `VariantValue`
+
+variant の軸が受け付ける値の型です。
+
+```typescript
+type VariantValue = string | number | boolean;
+```
+
+### `VariantConfig<T>`
+
+`variants` フィールドに適用される制約です。自分で書くことはほとんどなく、`ev()` のシグネチャや他のジェネリック型の中に登場します。
+
+### `VariantKeys<T>`
+
+variant の設定に含まれる軸の名前の union です。
+
+```typescript
+type Keys = VariantKeys<{ size: {}; color: {} }>; // 'size' | 'color'
+```
+
+### `VariantValueFor<T, K>`
+
+ひとつの軸で有効な値で、スタイルオブジェクトのキーから逆算されます。文字列のキーは文字列のまま、`'true'` と `'false'` は `boolean` に、数値のキーは数値リテラルになります。
+
+```typescript
+type Size = VariantValueFor<{ size: { small: {}; large: {} } }, 'size'>;
+// 'small' | 'large'
+
+type Outlined = VariantValueFor<{ outlined: { true: {}; false: {} } }, 'outlined'>;
+// boolean
+```
+
+## Emotion の型
+
+`CSSObject` と `SerializedStyles` は `@emotion/react` の型で、再 export はされていません。必要な場合は Emotion から直接 import してください。
+
+
+```typescript
+import type { CSSObject, SerializedStyles } from '@emotion/react';
+```

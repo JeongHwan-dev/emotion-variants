@@ -1,0 +1,185 @@
+---
+title: Variants
+description: 'ev() accepts a single configuration object.'
+---
+
+`ev()` accepts a single configuration object. This page covers `base` and `variants`. [`defaultVariants`](./default-variants.mdx), [`compoundVariants`](./compound-variants.mdx), and [`slots`](./slots.mdx) each have their own page.
+
+```ts
+ev({
+  base,             // styles applied to all variants
+  variants,         // axis × value → styles
+  compoundVariants, // styles applied when multiple axes match
+  defaultVariants,  // fallback values when the consumer omits a prop
+});
+```
+
+## `base`
+
+`base` styles are applied to every call of the variant function. Use it for properties that don't depend on any variant.
+
+```ts
+const button = ev({
+  base: {
+    padding: '10px 20px',
+    borderRadius: '8px',
+    border: 'none',
+    cursor: 'pointer',
+  },
+});
+
+button(); // applies only base styles
+```
+
+`base` accepts a single `CSSObject` and supports Emotion's full syntax — nested selectors, pseudo-classes, media queries, keyframes via `@keyframes`, etc.
+
+```ts
+const button = ev({
+  base: {
+    transition: 'transform 0.2s ease',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+    },
+    '&:disabled': {
+      opacity: 0.6,
+      cursor: 'not-allowed',
+    },
+  },
+});
+```
+
+## `variants`
+
+`variants` is a record of axes. Each axis maps from a value to a `CSSObject`.
+
+<Preview name="variants">
+
+```tsx
+const button = ev({
+  base: {
+    border: '1px solid transparent',
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontWeight: 600,
+    transition: 'all 0.2s ease',
+  },
+  variants: {
+    variant: {
+      filled: {
+        background: 'var(--button-color)',
+        color: 'white',
+      },
+      outlined: {
+        background: 'transparent',
+        borderColor: 'var(--button-color)',
+        color: 'var(--button-color)',
+      },
+      text: {
+        background: 'transparent',
+        color: 'var(--button-color)',
+      },
+    },
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        '--button-color': '#d36ac2',
+      },
+      secondary: {
+        '--button-color': '#475569',
+      },
+    },
+  },
+});
+
+<button
+  css={button({
+    variant: 'filled',
+    size: 'medium',
+    color: 'primary',
+  })}
+>
+  Filled
+</button>
+<button
+  css={button({
+    variant: 'outlined',
+    size: 'medium',
+    color: 'primary',
+  })}
+>
+  Outlined
+</button>
+<button
+  css={button({
+    variant: 'text',
+    size: 'medium',
+    color: 'primary',
+  })}
+>
+  Text
+</button>
+```
+
+</Preview>
+
+Variant values can be **strings**, **numbers**, or **booleans**:
+
+```ts
+const panel = ev({
+  variants: {
+    color: {
+      red: {
+        color: 'red',
+      },
+      blue: {
+        color: 'blue',
+      },
+    },
+    level: {
+      1: {
+        zIndex: 1,
+      },
+      2: {
+        zIndex: 2,
+      },
+    },
+    outlined: {
+      true: {
+        border: '1px solid',
+      },
+      false: {
+        border: 'none',
+      },
+    },
+  },
+});
+
+panel({ color: 'red', level: 2, outlined: true });
+```
+
+<Callout type="info">
+
+Boolean variant values use the literal string keys `'true'` and `'false'` in the configuration, but you pass actual booleans (`true` / `false`) when calling the function.
+
+</Callout>
+
+## Style precedence [#style-precedence]
+
+For a given call, styles are appended in this order (later wins on CSS conflicts):
+
+1. `base`
+2. Each matching simple `variants` entry, in the order keys appear in `variants`
+3. Each matching `compoundVariants` entry, in array order

@@ -1,0 +1,66 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+@import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
+@import "d2coding/d2coding-subset.css";
+
+/* `static` keeps the variable in the output even when only Emotion styles read it. */
+@theme static {
+  --color-primary: #d36ac2;
+}
+
+:root {
+  --font-sans: "Pretendard Variable", Pretendard, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: D2Coding, ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-fd-primary: #c4399f;
+  --color-fd-primary-foreground: #fff;
+  --color-fd-ring: var(--color-primary);
+  --ev-glow: color-mix(in srgb, var(--color-primary) 14%, transparent);
+}
+
+.dark {
+  --color-fd-primary: #e190d7;
+  --color-fd-primary-foreground: #2a0a22;
+  --ev-glow: color-mix(in srgb, var(--color-primary) 18%, transparent);
+}
+
+/* The theme toggle runs in a view transition; its default cross-fade washes the page gray. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+/* Every copy button (code blocks, heading links, install command) swaps its icon on copy. */
+button[aria-live] {
+  cursor: pointer;
+  transition:
+    background-color 150ms,
+    color 150ms,
+    scale 150ms;
+}
+
+button[aria-live]:hover {
+  background-color: var(--color-fd-accent);
+}
+
+button[aria-live] > svg {
+  animation: copy-icon-in 300ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+button[aria-live][data-checked] {
+  color: var(--color-fd-success);
+}
+
+@keyframes copy-icon-in {
+  from {
+    opacity: 0;
+    scale: 0.25;
+    filter: blur(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button[aria-live] > svg {
+    animation: none;
+  }
+}

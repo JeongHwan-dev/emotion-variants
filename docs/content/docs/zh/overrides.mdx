@@ -1,0 +1,151 @@
+---
+title: Overrides
+description: '有时某个实例需要一个不属于任何维度的样式，比如表单中撑满整行的按钮，或者带一次性 margin 的卡片。'
+---
+
+有时某个实例需要一个不属于任何维度的样式，比如表单中撑满整行的按钮，或者带一次性 margin 的卡片。`ev()` 的配置里没有 `class` 或 `css` 这样的逃生口，所以覆盖要在调用处完成。
+
+## 用法
+
+### 在 `css` prop 中追加样式
+
+variant 函数返回 `SerializedStyles[]`，而 Emotion 的 `css` prop 接受数组。把额外的样式放在 variant 结果**之后**，它就会生效。
+
+<Preview name="overrides">
+
+```tsx
+<button
+  css={[
+    button({
+      size: 'large',
+    }),
+    {
+      width: '100%',
+    },
+  ]}
+>
+  Submit
+</button>
+```
+
+</Preview>
+
+Emotion 会展平嵌套数组，所以展开是可选的。下面两种写法效果相同：
+
+```tsx
+<button css={[...button({ size: 'large' }), { width: '100%' }]}>Submit</button>;
+```
+
+起作用的是顺序：Emotion 按数组顺序拼接样式，在**特异性相同**的声明中，最后一个生效。把覆盖样式放在前面，它就会失效：
+
+```tsx
+// ✗ `width` 被 base/variant 样式覆盖
+<button css={[{ width: '100%' }, button({ size: 'large' })]}>Submit</button>;
+
+// ✓ 覆盖样式在最后
+<button css={[button({ size: 'large' }), { width: '100%' }]}>Submit</button>;
+```
+
+### 通过 prop 接收覆盖样式
+
+给组件加一个用于额外样式的 prop，并追加在同样的位置。这样调用方无需了解样式如何构建，就能进行覆盖。
+
+```tsx
+import type { Interpolation, Theme } from '@emotion/react';
+import type { ComponentPropsWithoutRef } from 'react';
+import type { VariantProps } from 'emotion-variants';
+
+type ButtonProps = ComponentPropsWithoutRef<'button'> &
+  VariantProps<typeof button> & {
+    styleOverride?: Interpolation<Theme>;
+  };
+
+function Button({ size, color, styleOverride, ...rest }: ButtonProps) {
+  return <button css={[button({ size, color }), styleOverride]} {...rest} />;
+}
+```
+
+```tsx
+<Button size="large" styleOverride={{ width: '100%' }}>
+  Submit
+</Button>
+```
+
+<Callout type="warn">
+
+不要把这个 prop 命名为 `css`。Emotion 的 JSX runtime 会在调用处消费 `css`，转而给组件传入 `className`，因此 `css` prop 永远到不了 `Button`，覆盖样式会被悄无声息地丢弃。换成其他名称都会原样透传。
+
+</Callout>
+
+### 在使用 `className` 的地方覆盖
+
+[`className()`](./ev.mdx#classname) 返回单个 class，所以再追加一个 class **不一定**能生效：两个 class 的特异性相同，最终生效的是 Emotion 后插入的那个。
+
+```tsx
+// ✗ 无法保证顺序
+<button className={`${button.className({ size: 'large' })} ${myClass}`}>Submit</button>;
+```
+
+应该组合样式而不是组合 class，再用 `@emotion/css` 把结果转成一个 class：
+
+```tsx
+import { css as cssClassName } from '@emotion/css';
+
+const full = cssClassName(button({ size: 'large' }), { width: '100%' });
+
+<button className={full}>Submit</button>;
+```
+
+<Callout type="warn">
+
+顺序只在特异性相同时起决定作用。平铺的声明永远赢不了更具体的选择器，所以在 variant 的 `&:hover` 规则生效时，追加在后面的 `{ width: '100%' }` 并不会生效。请匹配你要覆盖的选择器：
+
+```tsx
+<button
+  css={[
+    button({ size: 'large' }),
+    {
+      width: '100%',
+      '&:hover': {
+        width: '100%',
+      },
+    },
+  ]}
+>
+  Submit
+</button>;
+```
+
+</Callout>
+
+## 何时应改为添加 variant
+
+当样式只属于**一个调用处**时，使用覆盖。如果同样的覆盖写了两次，它就该是一个维度：
+
+```ts
+// 两个调用处都需要撑满宽度，那就做成 variant。
+const button = ev({
+  variants: {
+    size: {
+      small: {},
+      large: {},
+    },
+    fullWidth: {
+      true: {
+        width: '100%',
+      },
+      false: {},
+    },
+  },
+  defaultVariants: {
+    fullWidth: false,
+  },
+});
+```
+
+这样覆盖只用于真正的一次性场景，而重复出现的情况则拥有了名称、类型和 class name。
+
+## 另请参阅
+
+- [Variants → 样式优先级](./variants.mdx#style-precedence)
+- [Compound Variants](./compound-variants.mdx)：针对组合而非单个实例的样式

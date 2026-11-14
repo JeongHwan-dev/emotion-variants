@@ -1,0 +1,158 @@
+---
+title: 简介
+description: 'emotion-variants 是构建在 @emotion/react 之上的一层轻量封装，让你在一个配置对象中定义组件的所有视觉组合（base 样式、variants、compound 组合和默认值），并获得完整的 TypeScript 类型推断。'
+---
+
+`emotion-variants` 是构建在 [`@emotion/react`](https://emotion.sh/) 之上的一层轻量封装，让你在**一个配置对象**中定义组件的所有视觉组合（base 样式、variants、compound 组合和默认值），并获得完整的 TypeScript 类型推断。
+
+## 要解决的问题
+
+真实项目中的按钮往往有多个视觉维度：尺寸、颜色、填充风格、状态。用原生 Emotion 写时，这些维度会把样式拆散到多个地方：这里一张查找表，那里一段条件展开，别处再手写一份 props 类型。
+
+```tsx
+// 仅使用 @emotion/react
+import { css } from '@emotion/react';
+
+// 1. 查找表，与组件分离
+const sizeStyles = {
+  small: {
+    padding: '8px 16px',
+    fontSize: 12,
+  },
+  medium: {
+    padding: '10px 20px',
+    fontSize: 14,
+  },
+  large: {
+    padding: '12px 24px',
+    fontSize: 16,
+  },
+};
+
+const colorStyles = {
+  primary: {
+    background: 'blue',
+    color: 'white',
+  },
+  danger: {
+    background: 'red',
+    color: 'white',
+  },
+};
+
+// 2. 手动维护的 props 类型
+type ButtonProps = {
+  size?: 'small' | 'medium' | 'large';
+  color?: 'primary' | 'danger';
+};
+
+// 3. 组件要自己负责默认值、组合和 compound 逻辑
+function Button({ size = 'medium', color = 'primary' }: ButtonProps) {
+  return (
+    <button
+      css={css({
+        borderRadius: 8,
+        cursor: 'pointer',
+        ...sizeStyles[size],
+        ...colorStyles[color],
+        // compound 规则混进了组件内部
+        ...(size === 'large' && color === 'primary' && {
+          fontWeight: 'bold',
+        }),
+      })}
+    >
+      Click
+    </button>
+  );
+}
+```
+
+新增一个 `size` 值，就要同时修改查找表、prop 类型的联合类型，如果它参与 compound 规则，还得改组件本身。
+
+## 解决方案
+
+`emotion-variants` 把这些全部收拢到一个配置对象中。
+
+```tsx
+// 使用 emotion-variants
+import { ev, type VariantProps } from 'emotion-variants';
+
+const button = ev({
+  base: {
+    borderRadius: 8,
+    cursor: 'pointer',
+  },
+  variants: {
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        background: 'blue',
+        color: 'white',
+      },
+      danger: {
+        background: 'red',
+        color: 'white',
+      },
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        size: 'large',
+        color: 'primary',
+      },
+      style: {
+        fontWeight: 'bold',
+      },
+    },
+  ],
+  defaultVariants: {
+    size: 'medium',
+    color: 'primary',
+  },
+});
+
+type ButtonProps = VariantProps<typeof button>;
+
+function Button({ size, color }: ButtonProps) {
+  return <button css={button({ size, color })}>Click</button>;
+}
+```
+
+要新增一个 `size` 值？只需在 `variants.size` 一处加一行，props 类型会自动更新。
+
+## 对比
+
+| | 不使用 `emotion-variants` | 使用 `emotion-variants` |
+|---|---|---|
+| 样式定义 | 查找表，分散在多个文件 | 单个配置对象 |
+| variant props 类型 | 手写联合类型 | 从配置中推断 |
+| compound 规则 | 组件内的内联条件 | `compoundVariants` 数组 |
+| 默认值 | 函数参数默认值 | `defaultVariants` |
+| 新增 variant 值 | 修改查找表、类型和组件 | 只改 `variants` |
+| 生成的 class name | 不对外暴露 | `button.classNames` |
+| 新人阅读代码 | 要读 3 个文件才能理解样式 | 只读 1 个对象 |
+
+## 不适用的场景
+
+- 如果组件没有 variant 或只有一个 variant，直接用 `css()` 更简单。
+- 如果需要在每次渲染时解析任意 CSS 变量来实现运行时主题，`emotion-variants` 也能用，但你可能更适合直接依赖 Emotion 的 `theme`。
+
+## 下一步
+
+- [安装](./installation.mdx)本包及其 peer dependencies。
+- 跟着[快速开始](./quick-start.mdx)构建你的第一个组件。
+- 阅读 [Variants](./variants.mdx)，深入了解 `base` 和 `variants`。

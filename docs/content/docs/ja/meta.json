@@ -1,0 +1,24 @@
+{
+  "pages": [
+    "---はじめに---",
+    "introduction",
+    "installation",
+    "quick-start",
+    "---コンセプト---",
+    "variants",
+    "default-variants",
+    "compound-variants",
+    "slots",
+    "overrides",
+    "extending",
+    "responsive",
+    "---ガイド---",
+    "typescript",
+    "migration",
+    "---リファレンス---",
+    "ev",
+    "create-ev",
+    "types",
+    "changelog"
+  ]
+}

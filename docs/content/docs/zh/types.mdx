@@ -1,0 +1,217 @@
+---
+title: 类型
+description: 'emotion-variants 导出的所有类型，以及各自的使用场景。'
+---
+
+`emotion-variants` 导出的所有类型，以及各自的使用场景。
+
+```typescript
+import type {
+  CompoundVariant,
+  Ev,
+  EvClassNames,
+  EvConfig,
+  EvFunction,
+  EvSlotsFunction,
+  EvVariants,
+  VariantConfig,
+  VariantKeys,
+  VariantProps,
+  VariantValue,
+  VariantValueFor,
+} from 'emotion-variants';
+```
+
+大多数时候你一个都用不到。variant 类型会从配置对象中推断出来，所以直接从已有的函数读取 props，比写出泛型参数更简洁：
+
+```typescript
+type ButtonVariants = VariantProps<typeof button>;
+```
+
+完整的用法请参阅 [TypeScript](./typescript.mdx)。
+
+## 用法
+
+### `EvConfig<T, N, E>`
+
+传给 [`ev()`](./ev.mdx) 的对象的结构。适合把配置提取为单独的变量或工厂函数。
+
+```typescript
+import type { EvConfig } from 'emotion-variants';
+
+const config: EvConfig<{ size: { small: { fontSize: number } } }> = {
+  variants: {
+    size: {
+      small: {
+        fontSize: 12,
+      },
+    },
+  },
+};
+```
+
+所有字段都是可选的：`base`、`variants`、`compoundVariants`、`defaultVariants`、[`extend`](./ev.mdx#extend)，以及用于 [slots](./ev.mdx#slots) 的 `slots` 和 `compoundSlots`。
+
+`N` 是 slot 名的联合类型。默认为 `never`，即不带 `slots` 的普通形式。
+
+`E` 是作为 `extend` 传入的 `ev()` 结果的类型。默认为 `undefined`，即不扩展任何函数的配置。
+
+### `EvFunction<T, B>`
+
+[`ev()`](./ev.mdx) 返回值的类型：可调用，并带有 `variants()`、`className()` 和 `classNames`。
+
+```typescript
+interface EvFunction<T, B extends string = never> {
+  (variants?: EvVariants<T, B>): SerializedStyles[];
+  variants: () => Array<VariantKeys<T>>;
+  className: (variants?: EvVariants<T, B>) => string;
+  classNames: EvClassNames<T>;
+}
+```
+
+`B` 是用 [`createEv`](./create-ev.mdx) 声明的 breakpoint 名的联合类型。默认为 `never`，即只接收普通值的函数。`EvSlotsFunction` 和 `EvVariants` 也接收同样的参数。
+
+### `EvSlotsFunction<N, T, B>`
+
+配置中声明了 `slots` 时，[`ev()`](./ev.mdx#slots) 返回的类型。`N` 是 slot 名的联合类型。
+
+```typescript
+interface EvSlotsFunction<N extends string, T, B extends string = never> {
+  (variants?: EvVariants<T, B>): { [K in N]: (slotVariants?: EvVariants<T, B>) => SerializedStyles[] };
+  variants: () => Array<VariantKeys<T>>;
+  className: (variants?: EvVariants<T, B>) => { [K in N]: string };
+}
+```
+
+### `Ev<B>`
+
+`ev` 函数本身的类型。[`createEv`](./create-ev.mdx) 返回一个 `Ev<B>`，其结果可以为 breakpoint `B` 接收响应式值；包导出的 `ev` 则是 `Ev<never>`。
+
+```typescript
+import { createEv } from 'emotion-variants';
+import type { Ev } from 'emotion-variants';
+
+const { ev }: { ev: Ev<'md' | 'lg'> } = createEv({
+  breakpoints: {
+    md: '@media (min-width: 768px)',
+    lg: '@media (min-width: 1024px)',
+  },
+});
+```
+
+### `EvVariants<T, B>`
+
+variant 函数的参数类型：每个维度都是可选的，并收窄为声明的值。手写组件 props 时就需要它。
+
+```typescript
+import type { EvVariants } from 'emotion-variants';
+
+type Variants = EvVariants<{
+  size: { small: {}; large: {} };
+}>;
+// { size?: 'small' | 'large' }
+
+// 带上 breakpoint 名后，每个值也可以按 breakpoint 分别指定。
+type ResponsiveVariants = EvVariants<
+  {
+    size: { small: {}; large: {} };
+  },
+  'md' | 'lg'
+>;
+// { size?: 'small' | 'large' | { initial?: 'small' | 'large'; md?: 'small' | 'large'; lg?: 'small' | 'large' } }
+```
+
+### `VariantProps<T>`
+
+`ev()` 结果所接收的 variant props。传入的是函数的类型，而不是配置的类型。
+
+```typescript
+import type { VariantProps } from 'emotion-variants';
+
+type ButtonVariants = VariantProps<typeof button>;
+// { size?: 'small' | 'large'; color?: 'primary' | 'secondary' }
+```
+
+它解析出的类型与 `EvVariants<T, B>` 相同，但你不必写出 `T` 或 `B`。
+
+### `EvClassNames<T>`
+
+[`classNames`](./ev.mdx#classnames) 的结构：`base` 加上每个 variant 值对应的 class name。键是每个值的字符串形式。
+
+```typescript
+type ClassNames = EvClassNames<{
+  outlined: { true: {}; false: {} };
+}>;
+// { base: string; variants: { outlined: { true: string; false: string } } }
+```
+
+### `CompoundVariant<T>`
+
+`compoundVariants` 中的一个条目。在单独的数组中构建 compound 规则时会用到它。每个条件可以是单个值，也可以是[值数组](./compound-variants.mdx#matching-several-values)。
+
+```typescript
+import type { CompoundVariant } from 'emotion-variants';
+
+const variants = {
+  size: {
+    small: {},
+    large: {},
+  },
+  color: {
+    primary: {},
+    danger: {},
+  },
+};
+
+const compounds: Array<CompoundVariant<typeof variants>> = [
+  {
+    variants: {
+      size: 'large',
+      color: 'primary',
+    },
+    style: {
+      fontWeight: 'bold',
+    },
+  },
+];
+```
+
+### `VariantValue`
+
+variant 维度可接收的值类型。
+
+```typescript
+type VariantValue = string | number | boolean;
+```
+
+### `VariantConfig<T>`
+
+应用于 `variants` 字段的约束。你很少需要亲自书写它，它出现在 `ev()` 的签名和其他泛型类型中。
+
+### `VariantKeys<T>`
+
+variant 配置中维度名称的联合类型。
+
+```typescript
+type Keys = VariantKeys<{ size: {}; color: {} }>; // 'size' | 'color'
+```
+
+### `VariantValueFor<T, K>`
+
+某个维度的合法值，由其样式对象的键映射而来。字符串键仍为字符串，`'true'` 和 `'false'` 变为 `boolean`，数字键变为数字字面量。
+
+```typescript
+type Size = VariantValueFor<{ size: { small: {}; large: {} } }, 'size'>;
+// 'small' | 'large'
+
+type Outlined = VariantValueFor<{ outlined: { true: {}; false: {} } }, 'outlined'>;
+// boolean
+```
+
+## Emotion 类型
+
+`CSSObject` 和 `SerializedStyles` 来自 `@emotion/react`，本包不会重新导出它们。需要时请直接从 Emotion 导入。
+
+```typescript
+import type { CSSObject, SerializedStyles } from '@emotion/react';
+```

@@ -1,0 +1,333 @@
+---
+title: Compound Variants
+description: 'Compound variants は、列挙した variant の値がすべて一致したときだけスタイルを適用します。'
+---
+
+Compound variants は、列挙した variant の値がすべて一致したときだけスタイルを適用します。「`variant: 'outlined'` *かつ* `color: 'danger'` のときだけこのスタイルにしたい」という要件に応えるものです。軸をひとつだけ列挙することもでき、その場合は他のすべての variant の後に適用される variant スタイルのように振る舞います。
+
+## `compoundVariants`
+
+compound variant は、**複数の軸**が特定の値に一致したときだけスタイルを適用します。「X が Y でもあるときは見た目を変える」といったパターンに便利です。
+
+<Preview name="compound-variants">
+
+```tsx
+const button = ev({
+  base: {
+    border: '1px solid transparent',
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontWeight: 600,
+    transition: 'all 0.2s ease',
+  },
+  variants: {
+    variant: {
+      filled: {
+        background: 'var(--button-color)',
+        color: 'white',
+      },
+      outlined: {
+        background: 'transparent',
+        borderColor: 'var(--button-color)',
+        color: 'var(--button-color)',
+      },
+      text: {
+        background: 'transparent',
+        color: 'var(--button-color)',
+      },
+    },
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        '--button-color': '#d36ac2',
+      },
+      secondary: {
+        '--button-color': '#475569',
+      },
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        variant: 'filled',
+        size: 'large',
+        color: 'primary',
+      },
+      style: {
+        boxShadow: '0 4px 12px rgba(211, 106, 194, 0.4)',
+      },
+    },
+  ],
+  defaultVariants: {
+    variant: 'filled',
+    size: 'medium',
+    color: 'primary',
+  },
+});
+
+<button
+  css={button({
+    size: 'large',
+    color: 'primary',
+  })}
+>
+  Large primary
+</button>
+<button
+  css={button({
+    size: 'large',
+    color: 'secondary',
+  })}
+>
+  Large secondary
+</button>
+```
+
+</Preview>
+
+compound variants は配列の順に評価され、一致した単純な variant の**後に**積み重ねられるので、安全に上書きできます。
+
+## 使いどころ
+
+次のような場合は compound variant を使いましょう。
+
+- スタイルが 2 つ以上の軸に同時に依存している。
+- そのスタイルを単一軸の variant で表現しようとすると、新しい軸を作るか値を重複させる必要がある。
+- コンポーネント内に条件付きの CSS（`size === 'lg' && color === 'primary' && ...`）が入り込み始めている。
+
+スタイルがひとつの軸にしか依存しないなら、`variants` に直接書きましょう。compound variants は軸の組み合わせ（直積）のためのものです。
+
+## パターン: filled / outlined / text × color
+
+デザインシステムでよく見るパターンです。同じ色のセットを 3 通りのスタイルで表現します。
+
+```ts
+import { ev } from 'emotion-variants';
+
+const button = ev({
+  base: {
+    padding: '8px 16px',
+    borderRadius: 8,
+    cursor: 'pointer',
+    border: 'none',
+  },
+
+  variants: {
+    variant: {
+      filled: {},
+      outlined: {
+        background: 'transparent',
+        border: '2px solid currentColor',
+      },
+      text: {
+        background: 'transparent',
+      },
+    },
+    color: {
+      primary: {},
+      danger: {},
+    },
+  },
+
+  compoundVariants: [
+    // Filled
+    {
+      variants: {
+        variant: 'filled',
+        color: 'primary',
+      },
+      style: {
+        background: '#d36ac2',
+        color: 'white',
+      },
+    },
+    {
+      variants: {
+        variant: 'filled',
+        color: 'danger',
+      },
+      style: {
+        background: '#dc2626',
+        color: 'white',
+      },
+    },
+
+    // Outlined
+    {
+      variants: {
+        variant: 'outlined',
+        color: 'primary',
+      },
+      style: {
+        color: '#d36ac2',
+      },
+    },
+    {
+      variants: {
+        variant: 'outlined',
+        color: 'danger',
+      },
+      style: {
+        color: '#dc2626',
+      },
+    },
+
+    // Text
+    {
+      variants: {
+        variant: 'text',
+        color: 'primary',
+      },
+      style: {
+        color: '#d36ac2',
+      },
+    },
+    {
+      variants: {
+        variant: 'text',
+        color: 'danger',
+      },
+      style: {
+        color: '#dc2626',
+      },
+    },
+  ],
+
+  defaultVariants: {
+    variant: 'filled',
+    color: 'primary',
+  },
+});
+```
+
+`color` の variant が `variants` 内で空のオブジェクトになっているのは、そのスタイルが `variant` との**組み合わせでのみ**意味を持つからです。実際の値は compound variants が持っています。
+
+## パターン: size × density の上書き
+
+compound variant で、特定の組み合わせのときだけ基本のプロパティを微調整することもあります。
+
+```ts
+const card = ev({
+  base: {
+    padding: 16,
+    borderRadius: 12,
+  },
+  variants: {
+    size: {
+      sm: {
+        padding: 12,
+      },
+      md: {
+        padding: 16,
+      },
+      lg: {
+        padding: 24,
+      },
+    },
+    density: {
+      comfortable: {},
+      compact: {},
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        size: 'lg',
+        density: 'compact',
+      },
+      style: {
+        padding: 16,
+      },
+    },
+  ],
+});
+```
+
+`lg + compact` の組み合わせだけが、size 本来の padding を上書きします。
+
+## 複数の値にマッチさせる [#matching-several-values]
+
+条件には配列も使えます。variant が列挙した値の**いずれか**であれば一致するので、値ごとに複製していたエントリをひとつにまとめられます。
+
+```ts
+const button = ev({
+  variants: {
+    variant: {
+      filled: {},
+      outlined: {},
+      text: {},
+    },
+    color: {
+      primary: {},
+      danger: {},
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        variant: ['outlined', 'text'],
+        color: 'danger',
+      },
+      style: {
+        color: 'crimson',
+      },
+    },
+  ],
+});
+
+button({ variant: 'outlined', color: 'danger' }); // 複合スタイルが含まれる
+button({ variant: 'text', color: 'danger' }); // これも含まれる
+button({ variant: 'filled', color: 'danger' }); // 含まれない
+```
+
+軸どうしは引き続き AND で結合されます。列挙したすべての軸が一致する必要があり、配列はその軸で一致とみなす値の範囲を広げるだけです。空の配列はどの値とも一致しません。
+
+## 順序が重要
+
+compound variants は、呼び出しごとに単純な variant の**後に**、配列に書かれた順で追加されます。2 つの compound variant がどちらも一致して同じプロパティを設定している場合は、後のものが優先されます。
+
+```ts
+compoundVariants: [
+  {
+    variants: {
+      size: 'lg',
+    },
+    style: {
+      fontWeight: 600,
+    },
+  },
+  {
+    variants: {
+      size: 'lg',
+      color: 'primary',
+    },
+    style: {
+      fontWeight: 700, // 上のエントリを上書きする
+    },
+  },
+],
+```
+
+<Callout type="idea">
+
+**単一の**軸だけにマッチする compound variant を含めることもできます。動作は通常の variant と同じですが、「条件付き」のルールをすべて一か所にまとめておきたいときに便利です。
+
+</Callout>
+
+## 関連項目
+
+
+- [Default Variants](./default-variants.mdx)

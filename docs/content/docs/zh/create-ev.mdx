@@ -1,0 +1,79 @@
+---
+title: createEv
+description: '创建一个 ev 函数，其 variant prop 可以为每个 breakpoint 接收一个值。'
+---
+
+创建一个 `ev` 函数，其 variant prop 可以为每个 breakpoint 接收一个值。
+
+```typescript
+const { ev } = createEv(options);
+```
+
+## 用法
+
+### `createEv(options)` [#create-ev-options]
+
+当 variant 需要随屏幕宽度变化时，使用 `createEv`。只声明一次 breakpoint，导出它返回的 `ev`，然后在整个应用中使用这个 `ev`。
+
+```typescript
+import { createEv } from 'emotion-variants';
+
+export const { ev } = createEv({
+  breakpoints: {
+    md: '@media (min-width: 768px)',
+    lg: '@media (min-width: 1024px)',
+  },
+});
+```
+
+#### 参数
+
+- `options.breakpoints` (`Record<string, string>`，可选)：以 breakpoint 名为键的媒体查询，按宽度从小到大排列。`initial` 不能用作名称，名称也不能看起来像数字。
+
+#### 返回值
+
+(`{ ev: Ev<B> }`)：包含 `ev` 函数的对象。它接收与 [`ev`](./ev.mdx) 相同的配置，返回的函数可以接收[响应式值](#responsive-values)。不传 `breakpoints` 时，它的行为与包导出的 `ev` 相同，后者就是 `createEv().ev`。
+
+### 响应式值 [#responsive-values]
+
+由这个 `ev` 创建的函数，其每个 variant prop 都可以接收单个值，或一个为每个 breakpoint 各提供一个值的对象。
+
+```typescript
+const button = ev({
+  variants: {
+    size: {
+      small: {
+        fontSize: 12,
+      },
+      large: {
+        fontSize: 16,
+      },
+    },
+  },
+  defaultVariants: {
+    size: 'small',
+  },
+});
+
+button({
+  size: {
+    initial: 'small',
+    md: 'large',
+  },
+});
+```
+
+- `initial`：不包在任何媒体查询中的值。省略时使用该维度的默认 variant。
+- breakpoint 名：该 breakpoint 媒体查询内的值。省略的 breakpoint 不添加任何样式。
+
+样式会添加在该维度在常规顺序中的位置：先是 `initial` 的样式，然后按 breakpoint 的声明顺序，每个 breakpoint 一个样式。breakpoint 样式在其值首次使用时序列化，之后复用。
+
+在一次调用中收到响应式值的维度不会匹配任何 compound variant，即使对象中只有 `initial`。
+
+`className()` 以及使用 [slots](./ev.mdx#slots) 时的每个 slot 函数都接收同样的值，`defaultVariants` 则不接收。
+
+顺序规则和限制请参阅 [Responsive](./responsive.mdx)。
+
+## 类型
+
+`Ev`、`EvFunction` 和 `EvVariants` 以最后一个类型参数携带 breakpoint 名，详见[类型](./types.mdx)。

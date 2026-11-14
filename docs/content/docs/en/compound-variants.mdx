@@ -1,0 +1,332 @@
+---
+title: Compound Variants
+description: 'Compound variants apply styles only when the variant values you list all match.'
+---
+
+Compound variants apply styles only when the variant values you list all match. They're the answer to "I want this style only when `variant: 'outlined'` *and* `color: 'danger'`." Listing a single axis is allowed too — it then behaves like a variant style that is applied after all the others.
+
+## `compoundVariants`
+
+A compound variant applies styles only when **multiple axes** match specific values. Useful for "X looks different when it's also Y" patterns.
+
+<Preview name="compound-variants">
+
+```tsx
+const button = ev({
+  base: {
+    border: '1px solid transparent',
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontWeight: 600,
+    transition: 'all 0.2s ease',
+  },
+  variants: {
+    variant: {
+      filled: {
+        background: 'var(--button-color)',
+        color: 'white',
+      },
+      outlined: {
+        background: 'transparent',
+        borderColor: 'var(--button-color)',
+        color: 'var(--button-color)',
+      },
+      text: {
+        background: 'transparent',
+        color: 'var(--button-color)',
+      },
+    },
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        '--button-color': '#d36ac2',
+      },
+      secondary: {
+        '--button-color': '#475569',
+      },
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        variant: 'filled',
+        size: 'large',
+        color: 'primary',
+      },
+      style: {
+        boxShadow: '0 4px 12px rgba(211, 106, 194, 0.4)',
+      },
+    },
+  ],
+  defaultVariants: {
+    variant: 'filled',
+    size: 'medium',
+    color: 'primary',
+  },
+});
+
+<button
+  css={button({
+    size: 'large',
+    color: 'primary',
+  })}
+>
+  Large primary
+</button>
+<button
+  css={button({
+    size: 'large',
+    color: 'secondary',
+  })}
+>
+  Large secondary
+</button>
+```
+
+</Preview>
+
+Compound variants are evaluated in array order and stacked **after** the matching simple variants, so they can safely override.
+
+## When to reach for them
+
+Use a compound variant when:
+
+- A style depends on two or more axes simultaneously.
+- Expressing the style as a single-axis variant would force you to invent a new axis or duplicate values.
+- Conditional CSS inside the component (`size === 'lg' && color === 'primary' && ...`) is creeping in.
+
+If a style depends on only one axis, put it directly in `variants` — compound variants are for the cross-product.
+
+## Pattern: filled / outlined / text × color
+
+A common design system pattern: the same set of colors styled three ways.
+
+```ts
+import { ev } from 'emotion-variants';
+
+const button = ev({
+  base: {
+    padding: '8px 16px',
+    borderRadius: 8,
+    cursor: 'pointer',
+    border: 'none',
+  },
+
+  variants: {
+    variant: {
+      filled: {},
+      outlined: {
+        background: 'transparent',
+        border: '2px solid currentColor',
+      },
+      text: {
+        background: 'transparent',
+      },
+    },
+    color: {
+      primary: {},
+      danger: {},
+    },
+  },
+
+  compoundVariants: [
+    // Filled
+    {
+      variants: {
+        variant: 'filled',
+        color: 'primary',
+      },
+      style: {
+        background: '#d36ac2',
+        color: 'white',
+      },
+    },
+    {
+      variants: {
+        variant: 'filled',
+        color: 'danger',
+      },
+      style: {
+        background: '#dc2626',
+        color: 'white',
+      },
+    },
+
+    // Outlined
+    {
+      variants: {
+        variant: 'outlined',
+        color: 'primary',
+      },
+      style: {
+        color: '#d36ac2',
+      },
+    },
+    {
+      variants: {
+        variant: 'outlined',
+        color: 'danger',
+      },
+      style: {
+        color: '#dc2626',
+      },
+    },
+
+    // Text
+    {
+      variants: {
+        variant: 'text',
+        color: 'primary',
+      },
+      style: {
+        color: '#d36ac2',
+      },
+    },
+    {
+      variants: {
+        variant: 'text',
+        color: 'danger',
+      },
+      style: {
+        color: '#dc2626',
+      },
+    },
+  ],
+
+  defaultVariants: {
+    variant: 'filled',
+    color: 'primary',
+  },
+});
+```
+
+The `color` variant has empty objects in `variants` because the styling only makes sense **in combination** with `variant`. Compound variants carry the actual values.
+
+## Pattern: size × density override
+
+Sometimes a compound variant tweaks a base property only at a specific intersection.
+
+```ts
+const card = ev({
+  base: {
+    padding: 16,
+    borderRadius: 12,
+  },
+  variants: {
+    size: {
+      sm: {
+        padding: 12,
+      },
+      md: {
+        padding: 16,
+      },
+      lg: {
+        padding: 24,
+      },
+    },
+    density: {
+      comfortable: {},
+      compact: {},
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        size: 'lg',
+        density: 'compact',
+      },
+      style: {
+        padding: 16,
+      },
+    },
+  ],
+});
+```
+
+Only the `lg + compact` corner overrides the size's natural padding.
+
+## Matching several values [#matching-several-values]
+
+A condition can be an array. It matches when the variant has **any** of the listed values, so one entry covers what would otherwise be a copy per value.
+
+```ts
+const button = ev({
+  variants: {
+    variant: {
+      filled: {},
+      outlined: {},
+      text: {},
+    },
+    color: {
+      primary: {},
+      danger: {},
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        variant: ['outlined', 'text'],
+        color: 'danger',
+      },
+      style: {
+        color: 'crimson',
+      },
+    },
+  ],
+});
+
+button({ variant: 'outlined', color: 'danger' }); // includes the compound style
+button({ variant: 'text', color: 'danger' }); // includes it too
+button({ variant: 'filled', color: 'danger' }); // does NOT include it
+```
+
+Axes are still combined with AND. Every listed axis has to match; an array only widens what counts as a match for its own axis. An empty array never matches.
+
+## Order matters
+
+Compound variants are appended **after** simple variants for each call, in the order they appear in the array. If two compound variants both match and set the same property, the later one wins.
+
+```ts
+compoundVariants: [
+  {
+    variants: {
+      size: 'lg',
+    },
+    style: {
+      fontWeight: 600,
+    },
+  },
+  {
+    variants: {
+      size: 'lg',
+      color: 'primary',
+    },
+    style: {
+      fontWeight: 700, // overrides the entry above
+    },
+  },
+],
+```
+
+<Callout type="idea">
+
+You can include compound variants that match only a **single** axis. They behave like normal variants but are useful when you want to keep all "conditional" rules in one place.
+
+</Callout>
+
+## See also
+
+- [Default Variants](./default-variants.mdx)

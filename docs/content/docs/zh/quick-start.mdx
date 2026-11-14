@@ -1,0 +1,111 @@
+---
+title: 快速开始
+description: '本页将带你用 emotion-variants 从零构建一个 Button 组件。'
+---
+
+本页将带你用 `emotion-variants` 从零构建一个 `Button` 组件。
+
+这里假设你已经[安装](./installation.mdx)了本包，并启用了 Emotion 的 `css` prop。
+
+## 1. 定义样式
+
+调用 `ev()`，传入一个描述组件样式的配置对象：
+
+```tsx
+import { ev } from 'emotion-variants';
+
+const button = ev({
+  base: {
+    padding: '10px 20px',
+    borderRadius: '8px',
+    border: 'none',
+    cursor: 'pointer',
+    fontWeight: 600,
+  },
+  variants: {
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        background: '#d36ac2',
+        color: 'white',
+      },
+      secondary: {
+        background: '#475569',
+        color: 'white',
+      },
+    },
+  },
+  defaultVariants: {
+    size: 'medium',
+    color: 'primary',
+  },
+});
+```
+
+`ev()` 返回一个函数。传入 variant 值调用它，再把结果交给 Emotion 的 `css` prop。
+
+## 2. 在组件中使用
+
+```tsx
+import type { ComponentPropsWithoutRef } from 'react';
+
+type ButtonProps = ComponentPropsWithoutRef<'button'> & {
+  size?: 'small' | 'medium' | 'large';
+  color?: 'primary' | 'secondary';
+};
+
+export function Button({ size, color, ...rest }: ButtonProps) {
+  return <button css={button({ size, color })} {...rest} />;
+}
+```
+
+```tsx
+<Button>Default</Button>
+<Button size="large">Large primary</Button>
+<Button size="small" color="secondary">Small secondary</Button>
+```
+
+因为设置了 `defaultVariants`，`<Button>Default</Button>` 会以 `medium` + `primary` 渲染。
+
+## 3. 从 variant 函数推导 props
+
+props 类型不必手写。用 `VariantProps` 类型直接从 variant 函数中提取：
+
+```tsx
+import { ev, type VariantProps } from 'emotion-variants';
+
+const button = ev({
+  /* ... */
+});
+
+type ButtonVariants = VariantProps<typeof button>;
+
+type ButtonProps = ComponentPropsWithoutRef<'button'> & ButtonVariants;
+```
+
+<Callout type="idea">
+
+这样组件的 props 类型和样式始终保持同步。新增一个 variant 值，`ButtonProps` 会自动更新。
+
+</Callout>
+
+更多模式（例如转发 ref）请参阅 [TypeScript](./typescript.mdx)。
+
+## 接下来
+
+- [Variants](./variants.mdx)：深入了解 `base` 和 `variants`。
+- [API 参考](./ev.mdx)：`ev()` 的完整文档。
+- [Compound Variants](./compound-variants.mdx)：只在特定组合下生效的样式。

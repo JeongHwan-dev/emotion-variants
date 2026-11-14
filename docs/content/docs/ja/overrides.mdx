@@ -1,0 +1,152 @@
+---
+title: Overrides
+description: 'どの軸にも属さないスタイルが、ひとつのインスタンスだけで必要になることがあります。'
+---
+
+どの軸にも属さないスタイルが、ひとつのインスタンスだけで必要になることがあります。フォームの中でだけ横幅いっぱいに広がるボタンや、一か所だけ margin が異なるカードなどです。`ev()` の設定には `class` や `css` のような逃げ道がないので、上書きは呼び出し側で行います。
+
+## 使い方
+
+### `css` prop にスタイルを追加する
+
+variant 関数は `SerializedStyles[]` を返し、Emotion の `css` prop は配列を受け付けます。追加のスタイルを variant の結果の**後ろに**置けば、そちらが優先されます。
+
+<Preview name="overrides">
+
+```tsx
+<button
+  css={[
+    button({
+      size: 'large',
+    }),
+    {
+      width: '100%',
+    },
+  ]}
+>
+  Submit
+</button>
+```
+
+</Preview>
+
+Emotion はネストした配列を平坦化するので、spread は必須ではありません。どちらの書き方も同じように動作します。
+
+```tsx
+<button css={[...button({ size: 'large' }), { width: '100%' }]}>Submit</button>;
+```
+
+仕組みの鍵は順序です。Emotion は配列の順に連結し、**specificity が同じ**宣言どうしでは最後のものが優先されます。上書きするスタイルを先に置くと負けてしまいます。
+
+```tsx
+// ✗ `width` が base/variant のスタイルで上書きされる
+<button css={[{ width: '100%' }, button({ size: 'large' })]}>Submit</button>;
+
+// ✓ 上書きするスタイルが最後にある
+<button css={[button({ size: 'large' }), { width: '100%' }]}>Submit</button>;
+```
+
+### 上書きを prop として受け取る
+
+追加スタイル用の prop をコンポーネントに用意し、同じ位置に追加します。こうすれば、呼び出し側はスタイルの組み立て方を知らなくても上書きできます。
+
+```tsx
+import type { Interpolation, Theme } from '@emotion/react';
+import type { ComponentPropsWithoutRef } from 'react';
+import type { VariantProps } from 'emotion-variants';
+
+type ButtonProps = ComponentPropsWithoutRef<'button'> &
+  VariantProps<typeof button> & {
+    styleOverride?: Interpolation<Theme>;
+  };
+
+function Button({ size, color, styleOverride, ...rest }: ButtonProps) {
+  return <button css={[button({ size, color }), styleOverride]} {...rest} />;
+}
+```
+
+```tsx
+<Button size="large" styleOverride={{ width: '100%' }}>
+  Submit
+</Button>
+```
+
+<Callout type="warn">
+
+この prop に `css` という名前を付けないでください。Emotion の JSX runtime は呼び出し側で `css` を消費し、代わりに `className` をコンポーネントに渡します。そのため `css` prop は `Button` まで届かず、上書きは何の警告もなく失われます。それ以外の名前であれば、そのまま渡されます。
+
+</Callout>
+
+### `className` を使う場面での上書き
+
+[`className()`](./ev.mdx#classname) はひとつの class を返すので、別の class を後ろに追加しても確実に優先されるとは**限りません**。どちらの class も specificity が同じで、Emotion が後から挿入したほうが優先されるからです。
+
+```tsx
+// ✗ 順序は保証されない
+<button className={`${button.className({ size: 'large' })} ${myClass}`}>Submit</button>;
+```
+
+class ではなくスタイルを合成し、その結果を `@emotion/css` でひとつの class に変換しましょう。
+
+```tsx
+import { css as cssClassName } from '@emotion/css';
+
+const full = cssClassName(button({ size: 'large' }), { width: '100%' });
+
+<button className={full}>Submit</button>;
+```
+
+<Callout type="warn">
+
+順序が決めるのは、優劣がつかない場合だけです。フラットな宣言がより具体的なセレクターに勝つことはないので、variant の後に `{ width: '100%' }` を追加しても、その variant の `&:hover` ルールが適用されている間は優先されません。上書きしたいセレクターに合わせて書きましょう。
+
+```tsx
+<button
+  css={[
+    button({ size: 'large' }),
+    {
+      width: '100%',
+      '&:hover': {
+        width: '100%',
+      },
+    },
+  ]}
+>
+  Submit
+</button>;
+```
+
+</Callout>
+
+## 上書きではなく variant を追加すべきとき
+
+上書きは、そのスタイルが**ひとつの呼び出し箇所**に属するときに使います。同じ上書きを 2 回書いているなら、それは軸です。
+
+```ts
+// 2 か所の呼び出しでどちらも横幅いっぱいが必要だった — variant にする。
+const button = ev({
+  variants: {
+    size: {
+      small: {},
+      large: {},
+    },
+    fullWidth: {
+      true: {
+        width: '100%',
+      },
+      false: {},
+    },
+  },
+  defaultVariants: {
+    fullWidth: false,
+  },
+});
+```
+
+こうすれば、上書きは本当に一度きりのケースのためだけに残り、繰り返し使うケースには名前、型、class name が与えられます。
+
+## 関連項目
+
+- [Variants → スタイルの適用順](./variants.mdx#style-precedence)
+- [Compound Variants](./compound-variants.mdx) — 単一のインスタンスではなく、組み合わせのためのスタイル
+
