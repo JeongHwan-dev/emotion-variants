@@ -66,6 +66,8 @@ The configuration object is required. Pass `ev({})` if you have nothing to decla
 Call the variant function to get the styles for one combination. Pass the result to the `css` prop or to Emotion's `css()`.
 
 ```tsx
+import type { VariantProps } from 'emotion-variants';
+
 type ButtonProps = VariantProps<typeof button> & {
   children: React.ReactNode;
 };

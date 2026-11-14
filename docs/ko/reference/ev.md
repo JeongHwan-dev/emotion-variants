@@ -66,6 +66,8 @@ const button = ev({
 variant 함수를 호출하면 그 조합의 스타일을 받아요. 결과는 `css` prop이나 Emotion의 `css()`에 넘기세요.
 
 ```tsx
+import type { VariantProps } from 'emotion-variants';
+
 type ButtonProps = VariantProps<typeof button> & {
   children: React.ReactNode;
 };
