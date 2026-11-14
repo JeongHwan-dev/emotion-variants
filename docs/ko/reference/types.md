@@ -8,6 +8,7 @@ import type {
   EvClassNames,
   EvConfig,
   EvFunction,
+  EvSlotsFunction,
   EvVariants,
   VariantConfig,
   VariantKeys,
@@ -27,7 +28,7 @@ type ButtonVariants = VariantProps<typeof button>;
 
 ## 사용법
 
-### `EvConfig<T>`
+### `EvConfig<T, N>`
 
 [`ev()`](./ev)에 넘기는 객체의 모양이에요. 설정을 별도 변수나 factory로 분리할 때 쓸 만해요.
 
@@ -45,7 +46,9 @@ const config: EvConfig<{ size: { small: { fontSize: number } } }> = {
 };
 ```
 
-네 필드 `base`, `variants`, `compoundVariants`, `defaultVariants`는 모두 선택이에요.
+모든 필드가 선택이에요. `base`, `variants`, `compoundVariants`, `defaultVariants`가 있고, [slots](./ev#slots)를 쓸 때는 `slots`와 `compoundSlots`가 있어요.
+
+`N`은 slot 이름의 union이에요. 기본값은 `never`이고, `slots`가 없는 일반 형태를 뜻해요.
 
 ### `EvFunction<T>`
 
@@ -57,6 +60,18 @@ interface EvFunction<T> {
   variants: () => Array<VariantKeys<T>>;
   className: (variants?: EvVariants<T>) => string;
   classNames: EvClassNames<T>;
+}
+```
+
+### `EvSlotsFunction<N, T>`
+
+설정에 `slots`를 선언했을 때 [`ev()`](./ev#slots)가 반환하는 타입이에요. `N`은 slot 이름의 union이에요.
+
+```typescript
+interface EvSlotsFunction<N extends string, T> {
+  (variants?: EvVariants<T>): { [K in N]: (slotVariants?: EvVariants<T>) => SerializedStyles[] };
+  variants: () => Array<VariantKeys<T>>;
+  className: (variants?: EvVariants<T>) => { [K in N]: string };
 }
 ```
 

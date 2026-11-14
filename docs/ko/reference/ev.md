@@ -56,10 +56,12 @@ const button = ev({
 - `config.variants` (`Record<string, Record<string, CSSObject>>`): variant 축이에요. 각 축은 값과 그 값의 스타일을 짝지어요. 값이 객체 키라서 Boolean과 숫자 값은 `true`, `false`, `1`처럼 키로 쓰면 되고, 타입은 `boolean`과 숫자 literal로 되돌아와요.
 - `config.compoundVariants` (`Array<{ variants, style }>`): 나열한 variant 값이 **모두** 일치할 때만 적용되는 스타일이에요. 조건에 값의 배열을 쓰면 그중 어느 값이든 일치해요. 키 이름이 `style` 단수인 점을 눈여겨보세요.
 - `config.defaultVariants` (`Partial<Record<Axis, Value>>`): 호출하는 쪽에서 축을 생략했을 때 쓰이는 값이에요.
+- `config.slots` (`Record<string, CSSObject>`): 여러 요소로 이루어진 컴포넌트의 각 부분과 그 기본 스타일이에요. `base`를 대신하고, variant 값과 compound의 `style`을 모두 slot 이름으로 나눠 적게 돼요. [Slots](#slots)를 참고하세요.
+- `config.compoundSlots` (`Array<{ slots, variants?, style }>`): 스타일 하나를 여러 slot에 적용해요. 항상 적용하거나, `variants`가 일치할 때만 적용할 수 있어요. `slots`가 있어야 쓸 수 있어요.
 
 #### 반환 값
 
-(`EvFunction<T>`): 호출 가능한 객체예요. 호출하면 스타일을 돌려주고, [`className()`](#classname) · [`classNames`](#classnames) · [`variants()`](#variants)를 꺼내 쓸 수도 있어요.
+(`EvFunction<T>`): 호출 가능한 객체예요. 호출하면 스타일을 돌려주고, [`className()`](#classname) · [`classNames`](#classnames) · [`variants()`](#variants)를 꺼내 쓸 수도 있어요. `config.slots`가 있으면 대신 `EvSlotsFunction<N, T>`를 반환해요. [Slots](#slots)에서 설명해요.
 
 ### `button(variants)` {#call}
 
@@ -205,6 +207,74 @@ button.variants(); // ['size', 'color']
 #### 반환 값
 
 (`Array<VariantKeys<T>>`): 축 이름이에요. 호출할 때마다 같은 배열 instance를 돌려주니 읽기 전용으로 다뤄 주세요.
+
+### Slots {#slots}
+
+컴포넌트가 여러 요소로 이루어져 있다면 `config.base` 대신 `config.slots`를 선언하세요. variant 값과 compound의 `style`을 slot 이름으로 나눠 적게 되고, 호출하면 slot마다 스타일 함수를 하나씩 돌려줘요.
+
+```tsx
+const card = ev({
+  slots: {
+    root: {
+      padding: 16,
+    },
+    title: {
+      fontWeight: 600,
+    },
+  },
+  variants: {
+    size: {
+      small: {},
+      large: {
+        root: {
+          padding: 24,
+        },
+        title: {
+          fontSize: 20,
+        },
+      },
+    },
+  },
+  compoundSlots: [
+    {
+      slots: ['root', 'title'],
+      style: {
+        margin: 0,
+      },
+    },
+  ],
+  defaultVariants: {
+    size: 'small',
+  },
+});
+
+const { root, title } = card({
+  size: 'large',
+});
+
+<section css={root()}>
+  <h3 css={title()}>Title</h3>
+</section>;
+```
+
+각 slot 함수는 호출할 때와 같은 variants를 받아요. 값은 축마다 slot props, 호출 props, `defaultVariants` 순서로 정해져요. compound 항목은 slot마다 그 slot에서 정해진 값을 기준으로 일치 여부를 따져요.
+
+한 slot의 스타일은 `slots`의 해당 항목 → 일치하는 `variants` 항목 → 일치하는 `compoundVariants` → 일치하는 `compoundSlots` 순서로 쌓여요.
+
+나머지는 일반 형태와 두 군데가 달라요.
+
+- `card.className(variants)`는 slot마다 class name을 하나씩, `{ root: string, title: string }` 형태로 반환해요.
+- `card.classNames`는 없어요.
+
+`card.variants()`는 그대로예요.
+
+`config.base`는 `config.slots`와 함께 쓸 수 없고, slot 이름을 적는 자리에는 선언한 slot 이름만 쓸 수 있어요. 둘 다 타입 에러가 나요.
+
+#### 반환 값
+
+(`EvSlotsFunction<N, T>`): 호출하면 `{ [slot]: (slotVariants?) => SerializedStyles[] }`를 반환해요.
+
+자세한 설명은 [Slots](../recipes/slots)에서 볼 수 있어요.
 
 ## 사용해보기
 

@@ -1,5 +1,5 @@
 import type { ComponentProps, PropsWithChildren } from 'react';
-import { Button } from '@/components';
+import { Button, Card } from '@/components';
 import { theme } from '@/theme';
 
 export function App() {
@@ -28,7 +28,7 @@ export function App() {
             textAlign: 'center',
           }}
         >
-          Button Component Examples
+          Component Examples
         </h1>
 
         <Section title="Default">
@@ -134,6 +134,26 @@ export function App() {
           <SectionContent>
             <Button>Normal</Button>
             <Button disabled>Disabled</Button>
+          </SectionContent>
+        </Section>
+
+        <Section title="Card (slots)">
+          <SectionContent>
+            <Card heading="Small" footer={<Button size="small">Confirm</Button>}>
+              One ev() call styles the root, title, body, and footer.
+            </Card>
+            <Card
+              size="large"
+              tone="danger"
+              heading="Large danger"
+              footer={
+                <Button size="small" color="danger">
+                  Delete
+                </Button>
+              }
+            >
+              The size and tone variants restyle several slots at once.
+            </Card>
           </SectionContent>
         </Section>
       </div>

@@ -78,6 +78,10 @@ export const ko = defineConfig({
               text: 'Props 타입 추출',
               link: '/ko/recipes/typed-props',
             },
+            {
+              text: 'Slots',
+              link: '/ko/recipes/slots',
+            },
           ],
         },
         {

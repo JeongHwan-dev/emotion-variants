@@ -8,6 +8,7 @@ import type {
   EvClassNames,
   EvConfig,
   EvFunction,
+  EvSlotsFunction,
   EvVariants,
   VariantConfig,
   VariantKeys,
@@ -27,7 +28,7 @@ See [Typed Props](../recipes/typed-props) for that pattern in full.
 
 ## Usage
 
-### `EvConfig<T>`
+### `EvConfig<T, N>`
 
 The shape of the object you pass to [`ev()`](./ev). Useful for extracting a configuration into its own variable or a factory.
 
@@ -45,7 +46,9 @@ const config: EvConfig<{ size: { small: { fontSize: number } } }> = {
 };
 ```
 
-All four fields are optional: `base`, `variants`, `compoundVariants`, `defaultVariants`.
+Every field is optional: `base`, `variants`, `compoundVariants`, `defaultVariants`, and for [slots](./ev#slots), `slots` and `compoundSlots`.
+
+`N` is the union of slot names. It defaults to `never`, which is the plain form without `slots`.
 
 ### `EvFunction<T>`
 
@@ -57,6 +60,18 @@ interface EvFunction<T> {
   variants: () => Array<VariantKeys<T>>;
   className: (variants?: EvVariants<T>) => string;
   classNames: EvClassNames<T>;
+}
+```
+
+### `EvSlotsFunction<N, T>`
+
+The type [`ev()`](./ev#slots) returns when the configuration declares `slots`. `N` is the union of slot names.
+
+```typescript
+interface EvSlotsFunction<N extends string, T> {
+  (variants?: EvVariants<T>): { [K in N]: (slotVariants?: EvVariants<T>) => SerializedStyles[] };
+  variants: () => Array<VariantKeys<T>>;
+  className: (variants?: EvVariants<T>) => { [K in N]: string };
 }
 ```
 

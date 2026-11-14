@@ -68,17 +68,62 @@ export type CompoundVariant<T extends VariantConfig<Record<string, Record<string
 };
 
 /**
+ * Stops a type parameter from being inferred from the position it wraps, so slot names
+ * are inferred from `slots` alone. The built-in `NoInfer` would require TypeScript 5.4.
+ */
+export type NoInfer_<T> = [T][T extends unknown ? 0 : never];
+
+/**
+ * Style accepted by a compound variant: one style per slot when `slots` is declared,
+ * a single style otherwise.
+ */
+type SlotStyle<N extends string> = [N] extends [never] ? CSSObject : { [K in N]?: CSSObject };
+
+/**
+ * Rejects variant styles keyed by anything other than a declared slot.
+ */
+type OnlySlots<T, N extends string> = [N] extends [never]
+  ? unknown
+  : {
+      [A in keyof T]: {
+        [V in keyof T[A]]: { [K in keyof T[A][V]]: K extends N ? CSSObject : never };
+      };
+    };
+
+/**
  * Configuration object for the ev function.
  *
  * @typeParam T - The variant configuration type
+ * @typeParam N - The slot names, inferred from `slots`
  */
-export interface EvConfig<T extends VariantConfig<Record<string, Record<string, CSSObject>>>> {
-  /** Base styles applied to all variants */
-  base?: CSSObject;
-  /** Variant-specific style definitions */
-  variants?: T;
+export interface EvConfig<
+  T extends VariantConfig<Record<string, Record<string, CSSObject>>>,
+  N extends string = never,
+> {
+  /** Base styles applied to all variants. Use `slots` instead when it is declared */
+  base?: [N] extends [never] ? CSSObject : never;
+  /** Named parts of a component and their base styles */
+  slots?: Record<N, CSSObject>;
+  /** Variant-specific style definitions, keyed by slot when `slots` is declared */
+  variants?: T & OnlySlots<T, NoInfer_<N>>;
   /** Styles for specific variant combinations */
-  compoundVariants?: Array<CompoundVariant<T>>;
+  compoundVariants?: Array<{
+    /** Variant values that must match for this compound variant to apply */
+    variants: CompoundVariant<T>['variants'];
+    /** CSS styles to apply, keyed by slot when `slots` is declared */
+    style: SlotStyle<NoInfer_<N>>;
+  }>;
+  /** Styles applied to several slots at once, optionally only for a variant combination */
+  compoundSlots?: [N] extends [never]
+    ? never
+    : Array<{
+        /** Slots that receive the style */
+        slots: ReadonlyArray<NoInfer_<N>>;
+        /** Variant values that must match. Always applies when omitted */
+        variants?: CompoundVariant<T>['variants'];
+        /** CSS styles to apply to every listed slot */
+        style: CSSObject;
+      }>;
   /** Default values for variants */
   defaultVariants?: Partial<{
     [K in VariantKeys<T>]: VariantValueFor<T, K>;
@@ -169,4 +214,45 @@ export interface EvFunction<T extends VariantConfig<Record<string, Record<string
    * Generated and injected on first access.
    */
   classNames: EvClassNames<T>;
+}
+
+/**
+ * Function type returned by the ev function when `slots` is declared.
+ *
+ * @typeParam N - The slot names
+ * @typeParam T - The variant configuration type
+ */
+export interface EvSlotsFunction<
+  N extends string,
+  T extends VariantConfig<Record<string, Record<string, CSSObject>>>,
+> {
+  /**
+   * Main function that accepts variant values and returns one style function per slot.
+   *
+   * Each slot function accepts its own variant values, which take precedence over the
+   * ones passed here.
+   *
+   * @param variants - Optional variant values shared by every slot
+   * @returns Style functions keyed by slot name
+   */
+  (
+    variants?: EvVariants<T>,
+  ): {
+    [K in N]: (slotVariants?: EvVariants<T>) => SerializedStyles[];
+  };
+
+  /**
+   * Returns an array of all available variant keys.
+   *
+   * @returns Array of variant key names
+   */
+  variants: () => Array<VariantKeys<T>>;
+
+  /**
+   * Returns a class name per slot for the given variant values.
+   *
+   * @param variants - Optional variant values to apply
+   * @returns Generated class names keyed by slot name
+   */
+  className: (variants?: EvVariants<T>) => { [K in N]: string };
 }

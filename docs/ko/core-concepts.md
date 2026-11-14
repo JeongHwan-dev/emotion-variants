@@ -230,6 +230,45 @@ badge({ outlined: false }); // border: none — 기본값이 적용되지 않아
 2. 일치하는 단순 `variants` 항목 (선언된 키 순서대로)
 3. 일치하는 `compoundVariants` 항목 (배열 순서대로)
 
+## `slots`
+
+여러 요소로 이루어진 컴포넌트는 `base` 대신 `slots`를 선언해요. slot 하나가 한 부분을 가리키고, variant 값은 slot 이름으로 나눠 적어요. 결과를 호출하면 slot마다 스타일 함수를 하나씩 돌려줘요.
+
+```tsx
+const card = ev({
+  slots: {
+    root: {
+      padding: 16,
+    },
+    title: {
+      fontWeight: 600,
+    },
+  },
+  variants: {
+    size: {
+      large: {
+        root: {
+          padding: 24,
+        },
+        title: {
+          fontSize: 20,
+        },
+      },
+    },
+  },
+});
+
+const { root, title } = card({
+  size: 'large',
+});
+
+<section css={root()}>
+  <h3 css={title()}>Title</h3>
+</section>;
+```
+
+slot별 override, `compoundSlots`, 규칙은 [Slots](./recipes/slots)에서 다뤄요.
+
 ## 다음으로
 
 - [API 레퍼런스](./reference/ev) — `ev()`의 전체 시그니처와 반환값.

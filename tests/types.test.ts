@@ -251,6 +251,155 @@ describe('ev - Type Tests', () => {
     });
   });
 
+  it('slots return a style function and a class name per slot', () => {
+    const card = ev({
+      slots: {
+        root: {
+          padding: '8px',
+        },
+        title: {
+          fontWeight: 'bold',
+        },
+      },
+      variants: {
+        size: {
+          small: {
+            title: {
+              fontSize: '12px',
+            },
+          },
+          large: {
+            title: {
+              fontSize: '20px',
+            },
+          },
+        },
+      },
+      compoundVariants: [
+        {
+          variants: {
+            size: 'large',
+          },
+          style: {
+            root: {
+              padding: '16px',
+            },
+          },
+        },
+      ],
+      compoundSlots: [
+        {
+          slots: ['root', 'title'],
+          variants: {
+            size: ['small', 'large'],
+          },
+          style: {
+            margin: '0',
+          },
+        },
+      ],
+      defaultVariants: {
+        size: 'small',
+      },
+    });
+
+    type Variants = {
+      size?: 'small' | 'large';
+    };
+    type SlotFunction = (slotVariants?: Variants) => SerializedStyles[];
+
+    expectTypeOf(card()).toEqualTypeOf<{
+      root: SlotFunction;
+      title: SlotFunction;
+    }>();
+    expectTypeOf(card.className()).toEqualTypeOf<{
+      root: string;
+      title: string;
+    }>();
+    expectTypeOf<VariantProps<typeof card>>().toEqualTypeOf<Variants>();
+    expectTypeOf(card).not.toHaveProperty('classNames');
+    card().title({
+      // @ts-expect-error - 'medium' is not a size value
+      size: 'medium',
+    });
+  });
+
+  it('slots reject styles that are not keyed by a declared slot', () => {
+    ev({
+      slots: {
+        root: {
+          padding: '8px',
+        },
+      },
+      variants: {
+        size: {
+          small: {
+            // @ts-expect-error - 'title' is not a slot
+            title: {
+              fontSize: '12px',
+            },
+          },
+        },
+      },
+    });
+
+    ev({
+      slots: {
+        root: {
+          padding: '8px',
+        },
+      },
+      compoundSlots: [
+        {
+          // @ts-expect-error - 'title' is not a slot
+          slots: ['root', 'title'],
+          style: {
+            margin: '0',
+          },
+        },
+      ],
+    });
+
+    ev({
+      slots: {
+        root: {
+          padding: '8px',
+        },
+      },
+      compoundVariants: [
+        {
+          variants: {},
+          style: {
+            // @ts-expect-error - a slot-mode compound style is keyed by slot
+            margin: '0',
+          },
+        },
+      ],
+    });
+  });
+
+  it('slots and base are mutually exclusive', () => {
+    ev({
+      // @ts-expect-error - use `slots` for base styles once it is declared
+      base: {
+        padding: '8px',
+      },
+      slots: {
+        root: {
+          padding: '8px',
+        },
+      },
+    });
+
+    ev({
+      base: {
+        padding: '8px',
+      },
+      // @ts-expect-error - compoundSlots needs `slots`
+      compoundSlots: [],
+    });
+  });
+
   it('type-safe with empty variants', () => {
     const style = ev({
       base: { padding: '10px' },

@@ -67,6 +67,10 @@ export const en = defineConfig({
               text: 'Typed Props',
               link: '/recipes/typed-props',
             },
+            {
+              text: 'Slots',
+              link: '/recipes/slots',
+            },
           ],
         },
         {
