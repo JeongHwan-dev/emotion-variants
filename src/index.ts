@@ -4,6 +4,7 @@ export type {
   EvClassNames,
   EvConfig,
   EvFunction,
+  EvSlotsFunction,
   EvVariants,
   VariantConfig,
   VariantKeys,

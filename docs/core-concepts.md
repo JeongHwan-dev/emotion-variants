@@ -230,6 +230,45 @@ For a given call, styles are appended in this order (later wins on CSS conflicts
 2. Each matching simple `variants` entry, in the order keys appear in `variants`
 3. Each matching `compoundVariants` entry, in array order
 
+## `slots`
+
+A component made of several elements declares `slots` in place of `base`. Each slot names one part, and variant values are keyed by slot. Calling the result returns one style function per slot.
+
+```tsx
+const card = ev({
+  slots: {
+    root: {
+      padding: 16,
+    },
+    title: {
+      fontWeight: 600,
+    },
+  },
+  variants: {
+    size: {
+      large: {
+        root: {
+          padding: 24,
+        },
+        title: {
+          fontSize: 20,
+        },
+      },
+    },
+  },
+});
+
+const { root, title } = card({
+  size: 'large',
+});
+
+<section css={root()}>
+  <h3 css={title()}>Title</h3>
+</section>;
+```
+
+[Slots](./recipes/slots) covers per-slot overrides, `compoundSlots`, and the rules.
+
 ## Next
 
 - [API Reference](./reference/ev) — the complete `ev()` signature and return value.

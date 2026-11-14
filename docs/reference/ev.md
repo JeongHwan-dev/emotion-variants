@@ -56,10 +56,12 @@ The configuration object is required. Pass `ev({})` if you have nothing to decla
 - `config.variants` (`Record<string, Record<string, CSSObject>>`): The variant axes. Each axis maps a value to its styles. Because values are object keys, write Boolean and number values as keys — `true`, `false`, `1` — and they are typed back to `boolean` and number literals.
 - `config.compoundVariants` (`Array<{ variants, style }>`): Styles applied only when every listed variant value matches. A condition can also be an array of values, which matches any of them. Note the key is `style`, singular.
 - `config.defaultVariants` (`Partial<Record<Axis, Value>>`): Values used when the caller omits an axis.
+- `config.slots` (`Record<string, CSSObject>`): The parts of a multi-element component and their base styles. Replaces `base`, and keys every variant value and compound `style` by slot name. See [Slots](#slots).
+- `config.compoundSlots` (`Array<{ slots, variants?, style }>`): One style applied to several slots, always or only when `variants` match. Requires `slots`.
 
 #### Returns
 
-(`EvFunction<T>`): A callable object. Call it to get styles, or read [`className()`](#classname), [`classNames`](#classnames), and [`variants()`](#variants) off it.
+(`EvFunction<T>`): A callable object. Call it to get styles, or read [`className()`](#classname), [`classNames`](#classnames), and [`variants()`](#variants) off it. With `config.slots` it is an `EvSlotsFunction<N, T>` instead, described under [Slots](#slots).
 
 ### `button(variants)` {#call}
 
@@ -205,6 +207,74 @@ A config without `variants` returns `[]`.
 #### Returns
 
 (`Array<VariantKeys<T>>`): The axis names. The same array instance is returned on every call, so treat it as read-only.
+
+### Slots {#slots}
+
+Declare `config.slots` instead of `config.base` when a component is made of several elements. Variant values and compound `style` are then keyed by slot name, and the call returns one style function per slot.
+
+```tsx
+const card = ev({
+  slots: {
+    root: {
+      padding: 16,
+    },
+    title: {
+      fontWeight: 600,
+    },
+  },
+  variants: {
+    size: {
+      small: {},
+      large: {
+        root: {
+          padding: 24,
+        },
+        title: {
+          fontSize: 20,
+        },
+      },
+    },
+  },
+  compoundSlots: [
+    {
+      slots: ['root', 'title'],
+      style: {
+        margin: 0,
+      },
+    },
+  ],
+  defaultVariants: {
+    size: 'small',
+  },
+});
+
+const { root, title } = card({
+  size: 'large',
+});
+
+<section css={root()}>
+  <h3 css={title()}>Title</h3>
+</section>;
+```
+
+Each slot function takes the same variants as the call. A value is resolved per axis from the slot's props, then the call's props, then `defaultVariants`, and compound entries are matched for each slot against the values it resolved to.
+
+Styles for a slot are ordered: its entry in `slots`, matching `variants` entries, matching `compoundVariants`, then matching `compoundSlots`.
+
+The rest of the object differs from the plain form in two places:
+
+- `card.className(variants)` returns one class name per slot, as `{ root: string, title: string }`.
+- There is no `card.classNames`.
+
+`card.variants()` is unchanged.
+
+`config.base` cannot be combined with `config.slots`, and only declared slot names are accepted wherever a slot is named. Both are type errors.
+
+#### Returns
+
+(`EvSlotsFunction<N, T>`): Calling it returns `{ [slot]: (slotVariants?) => SerializedStyles[] }`.
+
+See [Slots](../recipes/slots) for a walkthrough.
 
 ## Try it out
 

@@ -1,8 +1,9 @@
 import { cache } from '@emotion/css';
+import type { SerializedStyles } from '@emotion/react';
 import { describe, expect, it } from 'vitest';
 import { ev } from '../src/ev';
 
-const stylesOf = (result: ReturnType<ReturnType<typeof ev>>) => result.map((s) => s.styles);
+const stylesOf = (result: SerializedStyles[]) => result.map((s) => s.styles);
 
 describe('ev - Basic Features', () => {
   it('applies base styles only', () => {
@@ -497,5 +498,175 @@ describe('ev - className', () => {
 
     expect(cache.registered[className]).toContain('font-size:12px;');
     expect(cache.registered[className]).not.toContain('font-weight:bold;');
+  });
+});
+
+describe('ev - Slots', () => {
+  const card = ev({
+    slots: {
+      root: {
+        padding: '8px',
+      },
+      title: {
+        fontWeight: 'bold',
+      },
+      footer: {
+        display: 'flex',
+      },
+    },
+    variants: {
+      size: {
+        small: {
+          root: {
+            padding: '4px',
+          },
+          title: {
+            fontSize: '12px',
+          },
+        },
+        large: {
+          root: {
+            padding: '16px',
+          },
+          title: {
+            fontSize: '20px',
+          },
+        },
+      },
+      tone: {
+        neutral: {},
+        danger: {
+          title: {
+            color: 'red',
+          },
+        },
+      },
+    },
+    compoundVariants: [
+      {
+        variants: {
+          size: 'large',
+          tone: 'danger',
+        },
+        style: {
+          title: {
+            textTransform: 'uppercase',
+          },
+        },
+      },
+    ],
+    compoundSlots: [
+      {
+        slots: ['root', 'title'],
+        style: {
+          margin: '0',
+        },
+      },
+      {
+        slots: ['root', 'footer'],
+        variants: {
+          size: 'large',
+        },
+        style: {
+          gap: '8px',
+        },
+      },
+    ],
+    defaultVariants: {
+      size: 'small',
+    },
+  });
+
+  it('returns a style function per slot', () => {
+    const { root, title, footer } = card();
+
+    expect(stylesOf(root())).toEqual(['padding:8px;', 'padding:4px;', 'margin:0;']);
+    expect(stylesOf(title())).toEqual(['font-weight:bold;', 'font-size:12px;', 'margin:0;']);
+    expect(stylesOf(footer())).toEqual(['display:flex;']);
+  });
+
+  it('orders slot base, variants, compoundVariants, then compoundSlots', () => {
+    const { root, title } = card({
+      size: 'large',
+      tone: 'danger',
+    });
+
+    expect(stylesOf(title())).toEqual([
+      'font-weight:bold;',
+      'font-size:20px;',
+      'color:red;',
+      'text-transform:uppercase;',
+      'margin:0;',
+    ]);
+    expect(stylesOf(root())).toEqual(['padding:8px;', 'padding:16px;', 'margin:0;', 'gap:8px;']);
+  });
+
+  it('resolves slot props over call props over defaults', () => {
+    const { title } = card({
+      size: 'large',
+    });
+
+    expect(stylesOf(title())).toContain('font-size:20px;');
+    expect(
+      stylesOf(
+        title({
+          size: 'small',
+        }),
+      ),
+    ).toContain('font-size:12px;');
+    expect(
+      stylesOf(
+        title({
+          size: undefined,
+        }),
+      ),
+    ).toContain('font-size:20px;');
+  });
+
+  it('re-evaluates compounds with slot props', () => {
+    const { title, footer } = card({
+      tone: 'danger',
+    });
+
+    expect(stylesOf(title())).not.toContain('text-transform:uppercase;');
+    expect(
+      stylesOf(
+        title({
+          size: 'large',
+        }),
+      ),
+    ).toContain('text-transform:uppercase;');
+    expect(
+      stylesOf(
+        footer({
+          size: 'large',
+        }),
+      ),
+    ).toEqual(['display:flex;', 'gap:8px;']);
+  });
+
+  it('accepts a slot named like an Object.prototype member', () => {
+    const box = ev({
+      slots: {
+        constructor: {
+          color: 'red',
+        },
+      },
+    });
+
+    expect(stylesOf(box().constructor())).toEqual(['color:red;']);
+  });
+
+  it('exposes variants() and a className per slot, but no classNames', () => {
+    const classNames = card.className({
+      size: 'large',
+    });
+
+    expect(card.variants()).toEqual(['size', 'tone']);
+    expect(Object.keys(classNames)).toEqual(['root', 'title', 'footer']);
+    expect(cache.registered[classNames.root]).toContain('padding:16px;');
+    expect(cache.registered[classNames.footer]).toContain('gap:8px;');
+    expect(cache.registered[classNames.footer]).not.toContain('padding');
+    expect('classNames' in card).toBe(false);
   });
 });
