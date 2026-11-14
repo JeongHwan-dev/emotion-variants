@@ -28,7 +28,7 @@ type ButtonVariants = VariantProps<typeof button>;
 
 ## 사용법
 
-### `EvConfig<T, N>`
+### `EvConfig<T, N, E>`
 
 [`ev()`](./ev)에 넘기는 객체의 모양이에요. 설정을 별도 변수나 factory로 분리할 때 쓸 만해요.
 
@@ -46,9 +46,11 @@ const config: EvConfig<{ size: { small: { fontSize: number } } }> = {
 };
 ```
 
-모든 필드가 선택이에요. `base`, `variants`, `compoundVariants`, `defaultVariants`가 있고, [slots](./ev#slots)를 쓸 때는 `slots`와 `compoundSlots`가 있어요.
+모든 필드가 선택이에요. `base`, `variants`, `compoundVariants`, `defaultVariants`, [`extend`](./ev#extend)가 있고, [slots](./ev#slots)를 쓸 때는 `slots`와 `compoundSlots`가 있어요.
 
 `N`은 slot 이름의 union이에요. 기본값은 `never`이고, `slots`가 없는 일반 형태를 뜻해요.
+
+`E`는 `extend`에 넘긴 `ev()` 결과의 타입이에요. 기본값은 `undefined`이고, 아무것도 extend하지 않는 설정을 뜻해요.
 
 ### `EvFunction<T>`
 

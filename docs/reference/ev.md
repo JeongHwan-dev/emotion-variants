@@ -58,6 +58,7 @@ The configuration object is required. Pass `ev({})` if you have nothing to decla
 - `config.defaultVariants` (`Partial<Record<Axis, Value>>`): Values used when the caller omits an axis.
 - `config.slots` (`Record<string, CSSObject>`): The parts of a multi-element component and their base styles. Replaces `base`, and keys every variant value and compound `style` by slot name. See [Slots](#slots).
 - `config.compoundSlots` (`Array<{ slots, variants?, style }>`): One style applied to several slots, always or only when `variants` match. Requires `slots`.
+- `config.extend` (`EvFunction | EvSlotsFunction`): Another `ev()` result to build on. Its styles, variants, compound variants, and default variants are inherited. See [extend](#extend).
 
 #### Returns
 
@@ -275,6 +276,75 @@ The rest of the object differs from the plain form in two places:
 (`EvSlotsFunction<N, T>`): Calling it returns `{ [slot]: (slotVariants?) => SerializedStyles[] }`.
 
 See [Slots](../recipes/slots) for a walkthrough.
+
+### extend {#extend}
+
+Pass another `ev()` result as `config.extend` to build on it. The new function inherits the parent's styles, variants, compound variants, and default variants. The parent is not changed.
+
+```ts
+const button = ev({
+  base: {
+    padding: '10px 20px',
+  },
+  variants: {
+    size: {
+      small: {
+        fontSize: 12,
+      },
+      large: {
+        fontSize: 16,
+      },
+    },
+  },
+  defaultVariants: {
+    size: 'small',
+  },
+});
+
+const iconButton = ev({
+  extend: button,
+  base: {
+    display: 'inline-flex',
+  },
+  variants: {
+    size: {
+      large: {
+        width: 48,
+      },
+    },
+    round: {
+      true: {
+        borderRadius: '50%',
+      },
+    },
+  },
+});
+
+iconButton({
+  size: 'large',
+  round: true,
+});
+// padding, display, font-size, width, border-radius
+```
+
+The parent's styles come before the child's at every step, so the full order is:
+
+1. `base`, parent then child
+2. Matching `variants` entries, axis by axis; for each value, parent then child
+3. Matching `compoundVariants` entries, parent then child
+
+Inherited axes keep their position and the child's new axes follow, which is also the order of `iconButton.variants()`. `defaultVariants` are merged per axis with the child's value winning. The child's `compoundVariants` and `defaultVariants` can refer to inherited axes and values.
+
+Every compound variant comes after every variant style, so a parent's compound variant still wins over a style the child declares for the same variant value.
+
+With [slots](#slots), the parent and the child must both be slot functions. The child's `slots` are added to the parent's, and a child without `slots` keeps the parent's. `compoundSlots` are inherited along with `compoundVariants`.
+
+`extend` throws when `ev()` runs in two cases:
+
+- The value is not an `ev()` result. If it did come from `ev()`, two copies of `emotion-variants` are probably installed.
+- A config with `slots` extends one without. This is a type error too, as is `config.base` on a child whose parent has `slots`.
+
+See [Extend](../recipes/extend) for a walkthrough.
 
 ## Try it out
 
