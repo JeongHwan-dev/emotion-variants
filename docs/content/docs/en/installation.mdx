@@ -1,0 +1,89 @@
+---
+title: Installation
+description: 'Install emotion-variants with its Emotion peer dependencies and enable the css prop.'
+---
+
+## Requirements
+
+- **React** 16.14 or newer — the automatic JSX runtime (`react/jsx-runtime`) landed in 16.14
+- **`@emotion/react`** 11.x
+- **`@emotion/css`** 11.x
+
+## Install
+
+```sh tab="npm"
+npm install emotion-variants @emotion/react @emotion/css
+```
+
+```sh tab="pnpm"
+pnpm add emotion-variants @emotion/react @emotion/css
+```
+
+```sh tab="yarn"
+yarn add emotion-variants @emotion/react @emotion/css
+```
+
+```sh tab="bun"
+bun add emotion-variants @emotion/react @emotion/css
+```
+
+Both Emotion packages are peer dependencies and must be installed alongside `emotion-variants`. `@emotion/react` serializes your styles for the `css` prop; `@emotion/css` backs [`className()` and `classNames`](./ev.mdx#classname). `@emotion/css` is imported unconditionally, so it is required even if you only ever use the `css` prop.
+
+## Enable the `css` prop
+
+`emotion-variants` returns values you pass to Emotion's `css` prop. Make sure your project is set up to use it. The simplest setup points the automatic JSX runtime at Emotion:
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "@emotion/react"
+  }
+}
+```
+
+Both options are required. `jsxImportSource` has no effect under `"jsx": "react"` — that is the classic transform, which calls `React.createElement` and never consults an import source.
+
+Or per file, for a project that cannot switch globally:
+
+```tsx
+/** @jsxImportSource @emotion/react */
+```
+
+The pragma needs the automatic runtime too, so it must be the first thing in the file and the file must be compiled with `react-jsx`. On React older than 16.14, use [Emotion's Babel plugin](https://emotion.sh/docs/css-prop#babel-plugin) with the classic transform instead.
+
+See [Emotion's installation guide](https://emotion.sh/docs/css-prop) for other setups (Next.js, Vite, etc.).
+
+## Verify
+
+Create a tiny component and render it. If TypeScript autocompletes `size` inside `button({ ... })`, you're good to go.
+
+```tsx
+import type { ComponentPropsWithoutRef } from 'react';
+import { ev, type VariantProps } from 'emotion-variants';
+
+const button = ev({
+  base: {
+    padding: '8px 16px',
+  },
+  variants: {
+    size: {
+      sm: {
+        fontSize: 12,
+      },
+      lg: {
+        fontSize: 16,
+      },
+    },
+  },
+});
+
+type ButtonProps = ComponentPropsWithoutRef<'button'> & VariantProps<typeof button>;
+
+export function Button({ size, ...rest }: ButtonProps) {
+  return <button css={button({ size })} {...rest} />;
+}
+```
+
+Next: [Quick Start](./quick-start.mdx).

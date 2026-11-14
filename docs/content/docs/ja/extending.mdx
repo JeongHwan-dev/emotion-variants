@@ -1,0 +1,237 @@
+---
+title: Extend
+description: '別のコンポーネントに少しだけ手を加えたコンポーネントがあります。'
+---
+
+別のコンポーネントに少しだけ手を加えたコンポーネントがあります。icon button は幅が固定された button で、danger card は tone がひとつ多い card です。`extend` を使うと、ある `ev()` の結果の上に別の `ev()` の結果を構築できるので、共通のスタイルと variants を一度宣言するだけで済みます。
+
+## 別の関数の上に構築する
+
+`extend` に `ev()` の結果を渡します。新しい関数は、親が宣言したものをすべて継承します。
+
+<Preview name="extending">
+
+```tsx
+import { ev } from 'emotion-variants';
+
+const button = ev({
+  base: {
+    border: '1px solid transparent',
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontWeight: 600,
+    transition: 'all 0.2s ease',
+  },
+  variants: {
+    variant: {
+      filled: {
+        background: 'var(--button-color)',
+        color: 'white',
+      },
+      outlined: {
+        background: 'transparent',
+        borderColor: 'var(--button-color)',
+        color: 'var(--button-color)',
+      },
+      text: {
+        background: 'transparent',
+        color: 'var(--button-color)',
+      },
+    },
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        '--button-color': '#d36ac2',
+      },
+      secondary: {
+        '--button-color': '#475569',
+      },
+    },
+  },
+  defaultVariants: {
+    variant: 'filled',
+    size: 'medium',
+    color: 'primary',
+  },
+});
+
+const iconButton = ev({
+  extend: button,
+  base: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 44,
+    height: 44,
+  },
+});
+
+<button css={button()}>Button</button>
+<button aria-label="Close" css={iconButton()}>
+  ✕
+</button>
+```
+
+</Preview>
+
+`iconButton` は `variant`、`size`、`color` を受け取り、親のデフォルト値を適用し、親の `base` の後に自身の `base` を追加します。`button` 自体は変更されません。
+
+## 値と軸を追加する
+
+子は、継承した軸に値を追加したり、継承した値にスタイルを追加したり、新しい軸を宣言したりできます。
+
+```ts
+const iconButton = ev({
+  extend: button,
+  variants: {
+    size: {
+      large: {
+        width: 48,
+      },
+      huge: {
+        fontSize: 24,
+      },
+    },
+    round: {
+      true: {
+        borderRadius: '50%',
+      },
+    },
+  },
+});
+
+iconButton.variants(); // ['variant', 'size', 'color', 'round']
+```
+
+- `size: 'small'` はそのまま継承されます。
+- `size: 'large'` には親の font size が適用され、その後に子の width が適用されます。
+- `size: 'huge'` と `round` 軸は `iconButton` にだけ存在します。
+
+継承した軸は元の位置を保ち、新しい軸はその後に続きます。
+
+## デフォルト値と compound variants
+
+`defaultVariants` は軸ごとにマージされ、子の値が優先されます。子の `compoundVariants` と `defaultVariants` では、継承した軸と値を参照できます。
+
+```ts
+const iconButton = ev({
+  extend: button,
+  variants: {
+    round: {
+      true: {
+        borderRadius: '50%',
+      },
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        variant: 'outlined',
+        round: true,
+      },
+      style: {
+        borderWidth: 2,
+      },
+    },
+  ],
+  defaultVariants: {
+    size: 'large',
+  },
+});
+```
+
+親の compound variants も継承され、子で解決された値に対して照合されます。
+
+## 順序
+
+どの段階でも、親のスタイルが子のスタイルより先に来ます。CSS が競合した場合は後のエントリが優先されます。
+
+1. `base`（親、次に子）
+2. 一致した `variants` のエントリ（軸ごとに、各値について親、次に子）
+3. 一致した `compoundVariants` のエントリ（親、次に子）
+
+<Callout type="warn">
+
+すべての compound variant は、すべての variant スタイルの後に来ます。そのため、子が同じ variant の値にスタイルを宣言しても、親の compound variant が優先されます。これを上書きするには、同じ条件の compound variant を子に追加してください。
+
+</Callout>
+
+チェーンはいくらでも長くできます。`iconButton` をさらに extend すると、`button` が最初、`iconButton` が 2 番目、新しい設定が最後になります。
+
+## slots と組み合わせる
+
+[slots](./slots.mdx) の関数は、別の slots の関数を extend します。子は slot を追加したり、継承した slot にスタイルを追加したりできます。
+
+```ts
+const card = ev({
+  slots: {
+    root: {
+      padding: 16,
+    },
+    title: {
+      fontWeight: 600,
+    },
+  },
+});
+
+const mediaCard = ev({
+  extend: card,
+  slots: {
+    root: {
+      overflow: 'hidden',
+    },
+    footer: {
+      display: 'flex',
+    },
+  },
+});
+
+const { root, title, footer } = mediaCard();
+```
+
+`slots` を宣言しない子は親の slot をそのまま使い、その variant の値も引き続き slot 名ごとに書きます。
+
+## Class name
+
+`className()` には継承したスタイルが含まれます。`classNames` の各エントリは、そのキーに対応する親と子のスタイルをマージしたもので、子が手を加えていない値は親の class name をそのまま使います。
+
+## ルール
+
+- `extend` はひとつの `ev()` の結果を受け取ります。それ以外を渡すと `ev()` の実行時にエラーが投げられます。値が確かに `ev()` から得たものなら、`emotion-variants` が 2 つインストールされている可能性があります。
+- `slots` を持つ設定は、`slots` を持つものしか extend できません。通常の関数を extend するとエラーが投げられ、型エラーにもなります。
+- 親が `slots` を持つ場合、子は `base` を使えません。スタイルは slot に書いてください。これは型エラーになります。
+
+## Props
+
+extend した関数に [`VariantProps`](./typescript.mdx) を使うと、マージされた variants が得られます。
+
+```ts
+import type { VariantProps } from 'emotion-variants';
+
+type IconButtonVariants = VariantProps<typeof iconButton>;
+// {
+//   variant?: 'filled' | 'outlined' | 'text';
+//   size?: 'small' | 'medium' | 'large';
+//   color?: 'primary' | 'secondary';
+//   round?: true;
+// }
+```
+
+## 関連項目
+
+- [Slots](./slots.mdx)
+- [API リファレンス → extend](./ev.mdx#extend)
+

@@ -1,0 +1,99 @@
+---
+title: 迁移到 v2
+description: 'v2.0.0 改变了三处行为，并新增了一个必需的 peer dependency。'
+---
+
+v2.0.0 改变了三处行为，并新增了一个必需的 peer dependency。大多数代码库只需要完成安装这一步。
+
+## 安装新的 peer dependency
+
+现在必须安装 `@emotion/css`。它为 [`className()`](./ev.mdx#classname) 和 [`classNames`](./ev.mdx#classnames) 提供支持，并且会被无条件导入，所以即使你只用 `css` prop 也需要它。
+
+```diff
+- pnpm add emotion-variants @emotion/react
++ pnpm add emotion-variants @emotion/react @emotion/css
+```
+
+## `undefined` 现在会回退到 `defaultVariants`
+
+在 v1 中，配置和 props 通过对象展开合并，所以显式传入的 `undefined` 会抹掉默认值。v2 对每个键使用 `??` 解析。
+
+```ts
+const button = ev({
+  variants: {
+    size: {
+      small: {},
+      large: {},
+    },
+  },
+  defaultVariants: {
+    size: 'small',
+  },
+});
+
+button({ size: undefined });
+// v1：完全没有 size 样式
+// v2：'small'
+```
+
+**需要删除的代码。** 任何在调用前剔除 `undefined` 的变通写法，或在 prop 边界重复声明默认值的写法：
+
+```diff
+  function Button({ size }: Props) {
+-   const variants = size !== undefined ? { size } : {};
+-   return <button css={button(variants)}>Click</button>;
++   return <button css={button({ size })}>Click</button>;
+  }
+```
+
+```diff
+- function Button({ size = 'small' }: Props) {
++ function Button({ size }: Props) {
+    return <button css={button({ size })}>Click</button>;
+  }
+```
+
+`false` 和 `0` 不受影响：它们是真正的 variant 值，从来不会被默认值替换。
+
+## 调用结果始终是数组
+
+v1 返回 `Interpolation<unknown>`，当恰好只有一个样式匹配时，它是一个单独的 `SerializedStyles` 对象。v2 始终返回 `SerializedStyles[]`。
+
+```diff
+- (variants?: EvVariants<T>): Interpolation<unknown>;
++ (variants?: EvVariants<T>): SerializedStyles[];
+```
+
+`css` prop 两种都接受，所以 `css={button(...)}` 无需修改。但检查返回结果的代码需要修改：
+
+```diff
+- const styles = button({ size: 'large' });
+- const list = Array.isArray(styles) ? styles : [styles];
++ const list = button({ size: 'large' });
+```
+
+## `classNames` 返回真正的 class name
+
+在 v1 中，每一项都是字符串 `"[object Object]"`，即对 `SerializedStyles` 调用 `String()` 的结果。v2 通过 `@emotion/css` 注入每个样式，并返回生成的 class。
+
+```ts
+button.classNames.variants.size.small;
+// v1：'[object Object]'
+// v2：'css-def456'
+```
+
+在你第一次读取 `classNames` 之前不会注入任何样式，并且结果会被缓存，所以只用 `css` prop 的代码没有任何开销。
+
+如果你曾为绕过旧行为而自己拼接 class name，请删除那些代码。注意，`classNames` 仍然只覆盖 `base` 和单个 variant 值；compound variants 请使用 [`className()`](./ev.mdx#classname)。
+
+## 新增：`className(variants)`
+
+v2 新增了一个方法，为整个组合（包括 compound variants）返回一个 class，适用于 `className` props 和非 React 代码。
+
+```tsx
+<button className={button.className({ size: 'large', color: 'primary' })}>Click me</button>;
+```
+
+## 新增：`EvClassNames` 类型
+
+现在导出了 `EvClassNames<T>`。请参阅[类型](./types.mdx)。

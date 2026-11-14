@@ -1,0 +1,110 @@
+---
+title: TypeScript
+description: 'emotion-variants 已经能从配置中推断 variant 类型。'
+---
+
+`emotion-variants` 已经能从配置中推断 variant 类型。本页介绍如何从 `ev()` 结果**推导出 React 组件的 props**，让组件的 props 类型与样式保持同步。
+
+## `VariantProps` 类型
+
+`emotion-variants` 导出了 `VariantProps`。把任意 `ev()` 结果的类型传给它，就能得到对应的 variants：
+
+```ts
+import { ev, type VariantProps } from 'emotion-variants';
+
+const button = ev({
+  variants: {
+    size: {
+      small: {},
+      medium: {},
+      large: {},
+    },
+    color: {
+      primary: {},
+      danger: {},
+    },
+  },
+});
+
+type ButtonVariants = VariantProps<typeof button>;
+// { size?: 'small' | 'medium' | 'large'; color?: 'primary' | 'danger' }
+```
+
+在 `variants.size` 中新增一个值，`ButtonVariants['size']` 会自动更新。
+
+## 与 HTML 元素 props 结合
+
+对于类似按钮的多态组件，与 `ComponentPropsWithoutRef` 取交叉类型：
+
+```tsx
+import type { ComponentPropsWithoutRef } from 'react';
+
+export type ButtonProps = ComponentPropsWithoutRef<'button'> & ButtonVariants;
+
+export function Button({ size, color, ...rest }: ButtonProps) {
+  return <button css={button({ size, color })} {...rest} />;
+}
+```
+
+## 搭配合理的默认值
+
+默认值只在 `defaultVariants` 中声明一次，props 原样透传即可。省略的 prop 会以 `undefined` 传入，并仍然解析为默认值；如果在 prop 边界再设一套默认值，只会让两者有机会产生分歧：
+
+```tsx
+const button = ev({
+  variants: {
+    /* ... */
+  },
+  defaultVariants: {
+    size: 'medium',
+    color: 'primary',
+  },
+});
+
+export function Button({ size, color, ...rest }: ButtonProps) {
+  return <button css={button({ size, color })} {...rest} />;
+}
+```
+
+解析规则请参阅 [Default Variants](./default-variants.mdx)。
+
+## 转发 ref
+
+```tsx
+import { forwardRef, type ComponentPropsWithoutRef } from 'react';
+
+export type ButtonProps = ComponentPropsWithoutRef<'button'> & ButtonVariants;
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ size, color, ...rest }, ref) => (
+    <button ref={ref} css={button({ size, color })} {...rest} />
+  ),
+);
+```
+
+## 只提取部分维度
+
+如果只想把部分维度作为 props 暴露（例如对公开 API 隐藏 `density`），用 `Pick` 即可：
+
+```ts
+type PublicButtonProps =
+  ComponentPropsWithoutRef<'button'> &
+  Pick<ButtonVariants, 'size' | 'color'>;
+```
+
+## 从设计系统中重新导出
+
+如果你维护的设计系统包在内部使用 `emotion-variants`，请导出 props 类型，这样使用方就不必导入内部的样式文件：
+
+```ts
+// design-system/src/button/index.ts
+export { Button } from './button';
+export type { ButtonProps } from './button';
+```
+
+使用方从你的包中导入 `ButtonProps`，完全不需要接触底层的 `ev()` 配置。
+
+## 另请参阅
+
+- [类型](./types.mdx)
+- [Default Variants](./default-variants.mdx)

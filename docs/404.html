@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Page not found | emotion-variants</title>
+    <link rel="icon" href="/logo.svg" />
+    <script>
+      // GitHub Pages serves this file for every unknown path. URLs from before the move to
+      // Fumadocs are still linked from READMEs published to npm, so send them to their new pages.
+      var MOVED = {
+        '/docs': 'introduction',
+        '/intro': 'introduction',
+        '/installation': 'installation',
+        '/getting-started': 'quick-start',
+        '/core-concepts': 'variants',
+        '/recipes/compound-variants': 'compound-variants',
+        '/recipes/default-variants': 'default-variants',
+        '/recipes/overrides': 'overrides',
+        '/recipes/typed-props': 'typescript',
+        '/recipes/slots': 'slots',
+        '/recipes/extend': 'extending',
+        '/recipes/responsive': 'responsive',
+        '/reference/ev': 'ev',
+        '/reference/create-ev': 'create-ev',
+        '/reference/types': 'types',
+        '/migration': 'migration',
+      };
+      var path = location.pathname.replace(/(\/|\.html)$/, '');
+      var ko = path === '/ko' || path.indexOf('/ko/') === 0 ? '/ko' : '';
+      var slug = MOVED[path.slice(ko.length)];
+      if (slug) location.replace(`${ko}/docs/${slug}/${location.hash}`);
+    </script>
+    <style>
+      body {
+        display: grid;
+        place-content: center;
+        min-height: 100vh;
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        text-align: center;
+        color-scheme: light dark;
+      }
+      a {
+        color: #d36ac2;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>404</h1>
+    <p>This page doesn't exist.</p>
+    <p><a href="/">emotion-variants.org</a></p>
+  </body>
+</html>

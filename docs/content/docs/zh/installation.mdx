@@ -1,0 +1,89 @@
+---
+title: 安装
+description: '安装 emotion-variants 及其 Emotion peer dependency，并启用 css prop。'
+---
+
+## 环境要求
+
+- **React** 16.14 或更高版本：自动 JSX runtime（`react/jsx-runtime`）从 16.14 开始提供
+- **`@emotion/react`** 11.x
+- **`@emotion/css`** 11.x
+
+## 安装
+
+```sh tab="npm"
+npm install emotion-variants @emotion/react @emotion/css
+```
+
+```sh tab="pnpm"
+pnpm add emotion-variants @emotion/react @emotion/css
+```
+
+```sh tab="yarn"
+yarn add emotion-variants @emotion/react @emotion/css
+```
+
+```sh tab="bun"
+bun add emotion-variants @emotion/react @emotion/css
+```
+
+两个 Emotion 包都是 peer dependencies，必须与 `emotion-variants` 一起安装。`@emotion/react` 负责为 `css` prop 序列化样式；`@emotion/css` 为 [`className()` 和 `classNames`](./ev.mdx#classname) 提供支持。`@emotion/css` 会被无条件导入，所以即使你只用 `css` prop，也必须安装它。
+
+## 启用 `css` prop
+
+`emotion-variants` 返回的值要传给 Emotion 的 `css` prop，请确保项目已配置好它。最简单的做法是让自动 JSX runtime 指向 Emotion：
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "@emotion/react"
+  }
+}
+```
+
+两个选项缺一不可。在 `"jsx": "react"` 下 `jsxImportSource` 不起作用：那是 classic transform，它调用 `React.createElement`，从不读取 import source。
+
+如果项目无法全局切换，也可以按文件配置：
+
+```tsx
+/** @jsxImportSource @emotion/react */
+```
+
+这个 pragma 同样依赖自动 runtime，所以它必须位于文件最开头，且该文件必须以 `react-jsx` 编译。如果 React 版本低于 16.14，请改用 [Emotion 的 Babel 插件](https://emotion.sh/docs/css-prop#babel-plugin)搭配 classic transform。
+
+其他配置方式（Next.js、Vite 等）请参阅 [Emotion 的安装指南](https://emotion.sh/docs/css-prop)。
+
+## 验证
+
+创建一个小组件并渲染它。如果 TypeScript 能在 `button({ ... })` 中自动补全 `size`，就说明一切就绪。
+
+```tsx
+import type { ComponentPropsWithoutRef } from 'react';
+import { ev, type VariantProps } from 'emotion-variants';
+
+const button = ev({
+  base: {
+    padding: '8px 16px',
+  },
+  variants: {
+    size: {
+      sm: {
+        fontSize: 12,
+      },
+      lg: {
+        fontSize: 16,
+      },
+    },
+  },
+});
+
+type ButtonProps = ComponentPropsWithoutRef<'button'> & VariantProps<typeof button>;
+
+export function Button({ size, ...rest }: ButtonProps) {
+  return <button css={button({ size })} {...rest} />;
+}
+```
+
+下一步：[快速开始](./quick-start.mdx)。

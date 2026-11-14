@@ -1,0 +1,260 @@
+---
+title: Slots
+description: '组件很少只由一个元素构成。'
+---
+
+组件很少只由一个元素构成。一张卡片有 root、标题和 footer，而像 `size` 这样的 variant 通常会同时改变其中好几个部分的样式。`slots` 让一次 `ev()` 调用就能为每个部分设置样式，各部分共享同一组 variants，不会彼此脱节。
+
+## 声明各部分
+
+用 `slots` 代替 `base`。每个键代表组件的一个部分，值是该部分的 base 样式。
+
+```ts
+import { ev } from 'emotion-variants';
+
+const card = ev({
+  slots: {
+    root: {
+      borderRadius: 12,
+      padding: 16,
+    },
+    title: {
+      fontWeight: 600,
+    },
+    footer: {
+      display: 'flex',
+      gap: 8,
+    },
+  },
+});
+```
+
+现在调用 `card()` 会为每个 slot 返回一个样式函数。在渲染对应元素的地方分别调用它们：
+
+```tsx
+import type { ComponentPropsWithoutRef, ReactNode } from 'react';
+
+type CardProps = ComponentPropsWithoutRef<'section'> & {
+  heading: ReactNode;
+};
+
+function Card({ heading, children, ...rest }: CardProps) {
+  const { root, title, footer } = card();
+
+  return (
+    <section css={root()} {...rest}>
+      <h3 css={title()}>{heading}</h3>
+      <div css={footer()}>{children}</div>
+    </section>
+  );
+}
+```
+
+<Callout type="warn">
+
+slot 是函数，不是样式。请写 `css={root()}`。Emotion 会用 theme 调用传给 `css` 的函数，所以 `css={root}` 会把 theme 对象当成该 slot 的 variants 读取。
+
+</Callout>
+
+## 每个 slot 的 variants
+
+使用 `slots` 时，variant 值把 slot 名映射到样式。每个值只需列出它要改变的 slot。
+
+<Preview name="slots">
+
+```tsx
+const card = ev({
+  slots: {
+    root: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 6,
+      width: 320,
+      border: '1px solid #e4e4e7',
+      borderRadius: 12,
+      background: 'white',
+      color: '#09090b',
+      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+    },
+    title: {
+      fontWeight: 600,
+    },
+    footer: {
+      display: 'flex',
+      gap: 8,
+      fontSize: 14,
+      color: '#71717a',
+    },
+  },
+  variants: {
+    size: {
+      small: {
+        root: {
+          padding: 16,
+        },
+        title: {
+          fontSize: 16,
+        },
+      },
+      large: {
+        root: {
+          padding: 24,
+        },
+        title: {
+          fontSize: 18,
+        },
+      },
+    },
+    tone: {
+      neutral: {},
+      accent: {
+        title: {
+          color: '#d36ac2',
+        },
+      },
+    },
+  },
+  defaultVariants: {
+    size: 'small',
+    tone: 'neutral',
+  },
+});
+
+const { root, title, footer } = card({
+  size: 'large',
+  tone: 'accent',
+});
+
+<div css={root()}>
+  <h3 css={title()}>Weekly report</h3>
+  <div css={footer()}>Updated 2 hours ago</div>
+</div>
+```
+
+</Preview>
+
+一次调用就会为所有 slot 解析 variants。`root()` 得到 large 的 padding，`title()` 得到 large 的字号和 accent 颜色，而 `footer()` 只有 base 样式，因为没有任何 variant 提到它。
+
+## 只为一个 slot 覆盖 variant
+
+每个 slot 函数都接收与整体调用相同的 variant props。slot 的 prop 优先于调用时的 props，调用时的 props 又优先于 `defaultVariants`。
+
+```tsx
+const { root, title } = card({
+  size: 'large',
+});
+
+root(); // large
+title({
+  size: 'small',
+}); // small，仅作用于 title
+```
+
+与其他地方一样，`undefined` 会落到下一级，所以把可选 prop 透传给 slot 是安全的。
+
+## Compound variants
+
+`compoundVariants` 的用法相同，只是 `style` 以 slot 为键。
+
+```ts
+compoundVariants: [
+  {
+    variants: {
+      size: 'large',
+      tone: 'accent',
+    },
+    style: {
+      title: {
+        textTransform: 'uppercase',
+      },
+    },
+  },
+],
+```
+
+compound 按 slot 分别匹配，依据的是该 slot 解析后的值。因此，在某个 slot 上覆盖 variant，可以只为这个 slot 开启或关闭 compound：
+
+```ts
+const { title } = card({
+  tone: 'accent',
+});
+
+title(); // small + accent：不触发 compound
+title({
+  size: 'large',
+}); // large + accent：uppercase
+```
+
+## 为多个 slot 应用同一样式
+
+`compoundSlots` 把一个样式应用到一组 slot 上，省去在每个 slot 名下重复书写。
+
+```ts
+compoundSlots: [
+  {
+    slots: ['title', 'footer'],
+    style: {
+      paddingInline: 4,
+    },
+  },
+  {
+    slots: ['root', 'footer'],
+    variants: {
+      size: 'large',
+    },
+    style: {
+      gap: 16,
+    },
+  },
+],
+```
+
+`variants` 是可选的。省略时该条目始终生效；提供时，它遵循与 `compoundVariants` 相同的匹配规则，包括数组条件。
+
+## 顺序
+
+对每个 slot，样式按以下顺序追加，发生 CSS 冲突时后者生效：
+
+1. `slots` 中该 slot 的 base 样式
+2. 匹配的 `variants` 项，按维度声明的顺序
+3. 匹配的 `compoundVariants` 项，按数组顺序
+4. 匹配的 `compoundSlots` 项，按数组顺序
+
+## class name
+
+`className()` 为每个 slot 返回一个 class name。
+
+```tsx
+const classNames = card.className({
+  size: 'large',
+});
+
+<section className={classNames.root}>
+  <h3 className={classNames.title}>Title</h3>
+</section>;
+```
+
+声明了 `slots` 时，没有 `classNames` 查找表。
+
+## 规则
+
+- `base` 和 `slots` 不能同时使用。把样式放进某个 slot，通常命名为 `root`。
+- variant 值、compound 的 `style` 和 `compoundSlots` 条目只能引用已声明的 slot。其他名称会报类型错误，可以帮你发现拼写错误。
+- `'&:hover'` 这类选择器要写在 slot 的样式内部，而不是和 slot 名并列。
+- `compoundSlots` 必须配合 `slots` 使用。
+
+## Props
+
+[`VariantProps`](./typescript.mdx) 同样适用于 slot 函数，得到的是所有 slot 共享的 variant props。
+
+```ts
+import type { VariantProps } from 'emotion-variants';
+
+type CardVariants = VariantProps<typeof card>;
+// { size?: 'small' | 'large'; tone?: 'neutral' | 'accent' }
+```
+
+## 另请参阅
+
+- [Compound Variants](./compound-variants.mdx)
+- [API 参考 → slots](./ev.mdx#slots)

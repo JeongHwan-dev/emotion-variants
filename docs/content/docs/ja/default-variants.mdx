@@ -1,0 +1,227 @@
+---
+title: Default Variants
+description: 'defaultVariants を設定しておくと、props を省略してもスタイルが適用されたコンポーネントを得られます。'
+---
+
+`defaultVariants` を設定しておくと、props を省略してもスタイルが適用されたコンポーネントを得られます。このページでは、使いどころ、よくある落とし穴、妥当なデフォルト値のパターンを紹介します。
+
+## `defaultVariants`
+
+`defaultVariants` は、variant が省略されたときに使うフォールバック値を設定します。
+
+<Preview name="default-variants">
+
+```tsx
+const button = ev({
+  base: {
+    border: '1px solid transparent',
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontWeight: 600,
+    transition: 'all 0.2s ease',
+  },
+  variants: {
+    variant: {
+      filled: {
+        background: 'var(--button-color)',
+        color: 'white',
+      },
+      outlined: {
+        background: 'transparent',
+        borderColor: 'var(--button-color)',
+        color: 'var(--button-color)',
+      },
+      text: {
+        background: 'transparent',
+        color: 'var(--button-color)',
+      },
+    },
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        '--button-color': '#d36ac2',
+      },
+      secondary: {
+        '--button-color': '#475569',
+      },
+    },
+  },
+  defaultVariants: {
+    variant: 'filled',
+    size: 'medium',
+    color: 'primary',
+  },
+});
+
+<button css={button()}>Default</button>
+<button
+  css={button({
+    variant: 'outlined',
+  })}
+>
+  Outlined
+</button>
+<button
+  css={button({
+    size: 'small',
+  })}
+>
+  Small
+</button>
+```
+
+</Preview>
+
+## いちばんよくあるケースをデフォルトにする
+
+コードベースの `<Button>` の呼び出しの 80% が `size: 'medium'` と `color: 'primary'` を使っているなら、それをデフォルト値にすべきです。
+
+```ts
+const button = ev({
+  variants: {
+    size: {
+      small: {},
+      medium: {},
+      large: {},
+    },
+    color: {
+      primary: {},
+      secondary: {},
+      danger: {},
+    },
+  },
+  defaultVariants: {
+    size: 'medium',
+    color: 'primary',
+  },
+});
+
+button();                  // medium primary
+button({ size: 'large' }); // large primary
+```
+
+## 省略可能な props をそのまま渡す
+
+各キーは `props[key] ?? defaultVariants[key]` で解決されるので、`undefined` と `null` はどちらもデフォルト値にフォールバックします。省略可能な prop を、ガードせずにそのまま variant 関数に渡せます。
+
+```tsx
+type Props = {
+  size?: 'small' | 'medium' | 'large';
+};
+
+function Button({ size }: Props) {
+  // prop が省略されると `size` は undefined だが、'medium' がそのまま適用される。
+  return <button css={button({ size })}>Click</button>;
+}
+```
+
+```ts
+button({ size: undefined }); // button() と同じ — medium primary
+```
+
+`null` もランタイムでは同じようにフォールバックしますが、`EvVariants` には含まれていません。`strictNullChecks` のもとでは、nullable な値は渡す前に `undefined` に正規化する必要があります。
+
+つまり、`defaultVariants` に加えて prop のデフォルト値（`{ size = 'medium' }`）まで指定する必要はありません。デフォルト値を宣言する場所はひとつに絞りましょう。コンポーネントの外から `button()` を直接呼ぶ場合までカバーできるのは `defaultVariants` のほうです。
+
+<Callout type="warn">
+
+`false` と `0` は有効な variant の値なので、フォールバックせずにその値のまま使われます。
+
+```ts
+const badge = ev({
+  variants: {
+    outlined: {
+      true: {
+        border: '1px solid',
+      },
+      false: {
+        border: 'none',
+      },
+    },
+  },
+  defaultVariants: {
+    outlined: true,
+  },
+});
+
+badge({ outlined: false }); // border: none。デフォルトの `true` のスタイルではない
+```
+
+</Callout>
+
+## Boolean の variant のデフォルト値
+
+文字列キーではなく、リテラルの `true` / `false` を使います。
+
+```ts
+const chip = ev({
+  variants: {
+    outlined: {
+      true: {
+        border: '1px solid',
+      },
+      false: {
+        border: 'none',
+      },
+    },
+  },
+  defaultVariants: {
+    outlined: false,
+  },
+});
+
+chip(); // `false` のスタイルが適用される
+```
+
+## デフォルト値は compound variants とも相性がよい
+
+デフォルト値は、複合条件の一致を評価するときの variant の値としても使われます。
+
+```ts
+const button = ev({
+  variants: {
+    size: {
+      small: {},
+      large: {},
+    },
+    color: {
+      primary: {},
+      danger: {},
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        size: 'large',
+        color: 'primary',
+      },
+      style: {
+        fontWeight: 'bold',
+      },
+    },
+  ],
+  defaultVariants: {
+    size: 'large',
+    color: 'primary',
+  },
+});
+
+button(); // デフォルト値が複合条件を満たすので bold になる
+```
+
+## 関連項目
+
+- [Compound Variants](./compound-variants.mdx)

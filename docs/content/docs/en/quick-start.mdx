@@ -1,0 +1,111 @@
+---
+title: Quick Start
+description: 'This page walks through building a Button component with emotion-variants from scratch.'
+---
+
+This page walks through building a `Button` component with `emotion-variants` from scratch.
+
+It assumes you have already [installed](./installation.mdx) the package and enabled Emotion's `css` prop.
+
+## 1. Define the style
+
+Call `ev()` with a single configuration object describing your component's styles:
+
+```tsx
+import { ev } from 'emotion-variants';
+
+const button = ev({
+  base: {
+    padding: '10px 20px',
+    borderRadius: '8px',
+    border: 'none',
+    cursor: 'pointer',
+    fontWeight: 600,
+  },
+  variants: {
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        background: '#d36ac2',
+        color: 'white',
+      },
+      secondary: {
+        background: '#475569',
+        color: 'white',
+      },
+    },
+  },
+  defaultVariants: {
+    size: 'medium',
+    color: 'primary',
+  },
+});
+```
+
+`ev()` returns a function. Call it with variant values and pass the result to Emotion's `css` prop.
+
+## 2. Use it in a component
+
+```tsx
+import type { ComponentPropsWithoutRef } from 'react';
+
+type ButtonProps = ComponentPropsWithoutRef<'button'> & {
+  size?: 'small' | 'medium' | 'large';
+  color?: 'primary' | 'secondary';
+};
+
+export function Button({ size, color, ...rest }: ButtonProps) {
+  return <button css={button({ size, color })} {...rest} />;
+}
+```
+
+```tsx
+<Button>Default</Button>
+<Button size="large">Large primary</Button>
+<Button size="small" color="secondary">Small secondary</Button>
+```
+
+Because `defaultVariants` is set, `<Button>Default</Button>` renders as `medium` + `primary`.
+
+## 3. Derive props from the variant function
+
+You don't have to hand-roll the prop types. Pull them out of the variant function with the `VariantProps` type:
+
+```tsx
+import { ev, type VariantProps } from 'emotion-variants';
+
+const button = ev({
+  /* ... */
+});
+
+type ButtonVariants = VariantProps<typeof button>;
+
+type ButtonProps = ComponentPropsWithoutRef<'button'> & ButtonVariants;
+```
+
+<Callout type="idea">
+
+This keeps your component's prop types and styles in sync. Add a new variant value and `ButtonProps` updates automatically.
+
+</Callout>
+
+See [TypeScript](./typescript.mdx) for more patterns, such as forwarding a ref.
+
+## What's next
+
+- [Variants](./variants.mdx) — `base` and `variants` in depth.
+- [API Reference](./ev.mdx) — exhaustive `ev()` documentation.
+- [Compound Variants](./compound-variants.mdx) — styles that apply only to a combination.

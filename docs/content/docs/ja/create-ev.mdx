@@ -1,0 +1,80 @@
+---
+title: createEv
+description: 'variant prop が breakpoint ごとに値を受け付ける ev 関数を作成します。'
+---
+
+variant prop が breakpoint ごとに値を受け付ける `ev` 関数を作成します。
+
+```typescript
+const { ev } = createEv(options);
+```
+
+## 使い方
+
+### `createEv(options)` [#create-ev-options]
+
+画面幅に応じて variant を変えたいときは `createEv` を使います。breakpoint を一度宣言し、返された `ev` を export して、アプリ全体でその `ev` を使いましょう。
+
+```typescript
+import { createEv } from 'emotion-variants';
+
+export const { ev } = createEv({
+  breakpoints: {
+    md: '@media (min-width: 768px)',
+    lg: '@media (min-width: 1024px)',
+  },
+});
+```
+
+#### パラメーター
+
+- `options.breakpoints` (`Record<string, string>`, 省略可): breakpoint 名をキーとする media query で、幅の小さいものから大きいものの順に並べます。`initial` は名前に使えず、数値に見える名前も使えません。
+
+#### 戻り値
+
+(`{ ev: Ev<B> }`): `ev` 関数を持つオブジェクトです。[`ev`](./ev.mdx) と同じ設定を受け取り、その `ev` が返す関数は[レスポンシブ値](#responsive-values)を受け付けます。`breakpoints` がない場合は、パッケージから export される `ev`（つまり `createEv().ev`）と同じように動作します。
+
+### レスポンシブ値 [#responsive-values]
+
+この `ev` で作った関数のすべての variant prop は、値ひとつ、または breakpoint ごとに値を持つオブジェクトを受け取ります。
+
+```typescript
+const button = ev({
+  variants: {
+    size: {
+      small: {
+        fontSize: 12,
+      },
+      large: {
+        fontSize: 16,
+      },
+    },
+  },
+  defaultVariants: {
+    size: 'small',
+  },
+});
+
+button({
+  size: {
+    initial: 'small',
+    md: 'large',
+  },
+});
+```
+
+- `initial`: どの media query の外側にも置かれる値です。省略すると、その軸の default variant が使われます。
+- breakpoint 名: その breakpoint の media query の中に置かれる値です。省略した breakpoint は何も追加しません。
+
+スタイルは、通常の順序でその軸が位置する場所に追加されます。まず `initial` のスタイル、次に breakpoint が宣言された順に breakpoint ごとのスタイルがひとつずつ追加されます。breakpoint のスタイルは、その値が初めて使われたときにシリアライズされ、以降は再利用されます。
+
+レスポンシブ値を受け取った軸は、オブジェクトに `initial` しかない場合でも、その呼び出しではどの compound variant とも一致しません。
+
+`className()` も同じ値を受け付け、[slots](./ev.mdx#slots) を使う場合は各 slot 関数も同じ値を受け付けます。`defaultVariants` は受け付けません。
+
+順序のルールと制限については [Responsive](./responsive.mdx) を参照してください。
+
+## 型
+
+`Ev`、`EvFunction`、`EvVariants` については[型](./types.mdx)を参照してください。いずれも最後の型パラメーターとして breakpoint 名を受け取ります。
+

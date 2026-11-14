@@ -1,0 +1,227 @@
+---
+title: Default Variants
+description: 'defaultVariants를 정해 두면, props를 생략해도 스타일이 적용된 컴포넌트를 얻을 수 있어요.'
+---
+
+`defaultVariants`를 정해 두면, props를 생략해도 스타일이 적용된 컴포넌트를 얻을 수 있어요. 이 페이지에서는 언제 쓰면 좋은지, 흔히 빠지는 함정, 그리고 합리적인 기본값 패턴을 살펴봐요.
+
+## `defaultVariants`
+
+`defaultVariants`는 variant를 생략했을 때 쓸 기본값을 정해 줘요.
+
+<Preview name="default-variants">
+
+```tsx
+const button = ev({
+  base: {
+    border: '1px solid transparent',
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontWeight: 600,
+    transition: 'all 0.2s ease',
+  },
+  variants: {
+    variant: {
+      filled: {
+        background: 'var(--button-color)',
+        color: 'white',
+      },
+      outlined: {
+        background: 'transparent',
+        borderColor: 'var(--button-color)',
+        color: 'var(--button-color)',
+      },
+      text: {
+        background: 'transparent',
+        color: 'var(--button-color)',
+      },
+    },
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        '--button-color': '#d36ac2',
+      },
+      secondary: {
+        '--button-color': '#475569',
+      },
+    },
+  },
+  defaultVariants: {
+    variant: 'filled',
+    size: 'medium',
+    color: 'primary',
+  },
+});
+
+<button css={button()}>Default</button>
+<button
+  css={button({
+    variant: 'outlined',
+  })}
+>
+  Outlined
+</button>
+<button
+  css={button({
+    size: 'small',
+  })}
+>
+  Small
+</button>
+```
+
+</Preview>
+
+## 가장 흔한 경우를 기본값으로
+
+코드베이스의 `<Button>` 호출 중 80%가 `size: 'medium'`, `color: 'primary'`를 쓴다면, 그게 기본값이 돼야 해요.
+
+```ts
+const button = ev({
+  variants: {
+    size: {
+      small: {},
+      medium: {},
+      large: {},
+    },
+    color: {
+      primary: {},
+      secondary: {},
+      danger: {},
+    },
+  },
+  defaultVariants: {
+    size: 'medium',
+    color: 'primary',
+  },
+});
+
+button();                  // medium primary
+button({ size: 'large' }); // large primary
+```
+
+## 선택 props를 그대로 넘기기
+
+기본값은 키 단위로 `props[key] ?? defaultVariants[key]`로 메워져요. 그래서 `undefined`와 `null`은 둘 다 기본값으로 떨어져요. 선택 prop을 따로 걸러내지 않고 variant 함수에 그대로 넘겨도 돼요.
+
+```tsx
+type Props = {
+  size?: 'small' | 'medium' | 'large';
+};
+
+function Button({ size }: Props) {
+  // prop을 생략하면 size는 undefined지만, 'medium'이 그대로 적용돼요.
+  return <button css={button({ size })}>Click</button>;
+}
+```
+
+```ts
+button({ size: undefined }); // button()과 완전히 같아요 — medium primary
+```
+
+`null`도 런타임에서는 똑같이 기본값으로 떨어지지만, `EvVariants` 타입에는 `null`이 없어요. `strictNullChecks`에서는 nullable한 값을 넘기기 전에 `undefined`로 바꿔 줘야 해요.
+
+그래서 `defaultVariants`가 있는데 prop 기본값(`{ size = 'medium' }`)까지 또 줄 필요는 없어요. 기본값은 한 곳에서만 선언하세요. 컴포넌트 밖에서 `button()`을 직접 부르는 경우까지 덮어 주는 쪽은 `defaultVariants`예요.
+
+<Callout type="warn">
+
+`false`와 `0`은 유효한 variant 값이라서, 기본값으로 떨어지지 않고 그 값 그대로 쓰여요.
+
+```ts
+const badge = ev({
+  variants: {
+    outlined: {
+      true: {
+        border: '1px solid',
+      },
+      false: {
+        border: 'none',
+      },
+    },
+  },
+  defaultVariants: {
+    outlined: true,
+  },
+});
+
+badge({ outlined: false }); // border: none. 기본값 `true` 스타일이 아니에요
+```
+
+</Callout>
+
+## Boolean variant의 기본값
+
+문자열 키 `'true'` / `'false'`가 아니라 실제 Boolean `true` / `false`를 써요.
+
+```ts
+const chip = ev({
+  variants: {
+    outlined: {
+      true: {
+        border: '1px solid',
+      },
+      false: {
+        border: 'none',
+      },
+    },
+  },
+  defaultVariants: {
+    outlined: false,
+  },
+});
+
+chip(); // false 스타일이 적용돼요
+```
+
+## Compound variants와도 잘 맞아요
+
+기본값은 복합 매칭을 평가할 때 쓰일 variant 값으로도 들어가요.
+
+```ts
+const button = ev({
+  variants: {
+    size: {
+      small: {},
+      large: {},
+    },
+    color: {
+      primary: {},
+      danger: {},
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        size: 'large',
+        color: 'primary',
+      },
+      style: {
+        fontWeight: 'bold',
+      },
+    },
+  ],
+  defaultVariants: {
+    size: 'large',
+    color: 'primary',
+  },
+});
+
+button(); // 기본값이 복합 조건을 만족하므로 bold가 적용돼요
+```
+
+## 함께 보기
+
+- [Compound Variants](./compound-variants.mdx)

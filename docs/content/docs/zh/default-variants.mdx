@@ -1,0 +1,227 @@
+---
+title: Default Variants
+description: '有了 defaultVariants，使用方即使省略 props 也能得到带样式的组件。'
+---
+
+有了 `defaultVariants`，使用方即使省略 props 也能得到带样式的组件。本页介绍何时使用它、常见陷阱，以及设置合理默认值的模式。
+
+## `defaultVariants`
+
+`defaultVariants` 设置使用方省略某个 variant 时采用的回退值。
+
+<Preview name="default-variants">
+
+```tsx
+const button = ev({
+  base: {
+    border: '1px solid transparent',
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontWeight: 600,
+    transition: 'all 0.2s ease',
+  },
+  variants: {
+    variant: {
+      filled: {
+        background: 'var(--button-color)',
+        color: 'white',
+      },
+      outlined: {
+        background: 'transparent',
+        borderColor: 'var(--button-color)',
+        color: 'var(--button-color)',
+      },
+      text: {
+        background: 'transparent',
+        color: 'var(--button-color)',
+      },
+    },
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        '--button-color': '#d36ac2',
+      },
+      secondary: {
+        '--button-color': '#475569',
+      },
+    },
+  },
+  defaultVariants: {
+    variant: 'filled',
+    size: 'medium',
+    color: 'primary',
+  },
+});
+
+<button css={button()}>Default</button>
+<button
+  css={button({
+    variant: 'outlined',
+  })}
+>
+  Outlined
+</button>
+<button
+  css={button({
+    size: 'small',
+  })}
+>
+  Small
+</button>
+```
+
+</Preview>
+
+## 用最常见的情况作为默认值
+
+如果代码库中 80% 的 `<Button>` 调用都使用 `size: 'medium'` 和 `color: 'primary'`，就应该把它们设为默认值。
+
+```ts
+const button = ev({
+  variants: {
+    size: {
+      small: {},
+      medium: {},
+      large: {},
+    },
+    color: {
+      primary: {},
+      secondary: {},
+      danger: {},
+    },
+  },
+  defaultVariants: {
+    size: 'medium',
+    color: 'primary',
+  },
+});
+
+button();                  // medium primary
+button({ size: 'large' }); // large primary
+```
+
+## 直接透传可选 props
+
+每个键都按 `props[key] ?? defaultVariants[key]` 解析，所以 `undefined` 和 `null` 都会回退到默认值。你可以把可选 prop 直接交给 variant 函数，无需额外判断。
+
+```tsx
+type Props = {
+  size?: 'small' | 'medium' | 'large';
+};
+
+function Button({ size }: Props) {
+  // 省略该 prop 时 `size` 为 undefined，仍会应用 'medium'。
+  return <button css={button({ size })}>Click</button>;
+}
+```
+
+```ts
+button({ size: undefined }); // 与 button() 相同：medium primary
+```
+
+运行时 `null` 也会同样回退，但 `EvVariants` 类型不包含它。在 `strictNullChecks` 下，可为 null 的值需要先规整为 `undefined` 再传入。
+
+也就是说，有了 `defaultVariants`，就不需要再写 prop 默认值（`{ size = 'medium' }`）。只在一处声明默认值即可，而 `defaultVariants` 还能覆盖在组件外部直接调用 `button()` 的情况。
+
+<Callout type="warn">
+
+`false` 和 `0` 都是合法的 variant 值，所以会被原样使用，而不会回退。
+
+```ts
+const badge = ev({
+  variants: {
+    outlined: {
+      true: {
+        border: '1px solid',
+      },
+      false: {
+        border: 'none',
+      },
+    },
+  },
+  defaultVariants: {
+    outlined: true,
+  },
+});
+
+badge({ outlined: false }); // border: none，而不是默认 `true` 的样式
+```
+
+</Callout>
+
+## Boolean variant 的默认值
+
+使用字面量 `true` / `false`，而不是字符串键：
+
+```ts
+const chip = ev({
+  variants: {
+    outlined: {
+      true: {
+        border: '1px solid',
+      },
+      false: {
+        border: 'none',
+      },
+    },
+  },
+  defaultVariants: {
+    outlined: false,
+  },
+});
+
+chip(); // 应用 `false` 的样式
+```
+
+## 默认值与 compound variants 配合良好
+
+默认值会作为 compound 匹配时使用的 variant 初始值。
+
+```ts
+const button = ev({
+  variants: {
+    size: {
+      small: {},
+      large: {},
+    },
+    color: {
+      primary: {},
+      danger: {},
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        size: 'large',
+        color: 'primary',
+      },
+      style: {
+        fontWeight: 'bold',
+      },
+    },
+  ],
+  defaultVariants: {
+    size: 'large',
+    color: 'primary',
+  },
+});
+
+button(); // 加粗，因为默认值满足 compound 条件
+```
+
+## 另请参阅
+
+- [Compound Variants](./compound-variants.mdx)

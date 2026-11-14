@@ -1,0 +1,158 @@
+---
+title: はじめに
+description: 'emotion-variants は @emotion/react の上に載せる薄いレイヤーです。'
+---
+
+`emotion-variants` は [`@emotion/react`](https://emotion.sh/) の上に載せる薄いレイヤーです。コンポーネントのあらゆる見た目の組み合わせ（base スタイル、variants、複合 variants、デフォルト値）を**ひとつの設定オブジェクト**にまとめて定義でき、TypeScript による型推論も完全に効きます。
+
+## 解決したい問題
+
+実際のボタンには、たいてい複数の見た目の軸があります。size、color、塗りのスタイル、状態などです。素の Emotion でこれらを扱うと、スタイルがあちこちに散らばります。ルックアップテーブルはここ、条件付きの spread はあそこ、手書きの props 型はまた別の場所、という具合です。
+
+```tsx
+// @emotion/react のみ使用
+import { css } from '@emotion/react';
+
+// 1. ルックアップテーブル。コンポーネントとは別の場所にある
+const sizeStyles = {
+  small: {
+    padding: '8px 16px',
+    fontSize: 12,
+  },
+  medium: {
+    padding: '10px 20px',
+    fontSize: 14,
+  },
+  large: {
+    padding: '12px 24px',
+    fontSize: 16,
+  },
+};
+
+const colorStyles = {
+  primary: {
+    background: 'blue',
+    color: 'white',
+  },
+  danger: {
+    background: 'red',
+    color: 'white',
+  },
+};
+
+// 2. props の型は手書きで管理
+type ButtonProps = {
+  size?: 'small' | 'medium' | 'large';
+  color?: 'primary' | 'danger';
+};
+
+// 3. コンポーネントがデフォルト値、合成、複合ロジックをすべて抱え込む
+function Button({ size = 'medium', color = 'primary' }: ButtonProps) {
+  return (
+    <button
+      css={css({
+        borderRadius: 8,
+        cursor: 'pointer',
+        ...sizeStyles[size],
+        ...colorStyles[color],
+        // 複合ルールがコンポーネントの中に漏れ出している
+        ...(size === 'large' && color === 'primary' && {
+          fontWeight: 'bold',
+        }),
+      })}
+    >
+      Click
+    </button>
+  );
+}
+```
+
+`size` の値をひとつ追加するだけで、ルックアップテーブル、prop 型の union、そして複合ルールに関わる場合はコンポーネント本体まで修正が必要になります。
+
+## emotion-variants による解決
+
+`emotion-variants` は、これらをすべてひとつの設定オブジェクトにまとめます。
+
+```tsx
+// emotion-variants を使う場合
+import { ev, type VariantProps } from 'emotion-variants';
+
+const button = ev({
+  base: {
+    borderRadius: 8,
+    cursor: 'pointer',
+  },
+  variants: {
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        background: 'blue',
+        color: 'white',
+      },
+      danger: {
+        background: 'red',
+        color: 'white',
+      },
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        size: 'large',
+        color: 'primary',
+      },
+      style: {
+        fontWeight: 'bold',
+      },
+    },
+  ],
+  defaultVariants: {
+    size: 'medium',
+    color: 'primary',
+  },
+});
+
+type ButtonProps = VariantProps<typeof button>;
+
+function Button({ size, color }: ButtonProps) {
+  return <button css={button({ size, color })}>Click</button>;
+}
+```
+
+`size` の値を追加したいときは、`variants.size` に 1 行足すだけです。props の型は自動で追従します。
+
+## 比較
+
+| | emotion-variants なし | emotion-variants あり |
+|---|---|---|
+| スタイルの定義場所 | ルックアップテーブル、複数ファイルに散在 | 設定オブジェクトひとつ |
+| Variant props の型 | union を手書き | 設定から自動推論 |
+| 複合ルール | コンポーネント内のインライン条件分岐 | `compoundVariants` 配列 |
+| デフォルト値 | 関数引数のデフォルト値 | `defaultVariants` |
+| variant の値を追加 | ルックアップ、型、コンポーネントをすべて修正 | `variants` だけ修正 |
+| 生成された class name | 外部から参照できない | `button.classNames` |
+| 初めてコードを読む人 | スタイルを理解するのに 3 ファイル読む | オブジェクトひとつで済む |
+
+## 向いていないケース
+
+- コンポーネントに variant がない、またはひとつだけなら、素の `css()` のほうがシンプルです。
+- レンダリングごとに任意の CSS 変数を解決するランタイムテーマが必要な場合、`emotion-variants` でも動きますが、Emotion の `theme` を直接使うほうが適しているかもしれません。
+
+## 次のステップ
+
+- パッケージと peer dependency を[インストール](./installation.mdx)しましょう。
+- [クイックスタート](./quick-start.mdx)で最初のコンポーネントを作ってみましょう。
+- [Variants](./variants.mdx)で `base` と `variants` を詳しく学びましょう。

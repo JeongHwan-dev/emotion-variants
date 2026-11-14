@@ -1,0 +1,236 @@
+---
+title: Extend
+description: '有些组件只是在另一个组件的基础上多了一点：图标按钮是固定宽度的按钮，danger 卡片是多了一种 tone 的卡片。'
+---
+
+有些组件只是在另一个组件的基础上多了一点：图标按钮是固定宽度的按钮，danger 卡片是多了一种 tone 的卡片。`extend` 让一个 `ev()` 结果构建在另一个之上，共享的样式和 variants 只需声明一次。
+
+## 基于另一个函数构建
+
+把一个 `ev()` 结果传给 `extend`。新函数会继承父函数声明的一切。
+
+<Preview name="extending">
+
+```tsx
+import { ev } from 'emotion-variants';
+
+const button = ev({
+  base: {
+    border: '1px solid transparent',
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontWeight: 600,
+    transition: 'all 0.2s ease',
+  },
+  variants: {
+    variant: {
+      filled: {
+        background: 'var(--button-color)',
+        color: 'white',
+      },
+      outlined: {
+        background: 'transparent',
+        borderColor: 'var(--button-color)',
+        color: 'var(--button-color)',
+      },
+      text: {
+        background: 'transparent',
+        color: 'var(--button-color)',
+      },
+    },
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        '--button-color': '#d36ac2',
+      },
+      secondary: {
+        '--button-color': '#475569',
+      },
+    },
+  },
+  defaultVariants: {
+    variant: 'filled',
+    size: 'medium',
+    color: 'primary',
+  },
+});
+
+const iconButton = ev({
+  extend: button,
+  base: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 44,
+    height: 44,
+  },
+});
+
+<button css={button()}>Button</button>
+<button aria-label="Close" css={iconButton()}>
+  ✕
+</button>
+```
+
+</Preview>
+
+`iconButton` 接收 `variant`、`size` 和 `color`，应用父函数的默认值，并在父函数的 `base` 之后追加自己的 `base`。`button` 本身不会被改变。
+
+## 添加值和维度
+
+子函数可以为继承的维度添加值，为继承的值追加样式，也可以声明新的维度。
+
+```ts
+const iconButton = ev({
+  extend: button,
+  variants: {
+    size: {
+      large: {
+        width: 48,
+      },
+      huge: {
+        fontSize: 24,
+      },
+    },
+    round: {
+      true: {
+        borderRadius: '50%',
+      },
+    },
+  },
+});
+
+iconButton.variants(); // ['variant', 'size', 'color', 'round']
+```
+
+- `size: 'small'` 原样继承。
+- `size: 'large'` 先得到父函数的字号，再得到子函数的宽度。
+- `size: 'huge'` 和 `round` 维度只存在于 `iconButton`。
+
+继承的维度保持原有位置，新维度排在它们之后。
+
+## 默认值和 compound variants
+
+`defaultVariants` 按维度合并，子函数的值优先。子函数的 `compoundVariants` 和 `defaultVariants` 可以引用继承的维度和值。
+
+```ts
+const iconButton = ev({
+  extend: button,
+  variants: {
+    round: {
+      true: {
+        borderRadius: '50%',
+      },
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        variant: 'outlined',
+        round: true,
+      },
+      style: {
+        borderWidth: 2,
+      },
+    },
+  ],
+  defaultVariants: {
+    size: 'large',
+  },
+});
+```
+
+父函数的 compound variants 同样会被继承，并按子函数解析出的值进行匹配。
+
+## 顺序
+
+在每一步中，父函数的样式都排在子函数之前。发生 CSS 冲突时，后者生效。
+
+1. `base`：先父后子
+2. 匹配的 `variants` 项：逐个维度处理，每个值先父后子
+3. 匹配的 `compoundVariants` 项：先父后子
+
+<Callout type="warn">
+
+所有 compound variant 都排在所有 variant 样式之后。因此，父函数的 compound variant 仍会胜过子函数为同一 variant 值声明的样式。要覆盖它，请在子函数中添加一个条件相同的 compound variant。
+
+</Callout>
+
+继承链可以任意长。再次扩展 `iconButton` 时，顺序是 `button` 第一、`iconButton` 第二，新配置最后。
+
+## 与 slots 一起使用
+
+[slots](./slots.mdx) 函数可以扩展另一个 slots 函数。子函数可以添加 slot，也可以为继承的 slot 追加样式。
+
+```ts
+const card = ev({
+  slots: {
+    root: {
+      padding: 16,
+    },
+    title: {
+      fontWeight: 600,
+    },
+  },
+});
+
+const mediaCard = ev({
+  extend: card,
+  slots: {
+    root: {
+      overflow: 'hidden',
+    },
+    footer: {
+      display: 'flex',
+    },
+  },
+});
+
+const { root, title, footer } = mediaCard();
+```
+
+没有声明 `slots` 的子函数会沿用父函数的 slots，其 variant 值仍以 slot 名为键。
+
+## class name
+
+`className()` 包含继承的样式。在 `classNames` 中，每一项都会合并父函数和子函数在该键上的样式，子函数没有改动的值则保留父函数的 class name。
+
+## 规则
+
+- `extend` 只接收单个 `ev()` 结果。传入其他值时，`ev()` 运行时会抛出错误。如果该值确实来自 `ev()`，很可能是安装了两份 `emotion-variants`。
+- 带 `slots` 的配置只能扩展带 `slots` 的函数。扩展普通函数会抛出错误，也会报类型错误。
+- 当父函数有 `slots` 时，子函数不能使用 `base`，请把样式放进某个 slot。这会报类型错误。
+
+## Props
+
+对扩展后的函数使用 [`VariantProps`](./typescript.mdx)，得到的是合并后的 variants。
+
+```ts
+import type { VariantProps } from 'emotion-variants';
+
+type IconButtonVariants = VariantProps<typeof iconButton>;
+// {
+//   variant?: 'filled' | 'outlined' | 'text';
+//   size?: 'small' | 'medium' | 'large';
+//   color?: 'primary' | 'secondary';
+//   round?: true;
+// }
+```
+
+## 另请参阅
+
+- [Slots](./slots.mdx)
+- [API 参考 → extend](./ev.mdx#extend)

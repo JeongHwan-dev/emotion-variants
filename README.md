@@ -5,7 +5,7 @@
 
 Type-safe variant API for Emotion. Create component styles with multiple variants without repetitive `css()` calls.
 
-📖 **[Documentation](https://emotion-variants.org/)** · **[한국어](https://emotion-variants.org/ko/)**
+📖 **[Documentation](https://emotion-variants.org/)** · **[한국어](https://emotion-variants.org/ko/)** · **[日本語](https://emotion-variants.org/ja/)** · **[简体中文](https://emotion-variants.org/zh/)**
 
 ## ✨ Features
 
@@ -19,19 +19,23 @@ Type-safe variant API for Emotion. Create component styles with multiple variant
 ## 📦 Installation
 
 ```bash
-# pnpm
-pnpm add emotion-variants @emotion/react @emotion/css
-
 # npm
 npm install emotion-variants @emotion/react @emotion/css
 
+# pnpm
+pnpm add emotion-variants @emotion/react @emotion/css
+
 # yarn
 yarn add emotion-variants @emotion/react @emotion/css
+
+# bun
+bun add emotion-variants @emotion/react @emotion/css
 ```
 
 ## 🚀 Quick Start
 
 ```tsx
+import type { ComponentPropsWithoutRef } from 'react';
 import { ev, type VariantProps } from 'emotion-variants';
 
 const button = ev({
@@ -57,12 +61,10 @@ const button = ev({
   },
 });
 
-type ButtonProps = VariantProps<typeof button> & {
-  children: React.ReactNode;
-};
+type ButtonProps = ComponentPropsWithoutRef<'button'> & VariantProps<typeof button>;
 
-function Button({ size, color, children }: ButtonProps) {
-  return <button css={button({ size, color })}>{children}</button>;
+function Button({ size, color, ...rest }: ButtonProps) {
+  return <button css={button({ size, color })} {...rest} />;
 }
 ```
 
@@ -70,11 +72,11 @@ Omitted props fall back to `defaultVariants`, so `<Button>` renders as `small` +
 
 ## 📖 Documentation
 
-- [Introduction](https://emotion-variants.org/intro) - what problem this solves
-- [Installation](https://emotion-variants.org/installation) - peer dependencies and the `css` prop
-- [Getting Started](https://emotion-variants.org/getting-started) - build a `Button` from scratch
-- [Core Concepts](https://emotion-variants.org/core-concepts) - `base`, `variants`, `compoundVariants`, `defaultVariants`
-- [API Reference](https://emotion-variants.org/reference/ev) - `ev()`, `className()`, `classNames`, `variants()`
+- [Introduction](https://emotion-variants.org/docs/introduction) - what problem this solves
+- [Installation](https://emotion-variants.org/docs/installation) - peer dependencies and the `css` prop
+- [Quick Start](https://emotion-variants.org/docs/quick-start) - build a `Button` from scratch
+- [Variants](https://emotion-variants.org/docs/variants) - `base`, `variants`, and the concepts built on them
+- [API Reference](https://emotion-variants.org/docs/ev) - `ev()`, `className()`, `classNames`, `variants()`
 
 ## 🤝 Contributing
 
@@ -83,11 +85,11 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ### Working on the docs
 
 ```bash
-pnpm docs:dev     # start the VitePress dev server
-pnpm docs:build   # production build
+pnpm docs:dev     # start the Next.js dev server
+pnpm docs:build   # static export to docs/out, then a link check
 ```
 
-Pages live in `docs/` (English) and `docs/ko/` (Korean). Keep both in sync.
+The site is built with [Fumadocs](https://fumadocs.dev). Pages live in `docs/content/docs/<lang>/`: `en` (English), `ko` (Korean), `ja` (Japanese), and `zh` (Simplified Chinese). Keep all of them in sync.
 
 ### Releasing
 

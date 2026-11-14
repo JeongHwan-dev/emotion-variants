@@ -1,0 +1,99 @@
+---
+title: v2로 마이그레이션
+description: 'v2.0.0에서는 동작 세 가지가 바뀌고, 필수 peer dependency 하나가 추가됐어요.'
+---
+
+v2.0.0에서는 동작 세 가지가 바뀌고, 필수 peer dependency 하나가 추가됐어요. 대부분의 프로젝트는 설치 단계만 하면 끝나요.
+
+## 새 peer dependency 설치
+
+`@emotion/css`가 이제 필수예요. [`className()`](./ev.mdx#classname)과 [`classNames`](./ev.mdx#classnames)를 담당하고, 조건 없이 import되기 때문에 `css` prop만 쓴다고 해도 필요해요.
+
+```diff
+- pnpm add emotion-variants @emotion/react
++ pnpm add emotion-variants @emotion/react @emotion/css
+```
+
+## `undefined`가 이제 `defaultVariants`로 떨어져요
+
+v1은 스타일 정의와 props를 객체 spread로 합쳤기 때문에, 명시적인 `undefined`가 기본값을 지웠어요. v2는 키마다 `??`로 결정해요.
+
+```ts
+const button = ev({
+  variants: {
+    size: {
+      small: {},
+      large: {},
+    },
+  },
+  defaultVariants: {
+    size: 'small',
+  },
+});
+
+button({ size: undefined });
+// v1: size 스타일이 아예 없어요
+// v2: 'small'
+```
+
+**지워야 하는 것.** 호출 전에 `undefined`를 걸러내던 코드, 또는 prop 경계에서 기본값을 한 번 더 적어 두던 코드예요.
+
+```diff
+  function Button({ size }: Props) {
+-   const variants = size !== undefined ? { size } : {};
+-   return <button css={button(variants)}>Click</button>;
++   return <button css={button({ size })}>Click</button>;
+  }
+```
+
+```diff
+- function Button({ size = 'small' }: Props) {
++ function Button({ size }: Props) {
+    return <button css={button({ size })}>Click</button>;
+  }
+```
+
+`false`와 `0`은 영향이 없어요. 실제 variant 값이라서 원래도 기본값으로 바뀌지 않았어요.
+
+## 호출 결과가 항상 배열이에요
+
+v1은 `Interpolation<unknown>`을 반환했고, 일치하는 스타일이 정확히 하나일 때는 배열이 아닌 `SerializedStyles` 객체를 그대로 줬어요. v2는 항상 `SerializedStyles[]`예요.
+
+```diff
+- (variants?: EvVariants<T>): Interpolation<unknown>;
++ (variants?: EvVariants<T>): SerializedStyles[];
+```
+
+`css` prop은 둘 다 받으니 `css={button(...)}`는 바꿀 게 없어요. 결과를 직접 들여다보던 코드는 바꿔야 해요.
+
+```diff
+- const styles = button({ size: 'large' });
+- const list = Array.isArray(styles) ? styles : [styles];
++ const list = button({ size: 'large' });
+```
+
+## `classNames`가 실제 class name을 반환해요
+
+v1에서는 모든 값이 `"[object Object]"`였어요. `SerializedStyles`에 `String()`을 적용한 결과였죠. v2는 각 스타일을 `@emotion/css`로 주입하고 생성된 class를 반환해요.
+
+```ts
+button.classNames.variants.size.small;
+// v1: '[object Object]'
+// v2: 'css-def456'
+```
+
+`classNames`를 처음 읽을 때까지는 아무것도 주입되지 않고 결과는 memoize돼요. 그래서 `css` prop만 쓰는 코드는 비용을 치르지 않아요.
+
+예전 동작을 우회하려고 class name을 직접 만들어 쓰던 코드가 있다면 지우세요. 다만 `classNames`는 여전히 `base`와 단일 variant 값만 다뤄요. compound variants가 필요하면 [`className()`](./ev.mdx#classname)을 사용하세요.
+
+## 새로 생긴 것: `className(variants)`
+
+v2에는 조합 전체를 담은 class 하나를 반환하는 메서드가 추가됐어요. compound variants까지 포함해요. `className` prop이나 React가 아닌 코드에서 쓸 만해요.
+
+```tsx
+<button className={button.className({ size: 'large', color: 'primary' })}>Click me</button>;
+```
+
+## 새로 생긴 것: `EvClassNames` 타입
+
+`EvClassNames<T>`가 이제 export돼요. [타입](./types.mdx)에서 확인하세요.

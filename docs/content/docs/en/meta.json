@@ -1,0 +1,24 @@
+{
+  "pages": [
+    "---Getting Started---",
+    "introduction",
+    "installation",
+    "quick-start",
+    "---Concepts---",
+    "variants",
+    "default-variants",
+    "compound-variants",
+    "slots",
+    "overrides",
+    "extending",
+    "responsive",
+    "---Guides---",
+    "typescript",
+    "migration",
+    "---Reference---",
+    "ev",
+    "create-ev",
+    "types",
+    "changelog"
+  ]
+}

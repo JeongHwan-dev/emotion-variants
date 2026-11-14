@@ -1,0 +1,89 @@
+---
+title: インストール
+description: 'emotion-variants と Emotion の peer dependency をインストールし、css prop を有効にします。'
+---
+
+## 必要環境
+
+- **React** 16.14 以上。自動 JSX runtime（`react/jsx-runtime`）は 16.14 で導入されました
+- **`@emotion/react`** 11.x
+- **`@emotion/css`** 11.x
+
+## インストール
+
+```sh tab="npm"
+npm install emotion-variants @emotion/react @emotion/css
+```
+
+```sh tab="pnpm"
+pnpm add emotion-variants @emotion/react @emotion/css
+```
+
+```sh tab="yarn"
+yarn add emotion-variants @emotion/react @emotion/css
+```
+
+```sh tab="bun"
+bun add emotion-variants @emotion/react @emotion/css
+```
+
+Emotion の 2 つのパッケージはどちらも peer dependency なので、`emotion-variants` と一緒にインストールする必要があります。`@emotion/react` は `css` prop に渡すスタイルをシリアライズし、`@emotion/css` は [`className()` と `classNames`](./ev.mdx#classname) を支えています。`@emotion/css` は無条件に import されるため、`css` prop しか使わない場合でも必要です。
+
+## `css` prop を有効にする
+
+`emotion-variants` が返す値は、Emotion の `css` prop に渡すものです。プロジェクトで `css` prop が使えるように設定しておいてください。いちばん簡単なのは、自動 JSX runtime が Emotion を参照するように設定する方法です。
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "@emotion/react"
+  }
+}
+```
+
+両方のオプションが必要です。`"jsx": "react"` のもとでは `jsxImportSource` は効果がありません。これは classic transform で、`React.createElement` を呼び出し、import source を参照しないためです。
+
+プロジェクト全体の設定を変えられない場合は、ファイル単位でも指定できます。
+
+```tsx
+/** @jsxImportSource @emotion/react */
+```
+
+この pragma も自動 runtime が前提なので、ファイルの先頭に置き、そのファイルを `react-jsx` でコンパイルする必要があります。React 16.14 より古いバージョンでは、代わりに [Emotion の Babel プラグイン](https://emotion.sh/docs/css-prop#babel-plugin)と classic transform を使ってください。
+
+その他の構成（Next.js、Vite など）については [Emotion のインストールガイド](https://emotion.sh/docs/css-prop)を参照してください。
+
+## 動作確認
+
+小さなコンポーネントを作ってレンダリングしてみましょう。`button({ ... })` の中で TypeScript が `size` を補完してくれれば、準備は完了です。
+
+```tsx
+import type { ComponentPropsWithoutRef } from 'react';
+import { ev, type VariantProps } from 'emotion-variants';
+
+const button = ev({
+  base: {
+    padding: '8px 16px',
+  },
+  variants: {
+    size: {
+      sm: {
+        fontSize: 12,
+      },
+      lg: {
+        fontSize: 16,
+      },
+    },
+  },
+});
+
+type ButtonProps = ComponentPropsWithoutRef<'button'> & VariantProps<typeof button>;
+
+export function Button({ size, ...rest }: ButtonProps) {
+  return <button css={button({ size })} {...rest} />;
+}
+```
+
+次へ: [クイックスタート](./quick-start.mdx)。

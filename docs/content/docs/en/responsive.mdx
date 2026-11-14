@@ -1,0 +1,223 @@
+---
+title: Responsive
+description: 'A variant often needs a different value at a different width: a small button on a phone, a large one on a desktop.'
+---
+
+A variant often needs a different value at a different width: a small button on a phone, a large one on a desktop. `createEv` declares your breakpoints once, and every variant prop then accepts one value per breakpoint.
+
+## Declare the breakpoints
+
+Call `createEv` once and export the `ev` it returns. Import `ev` from this file instead of from `emotion-variants`.
+
+```ts
+// ev.ts
+import { createEv } from 'emotion-variants';
+
+export const { ev } = createEv({
+  breakpoints: {
+    md: '@media (min-width: 768px)',
+    lg: '@media (min-width: 1024px)',
+  },
+});
+```
+
+Each key is a name you choose, and each value is the media query it stands for. List them from the smallest width to the largest.
+
+Configs stay the same. Nothing about a component's styles has to change.
+
+```ts
+import { ev } from './ev';
+
+const button = ev({
+  base: {
+    border: '1px solid transparent',
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontWeight: 600,
+    transition: 'all 0.2s ease',
+  },
+  variants: {
+    variant: {
+      filled: {
+        background: 'var(--button-color)',
+        color: 'white',
+      },
+      outlined: {
+        background: 'transparent',
+        borderColor: 'var(--button-color)',
+        color: 'var(--button-color)',
+      },
+      text: {
+        background: 'transparent',
+        color: 'var(--button-color)',
+      },
+    },
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        '--button-color': '#d36ac2',
+      },
+      secondary: {
+        '--button-color': '#475569',
+      },
+    },
+  },
+  defaultVariants: {
+    variant: 'filled',
+    size: 'medium',
+    color: 'primary',
+  },
+});
+```
+
+## Pass a value per breakpoint
+
+A variant prop takes either a value, as before, or an object keyed by `initial` and the breakpoint names.
+
+<Preview name="responsive">
+
+```tsx
+<button
+  css={button({
+    size: {
+      initial: 'small',
+      md: 'large',
+    },
+  })}
+>
+  Small below 768px, large above
+</button>
+```
+
+</Preview>
+
+`initial` applies at every width, outside any media query. `md` puts the styles of `large` inside the `md` query, so they take over from 768px. The result is still an array of styles for the `css` prop.
+
+- A breakpoint you leave out adds nothing, so the one before it carries on.
+- When `initial` is left out, the axis's default variant takes its place. Without a default, the axis has no styles below the first breakpoint you pass.
+
+```ts
+button({
+  size: {
+    lg: 'large',
+  },
+}); // medium (the default) up to 1024px, large from there
+```
+
+## In a component
+
+[`VariantProps`](./typescript.mdx) includes the responsive form, so forwarding the prop is enough.
+
+```tsx
+import type { ComponentPropsWithoutRef } from 'react';
+import type { VariantProps } from 'emotion-variants';
+
+type ButtonProps = ComponentPropsWithoutRef<'button'> & VariantProps<typeof button>;
+
+function Button({ variant, size, color, ...rest }: ButtonProps) {
+  return <button css={button({ variant, size, color })} {...rest} />;
+}
+```
+
+```tsx
+<Button
+  size={{
+    initial: 'small',
+    md: 'large',
+  }}
+>
+  Save
+</Button>
+```
+
+## Order
+
+Breakpoint styles are added in the order the breakpoints were declared, whatever the order of the keys you pass. That is why they are declared smallest first: when two queries match, the later one wins.
+
+<Callout type="warn">
+
+In the stylesheet, a rule inside a media query comes after the rule that holds the plain styles. Inside its breakpoint, a breakpoint style therefore wins over every plain style for the same property, including one from an axis declared later and one from a compound variant.
+
+When two axes both set the same property inside media queries, the axis declared later wins wherever both queries match.
+
+</Callout>
+
+## Compound variants
+
+A compound variant needs one value per axis, and a responsive value is several. An axis that received a responsive value therefore matches no compound variant in that call. Compound variants that don't mention the axis still apply.
+
+```ts
+button({
+  size: 'large',
+  color: 'primary',
+}); // a compound on large + primary applies
+
+button({
+  size: {
+    initial: 'large',
+  },
+  color: 'primary',
+}); // it does not, but a compound on primary alone still does
+```
+
+This is true even when the object only has `initial`. Pass a plain value when there is just one.
+
+## With slots
+
+With [slots](./slots.mdx), the call and each slot function accept responsive values. A slot prop replaces the call's value for that axis as a whole. The two are not merged per breakpoint.
+
+```ts
+const { root, title } = card({
+  size: {
+    initial: 'small',
+    md: 'large',
+  },
+});
+
+root(); // small, large from md
+title({
+  size: 'small',
+}); // small at every width
+```
+
+## Class names
+
+`className()` accepts responsive values, and the class it returns carries the media rules.
+
+```ts
+button.className({
+  size: {
+    initial: 'small',
+    md: 'large',
+  },
+});
+```
+
+`classNames` holds one class per variant value and has no entries for breakpoints.
+
+## Rules
+
+- `defaultVariants` takes single values. A responsive default is a type error.
+- `initial` is reserved, so it cannot be a breakpoint name. This is a type error.
+- A key that is not a declared breakpoint is a type error, and is ignored at runtime.
+- A breakpoint name must not look like a number, such as `'768'`. JavaScript moves such keys to the front of an object, so the order you declared is not kept.
+- The `ev` exported from `emotion-variants` has no breakpoints and accepts plain values only.
+- A function made by one `ev` can be [extended](./extending.mdx) by another. The breakpoints that apply are the ones of the `ev` that made the function you call.
+
+## See also
+
+- [TypeScript](./typescript.mdx)
+- [API Reference → createEv](./create-ev.mdx)

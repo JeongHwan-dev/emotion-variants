@@ -1,0 +1,372 @@
+---
+title: ev
+description: 'ひとつの設定オブジェクトから型安全なスタイル関数を作成します。'
+---
+
+ひとつの設定オブジェクトから型安全なスタイル関数を作成します。
+
+```typescript
+const button = ev(config);
+```
+
+## 使い方
+
+### `ev(config)` [#ev-config]
+
+コンポーネントに size、color、塗り、状態など複数の見た目の軸があり、それらをすべて一か所で宣言したいときに `ev` を使います。`ev` は variant の値を渡して呼び出す関数を返し、その結果はそのまま Emotion の `css` prop に渡せます。
+
+```typescript
+import { ev } from 'emotion-variants';
+
+const button = ev({
+  base: {
+    padding: '10px 20px',
+    borderRadius: 8,
+    cursor: 'pointer',
+  },
+  variants: {
+    size: {
+      small: {
+        fontSize: 12,
+      },
+      large: {
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        background: 'blue',
+        color: 'white',
+      },
+      secondary: {
+        background: 'gray',
+        color: 'white',
+      },
+    },
+  },
+  defaultVariants: {
+    size: 'small',
+    color: 'primary',
+  },
+});
+```
+
+設定オブジェクトは必須です。まだ宣言するものがなければ `ev({})` を渡してください。
+
+#### パラメーター
+
+- `config.base` (`CSSObject`): すべての呼び出しで適用されるスタイルです。呼び出しごとではなく、`ev()` の実行時に一度だけシリアライズされます。
+- `config.variants` (`Record<string, Record<string, CSSObject>>`): variant の軸です。各軸は値をそのスタイルにマッピングします。値はオブジェクトのキーなので、Boolean や数値は `true`、`false`、`1` のようにキーとして書きます。型としては `boolean` や数値リテラルに戻されます。
+- `config.compoundVariants` (`Array<{ variants, style }>`): 列挙したすべての variant の値が一致したときだけ適用されるスタイルです。条件には値の配列も指定でき、その場合はいずれかの値に一致します。キーは単数形の `style` である点に注意してください。
+- `config.defaultVariants` (`Partial<Record<Axis, Value>>`): 呼び出し側が軸を省略したときに使われる値です。
+- `config.slots` (`Record<string, CSSObject>`): 複数の要素で構成されるコンポーネントの各パーツと、その基本スタイルです。`base` の代わりに使い、すべての variant の値と compound の `style` を slot 名ごとに書きます。[Slots](#slots) を参照してください。
+- `config.compoundSlots` (`Array<{ slots, variants?, style }>`): 複数の slot に適用されるひとつのスタイルです。常に適用するか、`variants` が一致したときだけ適用します。`slots` が必要です。
+- `config.extend` (`EvFunction | EvSlotsFunction`): 土台にする別の `ev()` の結果です。そのスタイル、variants、compound variants、default variants を継承します。[extend](#extend) を参照してください。
+
+#### 戻り値
+
+(`EvFunction<T>`): 呼び出し可能なオブジェクトです。呼び出すとスタイルが得られ、[`className()`](#classname)、[`classNames`](#classnames)、[`variants()`](#variants) を取り出して使うこともできます。`config.slots` がある場合は代わりに `EvSlotsFunction<N, T>` になります。詳しくは [Slots](#slots) で説明します。
+
+### `button(variants)` [#call]
+
+variant 関数を呼び出すと、ひとつの組み合わせに対するスタイルが得られます。結果は `css` prop か Emotion の `css()` に渡します。
+
+```tsx
+import type { ComponentPropsWithoutRef } from 'react';
+import type { VariantProps } from 'emotion-variants';
+
+type ButtonProps = ComponentPropsWithoutRef<'button'> & VariantProps<typeof button>;
+
+function Button({ size, color, ...rest }: ButtonProps) {
+  return <button css={button({ size, color })} {...rest} />;
+}
+```
+
+```tsx
+<Button>Uses defaultVariants</Button>
+<Button size="large" color="primary">Large primary</Button>
+```
+
+値はキーごとに `??` で解決されるので、省略された値や `undefined` は `defaultVariants` にフォールバックします。上の `Button` が省略可能な props をガードせずにそのまま渡せるのはこのためです。`false` と `0` は実際の値なので、そのまま使われます。
+
+`null` もランタイムではフォールバックしますが、`EvVariants` には含まれていません。`strictNullChecks` のもとでは `button({ size: null })` は型エラーになります。呼び出す前に `null` を `undefined` に変換してください。
+
+```typescript
+button({ size: undefined }); // button() と同じ
+```
+
+prop もデフォルト値もない軸は、まるごとスキップされます。
+
+#### パラメーター
+
+- `variants` (`EvVariants<T>`, 省略可): variant の値です。すべてのキーが省略可能です。[`createEv`](./create-ev.mdx) で作った `ev` では、[レスポンシブ値](./create-ev.mdx#responsive-values)も渡せます。
+
+#### 戻り値
+
+(`SerializedStyles[]`): 一致したスタイルがひとつだけでも、常に配列です。スタイルは `base`、次に軸が宣言された順で一致した `variants` のエントリ、次に配列の順で一致した `compoundVariants` の順に並びます。CSS が競合した場合は後のエントリが優先され、渡したキーの順序は影響しません。
+
+### `button.className(variants)` [#classname]
+
+`css` prop ではなく通常の class 文字列が必要なときは `className()` を使います。React 以外の環境、`className` しか受け付けないサードパーティのコンポーネント、テストのアサーションなどです。`base`、一致した variants、**そして**一致した compound variants をひとつの class にまとめます。
+
+```tsx
+<button className={button.className({ size: 'large', color: 'primary' })}>Click me</button>;
+
+// defaultVariants は button() とまったく同じように適用される。
+button.className();
+```
+
+#### パラメーター
+
+- `variants` (`EvVariants<T>`, 省略可): variant の値です。すべてのキーが省略可能です。
+
+#### 戻り値
+
+(`string`): 組み合わせ全体をカバーするひとつの class name です。
+
+### `button.classNames` [#classnames]
+
+個々の class name のルックアップテーブルです。`base` にひとつ、variant の値ごとにひとつずつあります。独自に class のリストを組み立てるコードと組み合わせたり、生成された内容を確認したりするのに便利です。
+
+```typescript
+const button = ev({
+  base: {
+    padding: 10,
+  },
+  variants: {
+    size: {
+      small: {
+        fontSize: 12,
+      },
+      large: {
+        fontSize: 16,
+      },
+    },
+    outlined: {
+      true: {
+        border: '1px solid',
+      },
+    },
+    level: {
+      1: {
+        zIndex: 1,
+      },
+    },
+  },
+});
+
+button.classNames.base; // 'css-abc123'
+button.classNames.variants.size.small; // 'css-def456'
+```
+
+キーは値を文字列にしたものなので、Boolean や数値の軸は `true` や `1` で読み取ります。
+
+```typescript
+button.classNames.variants.outlined.true;
+button.classNames.variants.level[1];
+```
+
+最初に `classNames` にアクセスするまでドキュメントには何も挿入されず、結果はメモ化されます。`css` prop だけを使うコードにはコストがかかりません。
+
+```typescript
+button.classNames === button.classNames; // true
+```
+
+<Callout type="warn">
+
+`classNames` は `base` と単一の variant の値しか扱いません。**compound variants はここには含まれません。** 組み合わせに対応するキーはありません。compound のスタイルが必要な場合は [`className()`](#classname) を使ってください。
+
+これらの class を連結することは、関数を呼び出すことと同じではありません。それぞれが specificity の等しい別々のルールなので、`base` と variant が同じプロパティを設定している場合、列挙した順序ではなく Emotion が先に挿入したほうが優先されます。variant が `base` に勝つ必要がある場合は、[`className()`](#classname) を使ってください。
+
+設定に `base` がない場合、`base` は空文字列になります。
+
+</Callout>
+
+#### 戻り値
+
+(`EvClassNames<T>`): `{ base, variants }` で、`variants[axis][value]` が class name です。
+
+### `button.variants()` [#variants]
+
+軸の名前を宣言された順に返します。Storybook の argTypes や props の表を作るときに便利です。
+
+```typescript
+const button = ev({
+  variants: {
+    size: {
+      small: {},
+      large: {},
+    },
+    color: {
+      primary: {},
+      secondary: {},
+    },
+  },
+});
+
+button.variants(); // ['size', 'color']
+```
+
+`variants` のない設定では `[]` を返します。
+
+#### 戻り値
+
+(`Array<VariantKeys<T>>`): 軸の名前です。毎回同じ配列のインスタンスが返されるので、読み取り専用として扱ってください。
+
+### Slots [#slots]
+
+コンポーネントが複数の要素で構成される場合は、`config.base` の代わりに `config.slots` を宣言します。すると variant の値と compound の `style` は slot 名ごとに書くようになり、呼び出しは slot ごとにスタイル関数をひとつずつ返します。
+
+```tsx
+const card = ev({
+  slots: {
+    root: {
+      padding: 16,
+    },
+    title: {
+      fontWeight: 600,
+    },
+  },
+  variants: {
+    size: {
+      small: {},
+      large: {
+        root: {
+          padding: 24,
+        },
+        title: {
+          fontSize: 20,
+        },
+      },
+    },
+  },
+  compoundSlots: [
+    {
+      slots: ['root', 'title'],
+      style: {
+        margin: 0,
+      },
+    },
+  ],
+  defaultVariants: {
+    size: 'small',
+  },
+});
+
+const { root, title } = card({
+  size: 'large',
+});
+
+<section css={root()}>
+  <h3 css={title()}>Title</h3>
+</section>;
+```
+
+各 slot 関数は、呼び出しと同じ variants を受け取ります。値は軸ごとに、slot の props、呼び出しの props、`defaultVariants` の順で解決され、compound のエントリは slot ごとに、その slot で解決された値に対して照合されます。
+
+slot のスタイルは、`slots` 内のその slot のエントリ、一致した `variants` のエントリ、一致した `compoundVariants`、一致した `compoundSlots` の順に並びます。
+
+それ以外のオブジェクトは、通常の形と 2 点だけ異なります。
+
+- `card.className(variants)` は slot ごとに class name をひとつずつ、`{ root: string, title: string }` の形で返します。
+- `card.classNames` はありません。
+
+`card.variants()` は変わりません。
+
+`config.base` と `config.slots` は併用できず、slot 名を指定する場所では宣言済みの slot 名しか受け付けません。どちらも型エラーになります。
+
+#### 戻り値
+
+(`EvSlotsFunction<N, T>`): 呼び出すと `{ [slot]: (slotVariants?) => SerializedStyles[] }` を返します。
+
+順を追った説明は [Slots](./slots.mdx) を参照してください。
+
+### extend [#extend]
+
+別の `ev()` の結果を `config.extend` に渡すと、それを土台にできます。新しい関数は、親のスタイル、variants、compound variants、default variants を継承します。親は変更されません。
+
+```ts
+const button = ev({
+  base: {
+    padding: '10px 20px',
+  },
+  variants: {
+    size: {
+      small: {
+        fontSize: 12,
+      },
+      large: {
+        fontSize: 16,
+      },
+    },
+  },
+  defaultVariants: {
+    size: 'small',
+  },
+});
+
+const iconButton = ev({
+  extend: button,
+  base: {
+    display: 'inline-flex',
+  },
+  variants: {
+    size: {
+      large: {
+        width: 48,
+      },
+    },
+    round: {
+      true: {
+        borderRadius: '50%',
+      },
+    },
+  },
+});
+
+iconButton({
+  size: 'large',
+  round: true,
+});
+// padding, display, font-size, width, border-radius
+```
+
+どの段階でも親のスタイルが子のスタイルより先に来るので、全体の順序は次のとおりです。
+
+1. `base`（親、次に子）
+2. 一致した `variants` のエントリ（軸ごとに、各値について親、次に子）
+3. 一致した `compoundVariants` のエントリ（親、次に子）
+
+継承した軸は元の位置を保ち、子の新しい軸はその後に続きます。これは `iconButton.variants()` の順序でもあります。`defaultVariants` は軸ごとにマージされ、子の値が優先されます。子の `compoundVariants` と `defaultVariants` では、継承した軸と値を参照できます。
+
+すべての compound variant はすべての variant スタイルの後に来るので、子が同じ variant の値にスタイルを宣言しても、親の compound variant が優先されます。
+
+[slots](#slots) を使う場合、親と子はどちらも slot 関数である必要があります。子の `slots` は親の slot に追加され、`slots` を持たない子は親の slot をそのまま使います。`compoundSlots` も `compoundVariants` と一緒に継承されます。
+
+`extend` は、次の 2 つの場合に `ev()` の実行時にエラーを投げます。
+
+- 値が `ev()` の結果ではない場合。値が確かに `ev()` から得たものなら、`emotion-variants` が 2 つインストールされている可能性があります。
+- `slots` を持つ設定が、`slots` を持たない設定を extend した場合。これは型エラーにもなります。親が `slots` を持つ子で `config.base` を使った場合も同様に型エラーです。
+
+順を追った説明は [Extend](./extending.mdx) を参照してください。
+
+## 試してみる
+
+variant の値を編集して、ボタンの変化を確認してみましょう。
+
+<EvPlayground />
+
+## 型
+
+`EvConfig`、`EvFunction`、`EvVariants` など、export されている型定義については[型](./types.mdx)を参照してください。
+
+<Callout type="warn" title="@emotion/css と併用する場合">
+
+`className()` と `classNames` は [`@emotion/css`](https://emotion.sh/docs/@emotion/css) を経由します。`@emotion/css` は `@emotion/react` とは別に独自のグローバルキャッシュを持っています。そのため、`CacheProvider` の `key` や `nonce` などのオプションは無視され、サーバーレンダリングでこれらのスタイルを抽出するには [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach) が必要です。
+
+`css={button(...)}` と `className={button.className(...)}` を同じ要素に指定するのは避けてください。2 つのキャッシュは挿入順序を共有しないため、上書きが期待どおりに解決されない場合があります。
+
+サーバーレンダリングでは、抽出すべきキャッシュがひとつではなく 2 つになるということです。`@emotion/react` のキャッシュだけを収集すると、`className()` と `classNames` のルールが欠けたマークアップが送られ、ハイドレーションが完了するまで初回描画にスタイルが適用されません。
+
+
+</Callout>

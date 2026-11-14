@@ -1,0 +1,185 @@
+---
+title: Variants
+description: 'ev() はひとつの設定オブジェクトを受け取ります。'
+---
+
+`ev()` はひとつの設定オブジェクトを受け取ります。このページでは `base` と `variants` を扱います。[`defaultVariants`](./default-variants.mdx)、[`compoundVariants`](./compound-variants.mdx)、[`slots`](./slots.mdx) にはそれぞれ専用のページがあります。
+
+```ts
+ev({
+  base,             // すべての variant に適用されるスタイル
+  variants,         // 軸 × 値 → スタイル
+  compoundVariants, // 複数の軸が一致したときに適用されるスタイル
+  defaultVariants,  // prop が省略されたときに使う値
+});
+```
+
+## `base`
+
+`base` のスタイルは、variant 関数を呼び出すたびに必ず適用されます。どの variant にも依存しないプロパティに使いましょう。
+
+```ts
+const button = ev({
+  base: {
+    padding: '10px 20px',
+    borderRadius: '8px',
+    border: 'none',
+    cursor: 'pointer',
+  },
+});
+
+button(); // base のスタイルだけが適用される
+```
+
+`base` はひとつの `CSSObject` を受け取り、Emotion のあらゆる構文（ネストしたセレクター、疑似クラス、メディアクエリ、`@keyframes` など）をサポートします。
+
+```ts
+const button = ev({
+  base: {
+    transition: 'transform 0.2s ease',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+    },
+    '&:disabled': {
+      opacity: 0.6,
+      cursor: 'not-allowed',
+    },
+  },
+});
+```
+
+## `variants`
+
+`variants` は軸（axis）のレコードです。各軸は値から `CSSObject` へのマッピングです。
+
+<Preview name="variants">
+
+```tsx
+const button = ev({
+  base: {
+    border: '1px solid transparent',
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontWeight: 600,
+    transition: 'all 0.2s ease',
+  },
+  variants: {
+    variant: {
+      filled: {
+        background: 'var(--button-color)',
+        color: 'white',
+      },
+      outlined: {
+        background: 'transparent',
+        borderColor: 'var(--button-color)',
+        color: 'var(--button-color)',
+      },
+      text: {
+        background: 'transparent',
+        color: 'var(--button-color)',
+      },
+    },
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        '--button-color': '#d36ac2',
+      },
+      secondary: {
+        '--button-color': '#475569',
+      },
+    },
+  },
+});
+
+<button
+  css={button({
+    variant: 'filled',
+    size: 'medium',
+    color: 'primary',
+  })}
+>
+  Filled
+</button>
+<button
+  css={button({
+    variant: 'outlined',
+    size: 'medium',
+    color: 'primary',
+  })}
+>
+  Outlined
+</button>
+<button
+  css={button({
+    variant: 'text',
+    size: 'medium',
+    color: 'primary',
+  })}
+>
+  Text
+</button>
+```
+
+</Preview>
+
+variant の値には **string**、**number**、**Boolean** を使えます。
+
+```ts
+const panel = ev({
+  variants: {
+    color: {
+      red: {
+        color: 'red',
+      },
+      blue: {
+        color: 'blue',
+      },
+    },
+    level: {
+      1: {
+        zIndex: 1,
+      },
+      2: {
+        zIndex: 2,
+      },
+    },
+    outlined: {
+      true: {
+        border: '1px solid',
+      },
+      false: {
+        border: 'none',
+      },
+    },
+  },
+});
+
+panel({ color: 'red', level: 2, outlined: true });
+```
+
+<Callout type="info">
+
+Boolean の variant は、設定では文字列キー `'true'` と `'false'` で書きますが、関数を呼び出すときは実際の Boolean 値（`true` / `false`）を渡します。
+
+</Callout>
+
+## スタイルの適用順 [#style-precedence]
+
+1 回の呼び出しで、スタイルは次の順に追加されます（CSS が競合した場合は後のものが優先されます）。
+
+1. `base`
+2. 一致した単純な `variants` のエントリ（`variants` 内でキーが現れる順）
+3. 一致した `compoundVariants` のエントリ（配列の順）

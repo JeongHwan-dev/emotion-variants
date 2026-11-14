@@ -1,0 +1,111 @@
+---
+title: クイックスタート
+description: 'このページでは、emotion-variants を使って Button コンポーネントを一から作っていきます。'
+---
+
+このページでは、`emotion-variants` を使って `Button` コンポーネントを一から作っていきます。
+
+パッケージを[インストール](./installation.mdx)し、Emotion の `css` prop を有効にしてあることを前提とします。
+
+## 1. スタイルを定義する
+
+コンポーネントのスタイルを記述した設定オブジェクトをひとつ、`ev()` に渡します。
+
+```tsx
+import { ev } from 'emotion-variants';
+
+const button = ev({
+  base: {
+    padding: '10px 20px',
+    borderRadius: '8px',
+    border: 'none',
+    cursor: 'pointer',
+    fontWeight: 600,
+  },
+  variants: {
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        background: '#d36ac2',
+        color: 'white',
+      },
+      secondary: {
+        background: '#475569',
+        color: 'white',
+      },
+    },
+  },
+  defaultVariants: {
+    size: 'medium',
+    color: 'primary',
+  },
+});
+```
+
+`ev()` は関数を返します。この関数に variant の値を渡して呼び出し、その結果を Emotion の `css` prop に渡します。
+
+## 2. コンポーネントで使う
+
+```tsx
+import type { ComponentPropsWithoutRef } from 'react';
+
+type ButtonProps = ComponentPropsWithoutRef<'button'> & {
+  size?: 'small' | 'medium' | 'large';
+  color?: 'primary' | 'secondary';
+};
+
+export function Button({ size, color, ...rest }: ButtonProps) {
+  return <button css={button({ size, color })} {...rest} />;
+}
+```
+
+```tsx
+<Button>Default</Button>
+<Button size="large">Large primary</Button>
+<Button size="small" color="secondary">Small secondary</Button>
+```
+
+`defaultVariants` が設定されているので、`<Button>Default</Button>` は `medium` + `primary` としてレンダリングされます。
+
+## 3. variant 関数から props を導出する
+
+props の型を手書きする必要はありません。`VariantProps` 型を使えば、variant 関数から直接取り出せます。
+
+```tsx
+import { ev, type VariantProps } from 'emotion-variants';
+
+const button = ev({
+  /* ... */
+});
+
+type ButtonVariants = VariantProps<typeof button>;
+
+type ButtonProps = ComponentPropsWithoutRef<'button'> & ButtonVariants;
+```
+
+<Callout type="idea">
+
+こうするとコンポーネントの props 型とスタイルが常に同期します。variant の値を追加すれば、`ButtonProps` も自動で更新されます。
+
+</Callout>
+
+ref の転送など、その他のパターンは [TypeScript](./typescript.mdx) を参照してください。
+
+## 次に読む
+
+- [Variants](./variants.mdx) — `base` と `variants` を詳しく。
+- [API リファレンス](./ev.mdx) — `ev()` の網羅的なドキュメント。
+- [Compound Variants](./compound-variants.mdx) — 組み合わせにだけ適用されるスタイル。

@@ -1,0 +1,261 @@
+---
+title: Slots
+description: 'コンポーネントがひとつの要素だけで完結することはまれです。'
+---
+
+コンポーネントがひとつの要素だけで完結することはまれです。カードには root、title、footer があり、`size` のような variant はたいていそのうちの複数を同時に変更します。`slots` を使うと、ひとつの `ev()` 呼び出しですべてのパーツをスタイリングできます。パーツが同じ variants を共有するので、互いにずれることがありません。
+
+## パーツを宣言する
+
+`base` の代わりに `slots` を使います。各キーはコンポーネントのパーツの名前で、そのパーツの基本スタイルを持ちます。
+
+```ts
+import { ev } from 'emotion-variants';
+
+const card = ev({
+  slots: {
+    root: {
+      borderRadius: 12,
+      padding: 16,
+    },
+    title: {
+      fontWeight: 600,
+    },
+    footer: {
+      display: 'flex',
+      gap: 8,
+    },
+  },
+});
+```
+
+これで `card()` を呼び出すと、slot ごとにスタイル関数がひとつずつ返されます。それぞれの要素をレンダリングする場所で呼び出しましょう。
+
+```tsx
+import type { ComponentPropsWithoutRef, ReactNode } from 'react';
+
+type CardProps = ComponentPropsWithoutRef<'section'> & {
+  heading: ReactNode;
+};
+
+function Card({ heading, children, ...rest }: CardProps) {
+  const { root, title, footer } = card();
+
+  return (
+    <section css={root()} {...rest}>
+      <h3 css={title()}>{heading}</h3>
+      <div css={footer()}>{children}</div>
+    </section>
+  );
+}
+```
+
+<Callout type="warn">
+
+slot はスタイルではなく関数です。`css={root()}` と書いてください。Emotion は `css` に渡された関数を theme を引数にして呼び出すため、`css={root}` と書くと theme オブジェクトが slot の variants として読み取られてしまいます。
+
+</Callout>
+
+## slot ごとの variants
+
+`slots` がある場合、variant の値は slot 名とスタイルの対応になります。値には変更する slot だけを書けば十分です。
+
+<Preview name="slots">
+
+```tsx
+const card = ev({
+  slots: {
+    root: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 6,
+      width: 320,
+      border: '1px solid #e4e4e7',
+      borderRadius: 12,
+      background: 'white',
+      color: '#09090b',
+      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+    },
+    title: {
+      fontWeight: 600,
+    },
+    footer: {
+      display: 'flex',
+      gap: 8,
+      fontSize: 14,
+      color: '#71717a',
+    },
+  },
+  variants: {
+    size: {
+      small: {
+        root: {
+          padding: 16,
+        },
+        title: {
+          fontSize: 16,
+        },
+      },
+      large: {
+        root: {
+          padding: 24,
+        },
+        title: {
+          fontSize: 18,
+        },
+      },
+    },
+    tone: {
+      neutral: {},
+      accent: {
+        title: {
+          color: '#d36ac2',
+        },
+      },
+    },
+  },
+  defaultVariants: {
+    size: 'small',
+    tone: 'neutral',
+  },
+});
+
+const { root, title, footer } = card({
+  size: 'large',
+  tone: 'accent',
+});
+
+<div css={root()}>
+  <h3 css={title()}>Weekly report</h3>
+  <div css={footer()}>Updated 2 hours ago</div>
+</div>
+```
+
+</Preview>
+
+1 回の呼び出しで、すべての slot の variants が解決されます。`root()` には large の padding、`title()` には large の font size と accent の color が適用され、`footer()` はどの variant にも登場しないので基本スタイルだけが適用されます。
+
+## ひとつの slot だけ variant を上書きする
+
+各 slot 関数は、呼び出し時と同じ variant props を受け取ります。slot の props は呼び出しの props より優先され、呼び出しの props は `defaultVariants` より優先されます。
+
+```tsx
+const { root, title } = card({
+  size: 'large',
+});
+
+root(); // large
+title({
+  size: 'small',
+}); // title だけ small
+```
+
+他の場所と同じく、`undefined` は次のレベルにフォールバックするので、省略可能な prop をそのまま slot に渡しても安全です。
+
+## Compound variants
+
+`compoundVariants` も同じように動作しますが、`style` は slot 名ごとに書きます。
+
+```ts
+compoundVariants: [
+  {
+    variants: {
+      size: 'large',
+      tone: 'accent',
+    },
+    style: {
+      title: {
+        textTransform: 'uppercase',
+      },
+    },
+  },
+],
+```
+
+compound は slot ごとに、その slot で解決された値に対して照合されます。そのため、ひとつの slot で variant を上書きすると、その slot だけで compound が有効になったり無効になったりします。
+
+```ts
+const { title } = card({
+  tone: 'accent',
+});
+
+title(); // small + accent: compound なし
+title({
+  size: 'large',
+}); // large + accent: uppercase
+```
+
+## 複数の slot に同じスタイルを適用する
+
+`compoundSlots` は、ひとつのスタイルを slot のリストに適用します。slot 名ごとに同じスタイルを繰り返し書く手間が省けます。
+
+```ts
+compoundSlots: [
+  {
+    slots: ['title', 'footer'],
+    style: {
+      paddingInline: 4,
+    },
+  },
+  {
+    slots: ['root', 'footer'],
+    variants: {
+      size: 'large',
+    },
+    style: {
+      gap: 16,
+    },
+  },
+],
+```
+
+`variants` は省略可能です。省略するとエントリは常に適用され、指定すると配列の条件も含めて `compoundVariants` と同じ照合ルールに従います。
+
+## 順序
+
+各 slot で、スタイルは次の順に追加され、CSS が競合した場合は後のエントリが優先されます。
+
+1. `slots` に書いたその slot の基本スタイル
+2. 一致した `variants` のエントリ（軸が宣言された順）
+3. 一致した `compoundVariants` のエントリ（配列の順）
+4. 一致した `compoundSlots` のエントリ（配列の順）
+
+## Class name
+
+`className()` は slot ごとに class name をひとつずつ返します。
+
+```tsx
+const classNames = card.className({
+  size: 'large',
+});
+
+<section className={classNames.root}>
+  <h3 className={classNames.title}>Title</h3>
+</section>;
+```
+
+`slots` を宣言した場合、`classNames` のルックアップテーブルはありません。
+
+## ルール
+
+- `base` と `slots` は併用できません。スタイルは slot に、一般的には `root` という名前の slot に書きましょう。
+- variant の値、compound の `style`、`compoundSlots` のエントリには、宣言済みの slot 名しか書けません。それ以外は型エラーになるので、タイプミスを検出できます。
+- `'&:hover'` のようなセレクターは、slot 名と並べるのではなく slot のスタイルの中に書きます。
+- `compoundSlots` には `slots` が必要です。
+
+## Props
+
+[`VariantProps`](./typescript.mdx) は slot 関数にも使え、すべての slot で共有される variant props を取得できます。
+
+```ts
+import type { VariantProps } from 'emotion-variants';
+
+type CardVariants = VariantProps<typeof card>;
+// { size?: 'small' | 'large'; tone?: 'neutral' | 'accent' }
+```
+
+## 関連項目
+
+- [Compound Variants](./compound-variants.mdx)
+- [API リファレンス → slots](./ev.mdx#slots)
+

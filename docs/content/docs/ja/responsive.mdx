@@ -1,0 +1,224 @@
+---
+title: Responsive
+description: 'variant には、画面幅によって異なる値が必要になることがよくあります。'
+---
+
+variant には、画面幅によって異なる値が必要になることがよくあります。スマートフォンでは小さなボタン、デスクトップでは大きなボタン、といった具合です。`createEv` で breakpoint を一度宣言すれば、すべての variant prop が breakpoint ごとの値を受け付けるようになります。
+
+## breakpoint を宣言する
+
+`createEv` を一度呼び出し、返された `ev` を export します。`ev` は `emotion-variants` からではなく、このファイルから import してください。
+
+```ts
+// ev.ts
+import { createEv } from 'emotion-variants';
+
+export const { ev } = createEv({
+  breakpoints: {
+    md: '@media (min-width: 768px)',
+    lg: '@media (min-width: 1024px)',
+  },
+});
+```
+
+キーは自由に決められる名前で、値はその名前が表す media query です。幅の小さいものから大きいものの順に並べてください。
+
+設定はそのままです。コンポーネントのスタイルを変更する必要はありません。
+
+```ts
+import { ev } from './ev';
+
+const button = ev({
+  base: {
+    border: '1px solid transparent',
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontWeight: 600,
+    transition: 'all 0.2s ease',
+  },
+  variants: {
+    variant: {
+      filled: {
+        background: 'var(--button-color)',
+        color: 'white',
+      },
+      outlined: {
+        background: 'transparent',
+        borderColor: 'var(--button-color)',
+        color: 'var(--button-color)',
+      },
+      text: {
+        background: 'transparent',
+        color: 'var(--button-color)',
+      },
+    },
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        '--button-color': '#d36ac2',
+      },
+      secondary: {
+        '--button-color': '#475569',
+      },
+    },
+  },
+  defaultVariants: {
+    variant: 'filled',
+    size: 'medium',
+    color: 'primary',
+  },
+});
+```
+
+## breakpoint ごとに値を渡す
+
+variant prop には、これまでどおりの値か、`initial` と breakpoint 名をキーとするオブジェクトを渡せます。
+
+<Preview name="responsive">
+
+```tsx
+<button
+  css={button({
+    size: {
+      initial: 'small',
+      md: 'large',
+    },
+  })}
+>
+  Small below 768px, large above
+</button>
+```
+
+</Preview>
+
+`initial` はどの media query の外側にも置かれ、すべての幅で適用されます。`md` は `large` のスタイルを `md` の query の中に入れるので、768px からはそのスタイルが優先されます。結果は引き続き、`css` prop に渡すスタイルの配列です。
+
+- 省略した breakpoint は何も追加しないので、その前の breakpoint の値がそのまま続きます。
+- `initial` を省略すると、その軸の default variant が代わりに使われます。デフォルト値がない場合、最初に渡した breakpoint より狭い幅ではその軸のスタイルはありません。
+
+```ts
+button({
+  size: {
+    lg: 'large',
+  },
+}); // 1024px までは medium（デフォルト値）、そこから large
+```
+
+## コンポーネントで使う
+
+[`VariantProps`](./typescript.mdx) にはレスポンシブな形式も含まれているので、prop をそのまま渡すだけで十分です。
+
+```tsx
+import type { ComponentPropsWithoutRef } from 'react';
+import type { VariantProps } from 'emotion-variants';
+
+type ButtonProps = ComponentPropsWithoutRef<'button'> & VariantProps<typeof button>;
+
+function Button({ variant, size, color, ...rest }: ButtonProps) {
+  return <button css={button({ variant, size, color })} {...rest} />;
+}
+```
+
+```tsx
+<Button
+  size={{
+    initial: 'small',
+    md: 'large',
+  }}
+>
+  Save
+</Button>
+```
+
+## 順序
+
+breakpoint のスタイルは、渡したキーの順序に関係なく、breakpoint が宣言された順に追加されます。小さいものから順に宣言するのはそのためです。2 つの query が一致した場合は、後のものが優先されます。
+
+<Callout type="warn">
+
+スタイルシートでは、media query 内のルールは通常のスタイルを持つルールの後に置かれます。そのため、breakpoint のスタイルはその breakpoint の範囲内で、同じプロパティに対するすべての通常のスタイルより優先されます。後に宣言された軸のスタイルや compound variant のスタイルも例外ではありません。
+
+2 つの軸がどちらも media query 内で同じプロパティを設定している場合、両方の query が一致する範囲では後に宣言された軸が優先されます。
+
+</Callout>
+
+## Compound variants
+
+compound variant は軸ごとにひとつの値を必要としますが、レスポンシブな値は複数の値を持ちます。そのため、レスポンシブな値を受け取った軸は、その呼び出しではどの compound variant とも一致しません。その軸に言及しない compound variants は引き続き適用されます。
+
+```ts
+button({
+  size: 'large',
+  color: 'primary',
+}); // large + primary の compound が適用される
+
+button({
+  size: {
+    initial: 'large',
+  },
+  color: 'primary',
+}); // 適用されないが、primary だけを条件とする compound は適用される
+```
+
+オブジェクトに `initial` しかない場合も同じです。値がひとつだけなら、そのままの値を渡してください。
+
+## slots と組み合わせる
+
+[slots](./slots.mdx) を使う場合、呼び出しと各 slot 関数の両方がレスポンシブな値を受け付けます。slot の prop は、その軸に対する呼び出しの値を丸ごと置き換えます。breakpoint ごとにマージされることはありません。
+
+```ts
+const { root, title } = card({
+  size: {
+    initial: 'small',
+    md: 'large',
+  },
+});
+
+root(); // small、md から large
+title({
+  size: 'small',
+}); // すべての幅で small
+```
+
+## Class name
+
+`className()` もレスポンシブな値を受け付け、返される class には media ルールが含まれます。
+
+```ts
+button.className({
+  size: {
+    initial: 'small',
+    md: 'large',
+  },
+});
+```
+
+`classNames` は variant の値ごとに class をひとつずつ持ち、breakpoint に対応するエントリはありません。
+
+## ルール
+
+- `defaultVariants` は単一の値を受け取ります。レスポンシブなデフォルト値は型エラーになります。
+- `initial` は予約語なので、breakpoint 名には使えません。これは型エラーになります。
+- 宣言されていない breakpoint のキーは型エラーになり、ランタイムでは無視されます。
+- breakpoint 名を `'768'` のような数値に見える名前にしてはいけません。JavaScript はそのようなキーをオブジェクトの先頭に移動するため、宣言した順序が保たれません。
+- `emotion-variants` から export される `ev` には breakpoint がなく、通常の値しか受け付けません。
+- ある `ev` で作った関数を、別の `ev` で [extend](./extending.mdx) できます。適用される breakpoint は、呼び出す関数を作った `ev` のものです。
+
+## 関連項目
+
+- [TypeScript](./typescript.mdx)
+- [API リファレンス → createEv](./create-ev.mdx)
+

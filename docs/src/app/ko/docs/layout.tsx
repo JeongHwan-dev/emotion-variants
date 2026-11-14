@@ -1,0 +1,6 @@
+import type { ReactNode } from 'react';
+import { DocsShell } from '@/components/site';
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return <DocsShell lang="ko">{children}</DocsShell>;
+}

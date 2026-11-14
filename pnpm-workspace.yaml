@@ -7,8 +7,10 @@ packages:
 ignoreWorkspaceRootCheck: true
 
 # pnpm 10+ blocks dependency lifecycle scripts by default. esbuild needs its
-# postinstall to place the platform binary.
+# postinstall to place the platform binary. es5-ext (pulled in by Sandpack in
+# docs) only prints a message from its postinstall, so it stays blocked.
 allowBuilds:
+  es5-ext: false
   esbuild: true
 
 overrides:

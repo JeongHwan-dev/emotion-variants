@@ -1,0 +1,185 @@
+---
+title: Variants
+description: 'ev() 接收一个配置对象。'
+---
+
+`ev()` 接收一个配置对象。本页介绍 `base` 和 `variants`。[`defaultVariants`](./default-variants.mdx)、[`compoundVariants`](./compound-variants.mdx) 和 [`slots`](./slots.mdx) 各有单独的页面。
+
+```ts
+ev({
+  base,             // 应用于所有 variant 的样式
+  variants,         // 维度 × 值 → 样式
+  compoundVariants, // 多个维度同时匹配时应用的样式
+  defaultVariants,  // 使用方省略 prop 时的回退值
+});
+```
+
+## `base`
+
+每次调用 variant 函数都会应用 `base` 样式。与任何 variant 都无关的属性放在这里。
+
+```ts
+const button = ev({
+  base: {
+    padding: '10px 20px',
+    borderRadius: '8px',
+    border: 'none',
+    cursor: 'pointer',
+  },
+});
+
+button(); // 只应用 base 样式
+```
+
+`base` 接收单个 `CSSObject`，支持 Emotion 的全部语法：嵌套选择器、伪类、媒体查询、通过 `@keyframes` 定义的 keyframes 等。
+
+```ts
+const button = ev({
+  base: {
+    transition: 'transform 0.2s ease',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+    },
+    '&:disabled': {
+      opacity: 0.6,
+      cursor: 'not-allowed',
+    },
+  },
+});
+```
+
+## `variants`
+
+`variants` 是一个由维度组成的记录。每个维度把值映射到一个 `CSSObject`。
+
+<Preview name="variants">
+
+```tsx
+const button = ev({
+  base: {
+    border: '1px solid transparent',
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontWeight: 600,
+    transition: 'all 0.2s ease',
+  },
+  variants: {
+    variant: {
+      filled: {
+        background: 'var(--button-color)',
+        color: 'white',
+      },
+      outlined: {
+        background: 'transparent',
+        borderColor: 'var(--button-color)',
+        color: 'var(--button-color)',
+      },
+      text: {
+        background: 'transparent',
+        color: 'var(--button-color)',
+      },
+    },
+    size: {
+      small: {
+        padding: '8px 16px',
+        fontSize: 12,
+      },
+      medium: {
+        padding: '10px 20px',
+        fontSize: 14,
+      },
+      large: {
+        padding: '12px 24px',
+        fontSize: 16,
+      },
+    },
+    color: {
+      primary: {
+        '--button-color': '#d36ac2',
+      },
+      secondary: {
+        '--button-color': '#475569',
+      },
+    },
+  },
+});
+
+<button
+  css={button({
+    variant: 'filled',
+    size: 'medium',
+    color: 'primary',
+  })}
+>
+  Filled
+</button>
+<button
+  css={button({
+    variant: 'outlined',
+    size: 'medium',
+    color: 'primary',
+  })}
+>
+  Outlined
+</button>
+<button
+  css={button({
+    variant: 'text',
+    size: 'medium',
+    color: 'primary',
+  })}
+>
+  Text
+</button>
+```
+
+</Preview>
+
+variant 值可以是**字符串**、**数字**或 **Boolean**：
+
+```ts
+const panel = ev({
+  variants: {
+    color: {
+      red: {
+        color: 'red',
+      },
+      blue: {
+        color: 'blue',
+      },
+    },
+    level: {
+      1: {
+        zIndex: 1,
+      },
+      2: {
+        zIndex: 2,
+      },
+    },
+    outlined: {
+      true: {
+        border: '1px solid',
+      },
+      false: {
+        border: 'none',
+      },
+    },
+  },
+});
+
+panel({ color: 'red', level: 2, outlined: true });
+```
+
+<Callout type="info">
+
+Boolean variant 在配置中使用字符串字面量键 `'true'` 和 `'false'`，但调用函数时传入的是真正的 Boolean 值（`true` / `false`）。
+
+</Callout>
+
+## 样式优先级 [#style-precedence]
+
+每次调用时，样式按以下顺序追加（发生 CSS 冲突时，后者生效）：
+
+1. `base`
+2. 每个匹配的普通 `variants` 项，按键在 `variants` 中出现的顺序
+3. 每个匹配的 `compoundVariants` 项，按数组顺序
