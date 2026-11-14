@@ -15,6 +15,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { i18n, type Lang } from '@/lib/i18n';
+import { alternateLanguages, GITHUB, home, SITE } from '@/lib/site';
 import { source } from '@/lib/source';
 import { version } from '../../../package.json';
 import { GithubIcon, NpmIcon } from './icons';
@@ -28,8 +29,6 @@ import '@/app/global.css';
  * Everything the route trees (`app/(en)`, `app/ko`, `app/ja`, `app/zh`) share. Static export has no
  * middleware to pick a locale, so each tree is a set of thin wrappers passing its `lang` here.
  */
-
-const GITHUB = 'https://github.com/JeongHwan-dev/emotion-variants';
 
 const i18nUI = defineI18nUI(i18n, {
   en: {
@@ -106,7 +105,7 @@ const OG_LOCALE = {
 
 export function rootMetadata(lang: Lang): Metadata {
   return {
-    metadataBase: new URL('https://emotion-variants.org'),
+    metadataBase: new URL(SITE),
     title: {
       default: `emotion-variants — ${copy[lang].title}`,
       template: '%s | emotion-variants',
@@ -119,6 +118,24 @@ export function rootMetadata(lang: Lang): Metadata {
       type: 'website',
       siteName: 'emotion-variants',
       locale: OG_LOCALE[lang],
+      images: '/og.png',
+    },
+    twitter: {
+      card: 'summary_large_image',
+    },
+  };
+}
+
+/** On the page, not the layout, so the 404 page gets no canonical. */
+export function homeMetadata(lang: Lang): Metadata {
+  return {
+    alternates: {
+      canonical: home(lang),
+      languages: alternateLanguages(home),
+    },
+    openGraph: {
+      ...rootMetadata(lang).openGraph,
+      url: home(lang),
     },
   };
 }
@@ -150,11 +167,11 @@ export function RootLayout({ lang, children }: { lang: Lang; children: ReactNode
 }
 
 function baseOptions(lang: Lang): BaseLayoutProps {
-  const home = lang === 'en' ? '/' : `/${lang}`;
+  const prefix = lang === 'en' ? '' : `/${lang}`;
 
   return {
     nav: {
-      url: home,
+      url: home(lang),
       title: (
         <>
           <img src="/logo.svg" alt="" width={24} height={24} />
@@ -168,12 +185,12 @@ function baseOptions(lang: Lang): BaseLayoutProps {
     links: [
       {
         text: copy[lang].docs,
-        url: `${home === '/' ? '' : home}/docs/introduction`,
+        url: `${prefix}/docs/introduction`,
         active: 'none',
       },
       {
         text: copy[lang].changelog,
-        url: `${home === '/' ? '' : home}/docs/changelog`,
+        url: `${prefix}/docs/changelog`,
       },
       {
         type: 'icon',
@@ -198,6 +215,21 @@ function baseOptions(lang: Lang): BaseLayoutProps {
 export function HomePage({ lang }: { lang: Lang }) {
   return (
     <HomeLayout {...baseOptions(lang)}>
+      <JsonLd
+        data={{
+          '@context': 'https://schema.org',
+          '@type': 'SoftwareSourceCode',
+          name: 'emotion-variants',
+          description: copy[lang].description,
+          url: `${SITE}${home(lang)}`,
+          codeRepository: GITHUB,
+          programmingLanguage: 'TypeScript',
+          runtimePlatform: 'React',
+          license: 'https://opensource.org/licenses/MIT',
+          version,
+          inLanguage: lang,
+        }}
+      />
       <Landing lang={lang} />
     </HomeLayout>
   );
@@ -236,7 +268,31 @@ export function docsMetadata(lang: Lang, slug: string[]): Metadata {
   return {
     title: page.data.title,
     description: page.data.description,
+    alternates: {
+      canonical: page.url,
+      languages: alternateLanguages((l) => source.getPage(slug, l)?.url),
+    },
+    // Replaces the layout's `openGraph` whole, so the shared fields are spread back in.
+    openGraph: {
+      ...rootMetadata(lang).openGraph,
+      type: 'article',
+      url: page.url,
+      title: page.data.title,
+      description: page.data.description,
+      modifiedTime: page.data.lastModified?.toISOString(),
+    },
   };
+}
+
+function JsonLd({ data }: { data: object }) {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(data).replaceAll('<', '\\u003c'),
+      }}
+    />
+  );
 }
 
 export function DocsPageView({ lang, slug }: { lang: Lang; slug: string[] }) {
@@ -247,6 +303,22 @@ export function DocsPageView({ lang, slug }: { lang: Lang; slug: string[] }) {
 
   return (
     <DocsPage toc={page.data.toc}>
+      <JsonLd
+        data={{
+          '@context': 'https://schema.org',
+          '@type': 'TechArticle',
+          headline: page.data.title,
+          description: page.data.description,
+          url: `${SITE}${page.url}/`,
+          inLanguage: lang,
+          dateModified: page.data.lastModified?.toISOString(),
+          isPartOf: {
+            '@type': 'WebSite',
+            name: 'emotion-variants',
+            url: SITE,
+          },
+        }}
+      />
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsBody>
         <MDX

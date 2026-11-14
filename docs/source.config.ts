@@ -3,6 +3,12 @@ import lastModified from 'fumadocs-mdx/plugins/last-modified';
 
 export const docs = defineDocs({
   dir: 'content/docs',
+  docs: {
+    postprocess: {
+      // Feeds `getText('processed')` for /llms-full.txt.
+      includeProcessedMarkdown: true,
+    },
+  },
 });
 
 type Node = {
