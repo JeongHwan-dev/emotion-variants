@@ -1,13 +1,19 @@
 {
   "name": "emotion-variants",
   "version": "2.1.0",
-  "description": "Type-safe variant API for Emotion",
+  "description": "Type-safe variant API for Emotion, with slots, extend, and responsive variants",
   "keywords": [
     "emotion",
     "variants",
     "css-in-js",
     "typescript",
-    "design-system"
+    "design-system",
+    "react",
+    "type-safe",
+    "slots",
+    "responsive",
+    "compound-variants",
+    "styling"
   ],
   "author": "Jeonghwan Park",
   "license": "MIT",
