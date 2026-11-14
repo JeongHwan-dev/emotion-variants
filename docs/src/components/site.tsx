@@ -107,8 +107,8 @@ export function rootMetadata(lang: Lang): Metadata {
   return {
     metadataBase: new URL(SITE),
     title: {
-      default: `emotion-variants — ${copy[lang].title}`,
-      template: '%s | emotion-variants',
+      default: `Emotion Variants — ${copy[lang].title}`,
+      template: '%s | Emotion Variants',
     },
     description: copy[lang].description,
     icons: {
@@ -116,7 +116,7 @@ export function rootMetadata(lang: Lang): Metadata {
     },
     openGraph: {
       type: 'website',
-      siteName: 'emotion-variants',
+      siteName: 'Emotion Variants',
       locale: OG_LOCALE[lang],
       images: '/og.png',
     },
@@ -314,7 +314,7 @@ export function DocsPageView({ lang, slug }: { lang: Lang; slug: string[] }) {
           dateModified: page.data.lastModified?.toISOString(),
           isPartOf: {
             '@type': 'WebSite',
-            name: 'emotion-variants',
+            name: 'Emotion Variants',
             url: SITE,
           },
         }}
