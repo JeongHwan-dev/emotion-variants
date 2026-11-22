@@ -11,7 +11,6 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
-    "@emotion/css": "^11.13.5",
     "@emotion/react": "^11.13.5",
     "emotion-variants": "workspace:*",
     "react": "^19.2.0",
