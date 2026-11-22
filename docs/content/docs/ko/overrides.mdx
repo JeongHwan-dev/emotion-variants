@@ -83,15 +83,15 @@ function Button({ size, color, styleOverride, ...rest }: ButtonProps) {
 
 ```tsx
 // ✗ 순서가 보장되지 않아요
-<button className={`${button.className({ size: 'large' })} ${myClass}`}>Submit</button>;
+<button className={`${className(button, { size: 'large' })} ${myClass}`}>Submit</button>;
 ```
 
-class를 합치지 말고 스타일을 합친 다음, `@emotion/css`로 class 하나를 만드세요.
+class를 합치지 말고 스타일을 합친 다음, [`createClassName`](./ev.mdx#createclassname)에 넘긴 것과 같은 `css`로 class 하나를 만드세요.
 
 ```tsx
-import { css as cssClassName } from '@emotion/css';
+import { css } from '@emotion/css';
 
-const full = cssClassName(button({ size: 'large' }), { width: '100%' });
+const full = css(button({ size: 'large' }), { width: '100%' });
 
 <button className={full}>Submit</button>;
 ```

@@ -7,6 +7,7 @@ description: 'emotion-variants가 export하는 타입 전체와, 각각 언제 �
 
 ```typescript
 import type {
+  ClassNameHelpers,
   CompoundVariant,
   Ev,
   EvClassNames,
@@ -58,14 +59,12 @@ const config: EvConfig<{ size: { small: { fontSize: number } } }> = {
 
 ### `EvFunction<T, B>`
 
-[`ev()`](./ev.mdx)가 반환하는 값의 타입이에요. 호출 가능하고, 여기에 `variants()` · `className()` · `classNames`가 붙어 있어요.
+[`ev()`](./ev.mdx)가 반환하는 값의 타입이에요. 호출 가능하고, 여기에 `variants()`가 붙어 있어요.
 
 ```typescript
 interface EvFunction<T, B extends string = never> {
   (variants?: EvVariants<T, B>): SerializedStyles[];
   variants: () => Array<VariantKeys<T>>;
-  className: (variants?: EvVariants<T, B>) => string;
-  classNames: EvClassNames<T>;
 }
 ```
 
@@ -79,7 +78,6 @@ interface EvFunction<T, B extends string = never> {
 interface EvSlotsFunction<N extends string, T, B extends string = never> {
   (variants?: EvVariants<T, B>): { [K in N]: (slotVariants?: EvVariants<T, B>) => SerializedStyles[] };
   variants: () => Array<VariantKeys<T>>;
-  className: (variants?: EvVariants<T, B>) => { [K in N]: string };
 }
 ```
 
@@ -136,13 +134,24 @@ type ButtonVariants = VariantProps<typeof button>;
 
 ### `EvClassNames<T>`
 
-[`classNames`](./ev.mdx#classnames)의 모양이에요. `base` 하나와 variant 값마다 class name이 하나씩 있어요. 키는 각 값을 문자열로 바꾼 형태예요.
+[`classNames()`](./ev.mdx#classnames)의 반환 타입이에요. `base` 하나와 variant 값마다 class name이 하나씩 있어요. 키는 각 값을 문자열로 바꾼 형태예요.
 
 ```typescript
 type ClassNames = EvClassNames<{
   outlined: { true: {}; false: {} };
 }>;
 // { base: string; variants: { outlined: { true: string; false: string } } }
+```
+
+### `ClassNameHelpers`
+
+[`createClassName`](./ev.mdx#createclassname)이 반환하는 타입이에요. `className`과 `classNames` helper가 들어 있어요. helper를 다른 곳에 넘기거나 감쌀 때 꺼내 쓰세요.
+
+```typescript
+import { css } from '@emotion/css';
+import { type ClassNameHelpers, createClassName } from 'emotion-variants';
+
+const helpers: ClassNameHelpers = createClassName(css);
 ```
 
 ### `CompoundVariant<T>`

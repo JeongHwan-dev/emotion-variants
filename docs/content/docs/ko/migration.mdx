@@ -1,20 +1,64 @@
 ---
-title: v2로 마이그레이션
-description: 'v2.0.0에서는 동작 세 가지가 바뀌고, 필수 peer dependency 하나가 추가됐어요.'
+title: 마이그레이션
+description: 'emotion-variants를 v3나 v2로 올릴 때 바꿔야 하는 것들이에요.'
 ---
+
+## v3로 마이그레이션 [#migrating-to-v3]
+
+v3.0.0부터는 `@emotion/css`를 import하지 않아요. class name helper가 `ev()` 결과에서 빠지고, Emotion `css` 함수를 직접 넘겨받아요. `css` prop만 쓰는 코드는 설치 단계 말고는 바꿀 게 없어요.
+
+### `@emotion/css`가 더 이상 peer dependency가 아니에요
+
+`className()`이나 `classNames`를 호출하지 않는다면 제거하세요.
+
+```diff
+- pnpm add emotion-variants @emotion/react @emotion/css
++ pnpm add emotion-variants @emotion/react
+```
+
+### `className()`과 `classNames`는 `createClassName`에서 나와요
+
+스타일을 주입할 `css` 함수로 helper를 한 번만 만들고, `ev()` 결과를 첫 번째 인자로 넘기세요.
+
+```ts
+// class-name.ts
+import { css } from '@emotion/css';
+import { createClassName } from 'emotion-variants';
+
+export const { className, classNames } = createClassName(css);
+```
+
+```diff
+- button.className({ size: 'large' });
++ className(button, { size: 'large' });
+
+- button.classNames.variants.size.small;
++ classNames(button).variants.size.small;
+
+- card.className({ size: 'large' }).title;
++ className(card, { size: 'large' }).title;
+```
+
+`@emotion/css`의 `css`를 넘기면 v2와 똑같이 동작해요. `nonce`나 `container`, 공유 cache를 쓰려면 [cache와 서버 렌더링](./ev.mdx#caches)을 확인하세요.
+
+### `EvFunction`과 `EvSlotsFunction`에서 class name 멤버가 빠져요
+
+두 타입 모두에서 `className`과 `classNames`가 없어졌어요. helper의 타입은 새로 생긴 [`ClassNameHelpers`](./types.mdx#classnamehelpers)예요.
+
+## v2로 마이그레이션 [#migrating-to-v2]
 
 v2.0.0에서는 동작 세 가지가 바뀌고, 필수 peer dependency 하나가 추가됐어요. 대부분의 프로젝트는 설치 단계만 하면 끝나요.
 
-## 새 peer dependency 설치
+### 새 peer dependency 설치
 
-`@emotion/css`가 이제 필수예요. [`className()`](./ev.mdx#classname)과 [`classNames`](./ev.mdx#classnames)를 담당하고, 조건 없이 import되기 때문에 `css` prop만 쓴다고 해도 필요해요.
+v2에서는 `@emotion/css`가 필수예요. `className()`과 `classNames`를 담당하고, 조건 없이 import되기 때문에 `css` prop만 쓴다고 해도 필요해요. [v3에서는 이 요구 사항이 없어졌어요](#migrating-to-v3).
 
 ```diff
 - pnpm add emotion-variants @emotion/react
 + pnpm add emotion-variants @emotion/react @emotion/css
 ```
 
-## `undefined`가 이제 `defaultVariants`로 떨어져요
+### `undefined`가 이제 `defaultVariants`로 떨어져요
 
 v1은 스타일 정의와 props를 객체 spread로 합쳤기 때문에, 명시적인 `undefined`가 기본값을 지웠어요. v2는 키마다 `??`로 결정해요.
 
@@ -55,7 +99,7 @@ button({ size: undefined });
 
 `false`와 `0`은 영향이 없어요. 실제 variant 값이라서 원래도 기본값으로 바뀌지 않았어요.
 
-## 호출 결과가 항상 배열이에요
+### 호출 결과가 항상 배열이에요
 
 v1은 `Interpolation<unknown>`을 반환했고, 일치하는 스타일이 정확히 하나일 때는 배열이 아닌 `SerializedStyles` 객체를 그대로 줬어요. v2는 항상 `SerializedStyles[]`예요.
 
@@ -72,7 +116,7 @@ v1은 `Interpolation<unknown>`을 반환했고, 일치하는 스타일이 정확
 + const list = button({ size: 'large' });
 ```
 
-## `classNames`가 실제 class name을 반환해요
+### `classNames`가 실제 class name을 반환해요
 
 v1에서는 모든 값이 `"[object Object]"`였어요. `SerializedStyles`에 `String()`을 적용한 결과였죠. v2는 각 스타일을 `@emotion/css`로 주입하고 생성된 class를 반환해요.
 
@@ -84,9 +128,9 @@ button.classNames.variants.size.small;
 
 `classNames`를 처음 읽을 때까지는 아무것도 주입되지 않고 결과는 memoize돼요. 그래서 `css` prop만 쓰는 코드는 비용을 치르지 않아요.
 
-예전 동작을 우회하려고 class name을 직접 만들어 쓰던 코드가 있다면 지우세요. 다만 `classNames`는 여전히 `base`와 단일 variant 값만 다뤄요. compound variants가 필요하면 [`className()`](./ev.mdx#classname)을 사용하세요.
+예전 동작을 우회하려고 class name을 직접 만들어 쓰던 코드가 있다면 지우세요. 다만 `classNames`는 여전히 `base`와 단일 variant 값만 다뤄요. compound variants가 필요하면 `className()`을 사용하세요.
 
-## 새로 생긴 것: `className(variants)`
+### 새로 생긴 것: `className(variants)`
 
 v2에는 조합 전체를 담은 class 하나를 반환하는 메서드가 추가됐어요. compound variants까지 포함해요. `className` prop이나 React가 아닌 코드에서 쓸 만해요.
 
@@ -94,6 +138,6 @@ v2에는 조합 전체를 담은 class 하나를 반환하는 메서드가 추�
 <button className={button.className({ size: 'large', color: 'primary' })}>Click me</button>;
 ```
 
-## 새로 생긴 것: `EvClassNames` 타입
+### 새로 생긴 것: `EvClassNames` 타입
 
 `EvClassNames<T>`가 이제 export돼요. [타입](./types.mdx)에서 확인하세요.

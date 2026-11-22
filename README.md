@@ -39,19 +39,19 @@
 
 ```bash
 # npm
-npm install emotion-variants @emotion/react @emotion/css
+npm install emotion-variants @emotion/react
 
 # pnpm
-pnpm add emotion-variants @emotion/react @emotion/css
+pnpm add emotion-variants @emotion/react
 
 # yarn
-yarn add emotion-variants @emotion/react @emotion/css
+yarn add emotion-variants @emotion/react
 
 # bun
-bun add emotion-variants @emotion/react @emotion/css
+bun add emotion-variants @emotion/react
 ```
 
-Both Emotion packages are required peer dependencies. See [Installation](https://emotion-variants.org/docs/installation/) for setting up the `css` prop.
+`@emotion/react` is the only peer dependency. Add `@emotion/css` if you use the [class-name helpers](https://emotion-variants.org/docs/ev/#createclassname). See [Installation](https://emotion-variants.org/docs/installation/) for setting up the `css` prop.
 
 ## 🚀 Quick Start
 
@@ -202,7 +202,7 @@ Full docs live at **[emotion-variants.org](https://emotion-variants.org/)**.
 
 - **Getting Started** - [Introduction](https://emotion-variants.org/docs/introduction/) · [Installation](https://emotion-variants.org/docs/installation/) · [Quick Start](https://emotion-variants.org/docs/quick-start/)
 - **Concepts** - [Variants](https://emotion-variants.org/docs/variants/) · [Default Variants](https://emotion-variants.org/docs/default-variants/) · [Compound Variants](https://emotion-variants.org/docs/compound-variants/) · [Slots](https://emotion-variants.org/docs/slots/) · [Overrides](https://emotion-variants.org/docs/overrides/) · [Extend](https://emotion-variants.org/docs/extending/) · [Responsive](https://emotion-variants.org/docs/responsive/)
-- **Guides** - [TypeScript](https://emotion-variants.org/docs/typescript/) · [Migrating to v2](https://emotion-variants.org/docs/migration/)
+- **Guides** - [TypeScript](https://emotion-variants.org/docs/typescript/) · [Migration](https://emotion-variants.org/docs/migration/)
 - **Reference** - [`ev`](https://emotion-variants.org/docs/ev/) · [`createEv`](https://emotion-variants.org/docs/create-ev/) · [Types](https://emotion-variants.org/docs/types/) · [Changelog](https://emotion-variants.org/docs/changelog/)
 
 Using an AI assistant? Point it at [`llms.txt`](https://emotion-variants.org/llms.txt) or [`llms-full.txt`](https://emotion-variants.org/llms-full.txt).

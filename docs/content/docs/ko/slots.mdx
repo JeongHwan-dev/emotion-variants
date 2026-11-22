@@ -222,19 +222,19 @@ slot마다 스타일은 이 순서로 쌓이고, CSS가 충돌하면 뒤에 오�
 
 ## class name
 
-`className()`은 slot마다 class name을 하나씩 반환해요.
+[`className()`](./ev.mdx#classname)은 slot마다 class name을 하나씩 반환해요.
 
 ```tsx
-const classNames = card.className({
+const slots = className(card, {
   size: 'large',
 });
 
-<section className={classNames.root}>
-  <h3 className={classNames.title}>Title</h3>
+<section className={slots.root}>
+  <h3 className={slots.title}>Title</h3>
 </section>;
 ```
 
-`slots`를 선언하면 `classNames` 객체는 없어요.
+`classNames()`는 `slots`를 선언한 함수를 받지 않아요.
 
 ## 규칙
 

@@ -10,7 +10,7 @@ import {
   SlidersIcon,
 } from '../icons';
 
-export const INSTALL = 'npm install emotion-variants @emotion/react @emotion/css';
+export const INSTALL = 'npm install emotion-variants @emotion/react';
 
 const IMPORT_EV = `import { ev } from 'emotion-variants';
 

@@ -222,19 +222,19 @@ compoundSlots: [
 
 ## Class name
 
-`className()` は slot ごとに class name をひとつずつ返します。
+[`className()`](./ev.mdx#classname) は slot ごとに class name をひとつずつ返します。
 
 ```tsx
-const classNames = card.className({
+const slots = className(card, {
   size: 'large',
 });
 
-<section className={classNames.root}>
-  <h3 className={classNames.title}>Title</h3>
+<section className={slots.root}>
+  <h3 className={slots.title}>Title</h3>
 </section>;
 ```
 
-`slots` を宣言した場合、`classNames` のルックアップテーブルはありません。
+`classNames()` は、`slots` を宣言した関数を受け付けません。
 
 ## ルール
 

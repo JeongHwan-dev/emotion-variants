@@ -1,7 +1,10 @@
-import { cache } from '@emotion/css';
+import { cache, css } from '@emotion/css';
+import createEmotion from '@emotion/css/create-instance';
 import type { SerializedStyles } from '@emotion/react';
 import { describe, expect, it } from 'vitest';
-import { createEv, ev } from '../src/ev';
+import { createClassName, createEv, ev } from '../src/ev';
+
+const { className, classNames } = createClassName(css);
 
 const stylesOf = (result: SerializedStyles[]) => result.map((s) => s.styles);
 
@@ -384,7 +387,7 @@ describe('ev - Edge Cases', () => {
 });
 
 describe('ev - classNames', () => {
-  it('does not inject styles until classNames is accessed', () => {
+  it('does not inject styles until classNames() is called', () => {
     const before = Object.keys(cache.inserted).length;
     const box = ev({
       base: { padding: '99px' },
@@ -397,7 +400,7 @@ describe('ev - classNames', () => {
 
     expect(Object.keys(cache.inserted).length).toBe(before);
 
-    expect(box.classNames).toBeDefined();
+    expect(classNames(box)).toBeDefined();
 
     expect(Object.keys(cache.inserted).length).toBe(before + 2);
   });
@@ -415,10 +418,10 @@ describe('ev - classNames', () => {
       },
     });
 
-    expect(button.classNames.base).toMatch(/^css-/);
-    expect(cache.registered[button.classNames.base]).toBe('padding:10px;');
-    expect(cache.registered[button.classNames.variants.size.small]).toBe('font-size:12px;');
-    expect(cache.registered[button.classNames.variants.size.large]).toBe('font-size:16px;');
+    expect(classNames(button).base).toMatch(/^css-/);
+    expect(cache.registered[classNames(button).base]).toBe('padding:10px;');
+    expect(cache.registered[classNames(button).variants.size.small]).toBe('font-size:12px;');
+    expect(cache.registered[classNames(button).variants.size.large]).toBe('font-size:16px;');
   });
 
   it('keys boolean and number variants by their string form', () => {
@@ -434,9 +437,9 @@ describe('ev - classNames', () => {
       },
     });
 
-    expect(cache.registered[box.classNames.variants.outlined.true]).toBe('border:1px solid;');
-    expect(cache.registered[box.classNames.variants.outlined.false]).toBe('border:none;');
-    expect(cache.registered[box.classNames.variants.level[1]]).toBe('z-index:1;');
+    expect(cache.registered[classNames(box).variants.outlined.true]).toBe('border:1px solid;');
+    expect(cache.registered[classNames(box).variants.outlined.false]).toBe('border:none;');
+    expect(cache.registered[classNames(box).variants.level[1]]).toBe('z-index:1;');
   });
 
   it('returns an empty base class name when base is not provided', () => {
@@ -448,13 +451,35 @@ describe('ev - classNames', () => {
       },
     });
 
-    expect(box.classNames.base).toBe('');
+    expect(classNames(box).base).toBe('');
   });
 
-  it('returns the same object on repeated access', () => {
+  it('returns the same object on repeated calls', () => {
     const box = ev({ base: { margin: 0 } });
 
-    expect(box.classNames).toBe(box.classNames);
+    expect(classNames(box)).toBe(classNames(box));
+  });
+});
+
+describe('createClassName', () => {
+  it('injects through the css function it is given', () => {
+    const emotion = createEmotion({
+      key: 'custom',
+    });
+    const custom = createClassName(emotion.css);
+    const box = ev({
+      base: { padding: '77px' },
+    });
+    const name = custom.className(box);
+
+    expect(name).toMatch(/^custom-/);
+    expect(emotion.cache.registered[name]).toBe('padding:77px;');
+    expect(custom.classNames(box).base).toBe(name);
+    expect(cache.registered[name.replace('custom-', 'css-')]).toBeUndefined();
+  });
+
+  it('rejects a function that ev() did not return', () => {
+    expect(() => classNames((() => []) as never)).toThrow('returned by `ev()`');
   });
 });
 
@@ -484,20 +509,20 @@ describe('ev - className', () => {
   });
 
   it('returns one class name covering base, variants and compound variants', () => {
-    const className = button.className({ size: 'large', color: 'primary' });
+    const name = className(button, { size: 'large', color: 'primary' });
 
-    expect(className).toMatch(/^css-/);
-    expect(cache.registered[className]).toContain('padding:10px;');
-    expect(cache.registered[className]).toContain('font-size:16px;');
-    expect(cache.registered[className]).toContain('background:blue;');
-    expect(cache.registered[className]).toContain('font-weight:bold;');
+    expect(name).toMatch(/^css-/);
+    expect(cache.registered[name]).toContain('padding:10px;');
+    expect(cache.registered[name]).toContain('font-size:16px;');
+    expect(cache.registered[name]).toContain('background:blue;');
+    expect(cache.registered[name]).toContain('font-weight:bold;');
   });
 
   it('applies default variants', () => {
-    const className = button.className();
+    const name = className(button);
 
-    expect(cache.registered[className]).toContain('font-size:12px;');
-    expect(cache.registered[className]).not.toContain('font-weight:bold;');
+    expect(cache.registered[name]).toContain('font-size:12px;');
+    expect(cache.registered[name]).not.toContain('font-weight:bold;');
   });
 });
 
@@ -657,17 +682,17 @@ describe('ev - Slots', () => {
     expect(stylesOf(box().constructor())).toEqual(['color:red;']);
   });
 
-  it('exposes variants() and a className per slot, but no classNames', () => {
-    const classNames = card.className({
+  it('exposes variants() and a className per slot, but rejects classNames()', () => {
+    const slotNames = className(card, {
       size: 'large',
     });
 
     expect(card.variants()).toEqual(['size', 'tone']);
-    expect(Object.keys(classNames)).toEqual(['root', 'title', 'footer']);
-    expect(cache.registered[classNames.root]).toContain('padding:16px;');
-    expect(cache.registered[classNames.footer]).toContain('gap:8px;');
-    expect(cache.registered[classNames.footer]).not.toContain('padding');
-    expect('classNames' in card).toBe(false);
+    expect(Object.keys(slotNames)).toEqual(['root', 'title', 'footer']);
+    expect(cache.registered[slotNames.root]).toContain('padding:16px;');
+    expect(cache.registered[slotNames.footer]).toContain('gap:8px;');
+    expect(cache.registered[slotNames.footer]).not.toContain('padding');
+    expect(() => classNames(card as never)).toThrow('without `slots`');
   });
 });
 
@@ -830,16 +855,16 @@ describe('ev - extend', () => {
   });
 
   it('merges layers in className() and classNames', () => {
-    expect(cache.registered[iconButton.className()]).toContain('padding:8px;');
-    expect(cache.registered[iconButton.className()]).toContain('width:48px;');
-    expect(cache.registered[iconButton.classNames.base]).toContain('padding:8px;');
-    expect(cache.registered[iconButton.classNames.base]).toContain('display:inline-flex;');
-    expect(cache.registered[iconButton.classNames.variants.size.large]).toContain(
+    expect(cache.registered[className(iconButton)]).toContain('padding:8px;');
+    expect(cache.registered[className(iconButton)]).toContain('width:48px;');
+    expect(cache.registered[classNames(iconButton).base]).toContain('padding:8px;');
+    expect(cache.registered[classNames(iconButton).base]).toContain('display:inline-flex;');
+    expect(cache.registered[classNames(iconButton).variants.size.large]).toContain(
       'font-size:16px;',
     );
-    expect(cache.registered[iconButton.classNames.variants.size.large]).toContain('width:48px;');
-    expect(iconButton.classNames.variants.size.small).toBe(button.classNames.variants.size.small);
-    expect(Object.keys(iconButton.classNames.variants.size)).toEqual(['small', 'large', 'huge']);
+    expect(cache.registered[classNames(iconButton).variants.size.large]).toContain('width:48px;');
+    expect(classNames(iconButton).variants.size.small).toBe(classNames(button).variants.size.small);
+    expect(Object.keys(classNames(iconButton).variants.size)).toEqual(['small', 'large', 'huge']);
   });
 
   describe('slots', () => {
@@ -1075,7 +1100,7 @@ describe('createEv - responsive variants', () => {
   });
 
   it('includes the media rules in className()', () => {
-    const className = button.className({
+    const name = className(button, {
       size: {
         md: 'large',
       },
@@ -1083,20 +1108,20 @@ describe('createEv - responsive variants', () => {
 
     const rules = Array.from(document.querySelectorAll('style')).map((style) => style.textContent);
 
-    expect(rules).toContain(`@media (min-width: 768px){.${className}{font-size:16px;}}`);
+    expect(rules).toContain(`@media (min-width: 768px){.${name}{font-size:16px;}}`);
   });
 
   it('lets a breakpoint style win over later plain styles for the same property', () => {
-    const className = button.className({
+    const name = className(button, {
       size: {
         md: 'large',
       },
       tone: 'danger',
     });
     const rules = Array.from(document.querySelectorAll('style')).map((style) => style.textContent);
-    const plain = rules.findIndex((rule) => rule?.startsWith(`.${className}{`));
+    const plain = rules.findIndex((rule) => rule?.startsWith(`.${name}{`));
     const media = rules.findIndex((rule) =>
-      rule?.startsWith(`@media (min-width: 768px){.${className}{`),
+      rule?.startsWith(`@media (min-width: 768px){.${name}{`),
     );
 
     expect(plain).toBeGreaterThan(-1);

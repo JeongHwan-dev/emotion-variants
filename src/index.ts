@@ -1,5 +1,6 @@
-export { createEv, ev } from './ev';
+export { createClassName, createEv, ev } from './ev';
 export type {
+  ClassNameHelpers,
   CompoundVariant,
   Ev,
   EvClassNames,

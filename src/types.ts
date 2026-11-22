@@ -217,7 +217,7 @@ export type VariantProps<T> = T extends (variants?: infer P) => unknown ? NonNul
 /**
  * Class names generated for the base style and each variant value.
  *
- * Styles are injected through `@emotion/css` when the class names are first accessed.
+ * Returned by the `classNames` helper from `createClassName`.
  *
  * @typeParam T - The variant configuration type
  */
@@ -235,8 +235,7 @@ export type EvClassNames<T extends VariantConfig<Record<string, Record<string, C
 /**
  * Function type returned by the ev function.
  *
- * This is a callable object that also exposes the available variant keys and
- * class-name helpers backed by `@emotion/css`.
+ * This is a callable object that also exposes the available variant keys.
  *
  * @typeParam T - The variant configuration type
  * @typeParam B - The breakpoint names declared with `createEv`
@@ -259,24 +258,6 @@ export interface EvFunction<
    * @returns Array of variant key names
    */
   variants: () => Array<VariantKeys<T>>;
-
-  /**
-   * Returns a single class name for the given variant values.
-   *
-   * Base, variant, and compound variant styles are merged and injected through
-   * `@emotion/css`'s global cache. Use it for `className` props or outside React.
-   *
-   * @param variants - Optional variant values to apply
-   * @returns Generated class name
-   */
-  className: (variants?: EvVariants<T, B>) => string;
-
-  /**
-   * Class names for the base style and each variant value.
-   *
-   * Generated and injected on first access.
-   */
-  classNames: EvClassNames<T>;
 }
 
 /**
@@ -312,14 +293,52 @@ export interface EvSlotsFunction<
    * @returns Array of variant key names
    */
   variants: () => Array<VariantKeys<T>>;
+}
+
+/**
+ * Class-name helpers returned by `createClassName`.
+ */
+export interface ClassNameHelpers {
+  /**
+   * Returns a single class name for the given variant values, or one per slot when the
+   * function declares `slots`.
+   *
+   * Base, variant, and compound variant styles are merged and injected through the
+   * `css` function passed to `createClassName`.
+   *
+   * @param fn - A function returned by `ev()`
+   * @param variants - Optional variant values to apply
+   * @returns Generated class name, or class names keyed by slot name
+   */
+  className: {
+    <T extends VariantConfig<Record<string, Record<string, CSSObject>>>, B extends string = never>(
+      fn: EvFunction<T, B>,
+      variants?: EvVariants<T, B>,
+    ): string;
+    <
+      N extends string,
+      T extends VariantConfig<Record<string, Record<string, CSSObject>>>,
+      B extends string = never,
+    >(
+      fn: EvSlotsFunction<N, T, B>,
+      variants?: EvVariants<T, B>,
+    ): { [K in N]: string };
+  };
 
   /**
-   * Returns a class name per slot for the given variant values.
+   * Returns class names for the base style and each variant value.
    *
-   * @param variants - Optional variant values to apply
-   * @returns Generated class names keyed by slot name
+   * Generated and injected on the first call for a given function.
+   *
+   * @param fn - A function returned by `ev()` without `slots`
+   * @returns Class names for the base style and each variant value
    */
-  className: (variants?: EvVariants<T, B>) => { [K in N]: string };
+  classNames: <
+    T extends VariantConfig<Record<string, Record<string, CSSObject>>>,
+    B extends string = never,
+  >(
+    fn: EvFunction<T, B>,
+  ) => EvClassNames<T>;
 }
 
 /**
@@ -386,8 +405,8 @@ export interface Ev<B extends string = never> {
    * // css prop
    * <button css={button({ size: 'large', color: 'primary' })}>Click me</button>
    *
-   * // className
-   * <button className={button.className({ size: 'large', color: 'primary' })}>Click me</button>
+   * // className, with the helper from createClassName()
+   * <button className={className(button, { size: 'large', color: 'primary' })}>Click me</button>
    * ```
    */
   // biome-ignore lint/style/useShorthandFunctionType: a call signature keeps the JSDoc on hover

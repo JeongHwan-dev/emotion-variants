@@ -1,20 +1,64 @@
 ---
-title: v2 への移行
-description: 'v2.0.0 では 3 つの動作が変わり、必須の peer dependency がひとつ追加されました。'
+title: 移行ガイド
+description: 'emotion-variants を v3 または v2 にアップグレードするときに変更が必要な点をまとめました。'
 ---
+
+## v3 への移行 [#migrating-to-v3]
+
+v3.0.0 では `@emotion/css` を import しなくなりました。class name ヘルパーは `ev()` の結果から切り離され、Emotion の `css` 関数を受け取るようになります。`css` prop しか使わないコードは、インストールの手順以外に変更は不要です。
+
+### `@emotion/css` は peer dependency ではなくなった
+
+`className()` や `classNames` を一度も呼び出していない場合は、アンインストールしてください。
+
+```diff
+- pnpm add emotion-variants @emotion/react @emotion/css
++ pnpm add emotion-variants @emotion/react
+```
+
+### `className()` と `classNames` は `createClassName` から得る
+
+スタイルを挿入する `css` 関数でヘルパーを一度だけ作成し、`ev()` の結果を最初の引数として渡します。
+
+```ts
+// class-name.ts
+import { css } from '@emotion/css';
+import { createClassName } from 'emotion-variants';
+
+export const { className, classNames } = createClassName(css);
+```
+
+```diff
+- button.className({ size: 'large' });
++ className(button, { size: 'large' });
+
+- button.classNames.variants.size.small;
++ classNames(button).variants.size.small;
+
+- card.className({ size: 'large' }).title;
++ className(card, { size: 'large' }).title;
+```
+
+`@emotion/css` の `css` を渡せば、v2 と同じ動作になります。`nonce`、`container`、共有キャッシュを使う場合は、[キャッシュとサーバーレンダリング](./ev.mdx#caches)を参照してください。
+
+### `EvFunction` と `EvSlotsFunction` から class name のメンバーがなくなった
+
+どちらの型からも `className` と `classNames` がなくなりました。ヘルパーの型は、新しい [`ClassNameHelpers`](./types.mdx#classnamehelpers) です。
+
+## v2 への移行 [#migrating-to-v2]
 
 v2.0.0 では 3 つの動作が変わり、必須の peer dependency がひとつ追加されました。ほとんどのコードベースでは、インストールの手順だけで済みます。
 
-## 新しい peer dependency をインストールする
+### 新しい peer dependency をインストールする
 
-`@emotion/css` が必須になりました。[`className()`](./ev.mdx#classname) と [`classNames`](./ev.mdx#classnames) を支えており、無条件に import されるため、`css` prop しか使わない場合でも必要です。
+v2 では `@emotion/css` が必須です。`className()` と `classNames` を支えており、無条件に import されるため、`css` prop しか使わない場合でも必要です。[v3 ではこの要件がなくなりました](#migrating-to-v3)。
 
 ```diff
 - pnpm add emotion-variants @emotion/react
 + pnpm add emotion-variants @emotion/react @emotion/css
 ```
 
-## `undefined` が `defaultVariants` にフォールバックするようになった
+### `undefined` が `defaultVariants` にフォールバックするようになった
 
 v1 では設定と props をオブジェクトの spread でマージしていたため、明示的な `undefined` がデフォルト値を消していました。v2 では各キーを `??` で解決します。
 
@@ -55,7 +99,7 @@ button({ size: undefined });
 
 `false` と `0` は影響を受けません。これらは実際の variant の値であり、もともとデフォルト値に置き換えられることはありませんでした。
 
-## 呼び出しは常に配列を返す
+### 呼び出しは常に配列を返す
 
 v1 は `Interpolation<unknown>` を返しており、一致したスタイルがちょうどひとつのときは単体の `SerializedStyles` オブジェクトでした。v2 は常に `SerializedStyles[]` を返します。
 
@@ -72,7 +116,7 @@ v1 は `Interpolation<unknown>` を返しており、一致したスタイルが
 + const list = button({ size: 'large' });
 ```
 
-## `classNames` が実際の class name を返す
+### `classNames` が実際の class name を返す
 
 v1 では、すべてのエントリが文字列 `"[object Object]"`（`SerializedStyles` に `String()` を適用したもの）でした。v2 は各スタイルを `@emotion/css` で挿入し、生成された class を返します。
 
@@ -84,9 +128,9 @@ button.classNames.variants.size.small;
 
 最初に `classNames` を読むまでは何も挿入されず、結果はメモ化されるので、`css` prop だけを使うコードにはコストがかかりません。
 
-以前の動作を回避するために class name を自前で組み立てていた場合は、そのコードを削除してください。ただし、`classNames` は引き続き `base` と単一の variant の値しか扱いません。compound variants には [`className()`](./ev.mdx#classname) を使ってください。
+以前の動作を回避するために class name を自前で組み立てていた場合は、そのコードを削除してください。ただし、`classNames` は引き続き `base` と単一の variant の値しか扱いません。compound variants には `className()` を使ってください。
 
-## 新機能: `className(variants)`
+### 新機能: `className(variants)`
 
 v2 では、compound variants を含む組み合わせ全体に対してひとつの class を返すメソッドが追加されました。`className` props や React 以外のコードで便利です。
 
@@ -94,7 +138,7 @@ v2 では、compound variants を含む組み合わせ全体に対してひと�
 <button className={button.className({ size: 'large', color: 'primary' })}>Click me</button>;
 ```
 
-## 新機能: `EvClassNames` 型
+### 新機能: `EvClassNames` 型
 
 `EvClassNames<T>` が export されるようになりました。[型](./types.mdx)を参照してください。
 

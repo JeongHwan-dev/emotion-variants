@@ -7,27 +7,28 @@ description: '安装 emotion-variants 及其 Emotion peer dependency，并启用
 
 - **React** 16.14 或更高版本：自动 JSX runtime（`react/jsx-runtime`）从 16.14 开始提供
 - **`@emotion/react`** 11.x
-- **`@emotion/css`** 11.x
 
 ## 安装
 
 ```sh tab="npm"
-npm install emotion-variants @emotion/react @emotion/css
+npm install emotion-variants @emotion/react
 ```
 
 ```sh tab="pnpm"
-pnpm add emotion-variants @emotion/react @emotion/css
+pnpm add emotion-variants @emotion/react
 ```
 
 ```sh tab="yarn"
-yarn add emotion-variants @emotion/react @emotion/css
+yarn add emotion-variants @emotion/react
 ```
 
 ```sh tab="bun"
-bun add emotion-variants @emotion/react @emotion/css
+bun add emotion-variants @emotion/react
 ```
 
-两个 Emotion 包都是 peer dependencies，必须与 `emotion-variants` 一起安装。`@emotion/react` 负责为 `css` prop 序列化样式；`@emotion/css` 为 [`className()` 和 `classNames`](./ev.mdx#classname) 提供支持。`@emotion/css` 会被无条件导入，所以即使你只用 `css` prop，也必须安装它。
+`@emotion/react` 是唯一的 peer dependency，负责为 `css` prop 序列化样式。
+
+[`className()` 和 `classNames()`](./ev.mdx#createclassname) 需要你传入一个 Emotion 的 `css` 函数，通常是 `@emotion/css` 提供的那个。只有用到它们时才需要安装 `@emotion/css`。
 
 ## 启用 `css` prop
 

@@ -83,15 +83,15 @@ function Button({ size, color, styleOverride, ...rest }: ButtonProps) {
 
 ```tsx
 // ✗ 无法保证顺序
-<button className={`${button.className({ size: 'large' })} ${myClass}`}>Submit</button>;
+<button className={`${className(button, { size: 'large' })} ${myClass}`}>Submit</button>;
 ```
 
-应该组合样式而不是组合 class，再用 `@emotion/css` 把结果转成一个 class：
+应该组合样式而不是组合 class，再用你传给 [`createClassName`](./ev.mdx#createclassname) 的同一个 `css` 把结果转成一个 class：
 
 ```tsx
-import { css as cssClassName } from '@emotion/css';
+import { css } from '@emotion/css';
 
-const full = cssClassName(button({ size: 'large' }), { width: '100%' });
+const full = css(button({ size: 'large' }), { width: '100%' });
 
 <button className={full}>Submit</button>;
 ```

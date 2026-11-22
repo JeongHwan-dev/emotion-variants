@@ -195,10 +195,10 @@ title({
 
 ## Class name
 
-`className()` もレスポンシブな値を受け付け、返される class には media ルールが含まれます。
+[`className()`](./ev.mdx#classname) もレスポンシブな値を受け付け、返される class には media ルールが含まれます。
 
 ```ts
-button.className({
+className(button, {
   size: {
     initial: 'small',
     md: 'large',
@@ -206,7 +206,7 @@ button.className({
 });
 ```
 
-`classNames` は variant の値ごとに class をひとつずつ持ち、breakpoint に対応するエントリはありません。
+`classNames()` は variant の値ごとに class をひとつずつ持ち、breakpoint に対応するエントリはありません。
 
 ## ルール
 

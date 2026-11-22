@@ -1,7 +1,7 @@
-import { css as cssClassName } from '@emotion/css';
 import type { CSSObject, SerializedStyles } from '@emotion/react';
 import { css } from '@emotion/react';
 import type {
+  ClassNameHelpers,
   Ev,
   EvClassNames,
   EvFunction,
@@ -271,62 +271,101 @@ function define(
           forEachSlot((slot) => (slotProps?: Props) => resolve(slot, props, slotProps)),
         {
           variants: () => variantKeys,
-          className: (props: Props = {}) =>
-            forEachSlot((slot) => cssClassName(resolve(slot, props))),
         },
       ),
     );
   }
 
-  const evFunction = (props: Props = {}) => resolve(ROOT, props);
+  return register(
+    Object.assign((props: Props = {}) => resolve(ROOT, props), {
+      variants: () => variantKeys,
+    }),
+  );
+}
 
-  // Class names are injected into @emotion/css's global cache, so build them on first
-  // access instead of at definition time; css-prop-only users never pay for them.
-  let classNames: EvClassNames<Plain> | undefined;
+/**
+ * Creates class-name helpers bound to an Emotion `css` function, such as the one from
+ * `@emotion/css` or from an instance made with `@emotion/css/create-instance`.
+ *
+ * Styles are injected into the cache that `css` function belongs to.
+ *
+ * @param css - Function that injects styles and returns a class name
+ * @returns `className` and `classNames` helpers
+ *
+ * @example
+ * ```typescript
+ * import { css } from '@emotion/css';
+ *
+ * export const { className, classNames } = createClassName(css);
+ *
+ * <button className={className(button, { size: 'large' })}>Click me</button>
+ * ```
+ */
+export function createClassName(css: (...styles: SerializedStyles[]) => string): ClassNameHelpers {
+  // Injecting is a side effect, so each map is built once, on first request.
+  const built = new WeakMap<object, EvClassNames<Plain>>();
+  const classNameOf = (styles: Array<SerializedStyles | undefined>) => {
+    const defined = styles.filter((style) => style !== undefined);
 
-  const createClassNames = (): EvClassNames<Plain> => {
-    const variantClassNames: Record<string, Record<string, string>> = {};
-    const classNameOf = (styles: Array<SerializedStyles | undefined>) => {
-      const defined = styles.filter((style) => style !== undefined);
-
-      return defined.length ? cssClassName(...defined) : '';
-    };
-
-    variantKeys.forEach((key) => {
-      variantClassNames[key] = {};
-
-      layers
-        .flatMap((layer) => Object.keys(layer.variants[key] ?? {}))
-        .forEach((value) => {
-          variantClassNames[key][value] = classNameOf(
-            layers.map((layer) => layer.variants[key]?.[value]?.[ROOT]),
-          );
-        });
-    });
-
-    return {
-      base: classNameOf(layers.map((layer) => layer.base[ROOT])),
-      variants: variantClassNames,
-    };
+    return defined.length ? css(...defined) : '';
   };
 
-  const result = Object.assign(evFunction, {
-    variants: () => variantKeys,
-    className: (props?: Props) => cssClassName(evFunction(props)),
-  }) as EvFunction<Plain>;
+  const className = (
+    fn: (props?: Props) => SerializedStyles[] | Record<string, () => SerializedStyles[]>,
+    props?: Props,
+  ) => {
+    const result = fn(props);
 
-  Object.defineProperty(result, 'classNames', {
-    enumerable: true,
-    get: () => {
-      if (!classNames) {
-        classNames = createClassNames();
-      }
+    if (Array.isArray(result)) {
+      return css(...result);
+    }
 
-      return classNames;
-    },
-  });
+    return Object.fromEntries(
+      Object.entries(result).map(([slot, styles]) => [slot, css(...styles())]),
+    );
+  };
 
-  return register(result);
+  const classNames = (fn: object) => {
+    const internals = registry.get(fn);
+
+    if (!internals || internals.slotNames) {
+      throw new Error(
+        '[emotion-variants] `classNames()` expects a function returned by `ev()` without `slots`. If it is one, two copies of emotion-variants may be installed.',
+      );
+    }
+
+    let result = built.get(fn);
+
+    if (!result) {
+      const { layers, variantKeys } = internals;
+      const variants: Record<string, Record<string, string>> = {};
+
+      variantKeys.forEach((key) => {
+        variants[key] = {};
+
+        layers
+          .flatMap((layer) => Object.keys(layer.variants[key] ?? {}))
+          .forEach((value) => {
+            variants[key][value] = classNameOf(
+              layers.map((layer) => layer.variants[key]?.[value]?.[ROOT]),
+            );
+          });
+      });
+
+      result = {
+        base: classNameOf(layers.map((layer) => layer.base[ROOT])),
+        variants,
+      };
+      built.set(fn, result);
+    }
+
+    return result;
+  };
+
+  return {
+    className,
+    classNames,
+  } as ClassNameHelpers;
 }
 
 /**

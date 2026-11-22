@@ -78,7 +78,6 @@
     }
   },
   "peerDependencies": {
-    "@emotion/css": "^11.0.0",
     "@emotion/react": "^11.0.0"
   },
   "devDependencies": {

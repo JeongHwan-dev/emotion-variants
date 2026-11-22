@@ -195,10 +195,10 @@ title({
 
 ## class name
 
-`className()`도 반응형 값을 받고, 반환하는 class에 media 규칙이 들어 있어요.
+[`className()`](./ev.mdx#classname)도 반응형 값을 받고, 반환하는 class에 media 규칙이 들어 있어요.
 
 ```ts
-button.className({
+className(button, {
   size: {
     initial: 'small',
     md: 'large',
@@ -206,7 +206,7 @@ button.className({
 });
 ```
 
-`classNames`는 variant 값마다 class를 하나씩 갖고 있고, breakpoint에 해당하는 항목은 없어요.
+`classNames()`는 variant 값마다 class를 하나씩 갖고 있고, breakpoint에 해당하는 항목은 없어요.
 
 ## 규칙
 
