@@ -454,6 +454,26 @@ describe('ev - classNames', () => {
     expect(classNames(box).base).toBe('');
   });
 
+  it('injects base first, then variants in the order the axes were declared', () => {
+    const box = ev({
+      base: { color: 'rgb(1, 1, 1)' },
+      variants: {
+        tone: {
+          loud: { color: 'rgb(2, 2, 2)' },
+        },
+        size: {
+          large: { color: 'rgb(3, 3, 3)' },
+        },
+      },
+    });
+    const names = classNames(box);
+    const inserted = Object.keys(cache.inserted);
+    const indexOf = (name: string) => inserted.indexOf(name.replace('css-', ''));
+
+    expect(indexOf(names.base)).toBeLessThan(indexOf(names.variants.tone.loud));
+    expect(indexOf(names.variants.tone.loud)).toBeLessThan(indexOf(names.variants.size.large));
+  });
+
   it('returns the same object on repeated calls', () => {
     const box = ev({ base: { margin: 0 } });
 

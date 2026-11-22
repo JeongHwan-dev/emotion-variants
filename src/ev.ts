@@ -260,6 +260,7 @@ export function createClassName(css: (...styles: SerializedStyles[]) => string):
   };
 
   const build = ({ layers, variantKeys }: Internals): EvClassNames<Plain> => {
+    const base = classNameOf(layers.map((layer) => layer.base[ROOT]));
     const variants = Object.fromEntries(
       variantKeys.map((key) => [
         key,
@@ -273,7 +274,7 @@ export function createClassName(css: (...styles: SerializedStyles[]) => string):
     );
 
     return {
-      base: classNameOf(layers.map((layer) => layer.base[ROOT])),
+      base,
       variants,
     };
   };
