@@ -12,12 +12,10 @@ import type {
 
 type Plain = VariantConfig<Record<string, Record<string, CSSObject>>>;
 type Values = Record<string, VariantValue | undefined>;
-// A prop is a value, or values keyed by `initial` and breakpoint names.
 type Props = Record<string, VariantValue | Values | undefined>;
 type Condition = Record<string, VariantValue | ReadonlyArray<VariantValue> | undefined>;
 type SlotStyles = Record<string, SerializedStyles>;
 
-// The implementation's view of EvConfig, with the generics erased.
 interface Config {
   extend?: object;
   base?: CSSObject;
@@ -35,15 +33,6 @@ interface Config {
   defaultVariants?: Values;
 }
 
-// Without `slots`, a config is handled as a single slot under this private name.
-const ROOT = '';
-
-// Null-prototype lookups: a runtime value such as 'constructor' must not resolve
-// to an inherited Object.prototype member.
-const table = <V>(): Record<string, V> => Object.create(null);
-
-// What a config passes on through `extend`. Each config in the chain keeps its own
-// layer of styles: merging them with css() would serialize them again under new names.
 interface Internals {
   slotNames?: string[];
   variantKeys: string[];
@@ -58,6 +47,8 @@ interface Internals {
   defaultVariants: Values;
 }
 
+const ROOT = '';
+
 const ROOT_INTERNALS: Internals = {
   variantKeys: [],
   layers: [],
@@ -65,10 +56,23 @@ const ROOT_INTERNALS: Internals = {
   defaultVariants: {},
 };
 
-// Keyed by the functions ev() returns, so nothing is attached to the public object.
 const registry = new WeakMap<object, Internals>();
 
-// Builds an ev() result. `breakpoints` are the ones declared with createEv(), in order.
+const isDefined = <T>(value: T | undefined): value is T => value !== undefined;
+
+const unique = <T>(values: T[]): T[] => [...new Set(values)];
+
+const table = <V>(entries: Array<readonly [string, V]>): Record<string, V> =>
+  Object.assign(Object.create(null), Object.fromEntries(entries));
+
+const mapTable = <T, V>(source: Record<string, T>, transform: (value: T) => V): Record<string, V> =>
+  table(Object.entries(source).map(([key, value]) => [key, transform(value)] as const));
+
+const toCondition = (condition: Condition = {}): Record<string, string[]> =>
+  Object.fromEntries(
+    Object.entries(condition).map(([key, value]) => [key, [value].flat().map(String)]),
+  );
+
 function define(
   {
     extend,
@@ -93,24 +97,17 @@ function define(
     throw new Error('[emotion-variants] A config with `slots` cannot extend one without `slots`.');
   }
 
-  const slotNames = (slots ?? parent.slotNames) && [
-    ...new Set([...(parent.slotNames ?? []), ...Object.keys(slots ?? {})]),
-  ];
-  const variantKeys = [...new Set([...parent.variantKeys, ...Object.keys(variants)])];
+  const slotNames =
+    (slots ?? parent.slotNames) &&
+    unique([...(parent.slotNames ?? []), ...Object.keys(slots ?? {})]);
+  const variantKeys = unique([...parent.variantKeys, ...Object.keys(variants)]);
   const defaultVariants = {
     ...parent.defaultVariants,
     ...ownDefaultVariants,
   };
 
-  const serialize = (styles: Record<string, CSSObject>): SlotStyles => {
-    const serialized = table<SerializedStyles>();
-
-    Object.entries(styles).forEach(([slot, style]) => {
-      serialized[slot] = css(style);
-    });
-
-    return serialized;
-  };
+  const serialize = (styles: Record<string, CSSObject>): SlotStyles =>
+    mapTable(styles, (style) => css(style));
   const bySlot = (style: CSSObject) =>
     slotNames
       ? (style as Record<string, CSSObject>)
@@ -118,34 +115,15 @@ function define(
           [ROOT]: style,
         };
 
-  const baseStyles = serialize(slots ?? (base ? bySlot(base) : {}));
-  const variantStyles = table<Record<string, SlotStyles>>();
-
-  Object.entries(variants).forEach(([key, values]) => {
-    variantStyles[key] = table();
-
-    Object.entries(values ?? {}).forEach(([value, style]) => {
-      variantStyles[key][value] = serialize(bySlot(style));
-    });
-  });
-
   const layers = [
     ...parent.layers,
     {
-      base: baseStyles,
-      variants: variantStyles,
+      base: serialize(slots ?? (base ? bySlot(base) : {})),
+      variants: mapTable(variants, (values) =>
+        mapTable(values ?? {}, (style) => serialize(bySlot(style))),
+      ),
     },
   ];
-
-  const toCondition = (condition: Condition = {}) => {
-    const normalized: Record<string, string[]> = {};
-
-    Object.entries(condition).forEach(([key, value]) => {
-      normalized[key] = [value].flat().map(String);
-    });
-
-    return normalized;
-  };
 
   const compoundStyles = [
     ...parent.compoundStyles,
@@ -155,25 +133,17 @@ function define(
     })),
     ...compoundSlots.map((compoundSlot) => {
       const style = css(compoundSlot.style);
-      const styles = table<SerializedStyles>();
-
-      compoundSlot.slots.forEach((slot) => {
-        styles[slot] = style;
-      });
 
       return {
         condition: toCondition(compoundSlot.variants),
-        styles,
+        styles: table(compoundSlot.slots.map((slot) => [slot, style] as const)),
       };
     }),
   ];
 
   const cellsOf = (key: string, valueKey: string, slot: string) =>
-    layers
-      .map((layer) => layer.variants[key]?.[valueKey]?.[slot])
-      .filter((style) => style !== undefined);
+    layers.map((layer) => layer.variants[key]?.[valueKey]?.[slot]).filter(isDefined);
 
-  // Breakpoint styles depend on call-time values, so they are serialized on first use.
   const breakpointStyles = new Map<string, SerializedStyles>();
 
   const atBreakpoint = (query: string, key: string, valueKey: string, slot: string) => {
@@ -192,62 +162,42 @@ function define(
     return breakpointStyles.get(cacheKey);
   };
 
-  function resolve(slot: string, props: Props, slotProps: Props = {}): SerializedStyles[] {
-    const styles: SerializedStyles[] = [];
-    const resolved: Record<string, string> = {};
-    const push = (style: SerializedStyles | undefined) => {
-      if (style) {
-        styles.push(style);
-      }
-    };
+  const stylesOf = (key: string, value: VariantValue | Values, slot: string) => {
+    if (typeof value !== 'object') {
+      return cellsOf(key, String(value), slot);
+    }
 
-    layers.forEach((layer) => {
-      push(layer.base[slot]);
-    });
+    const initial = value.initial ?? defaultVariants[key];
 
-    variantKeys.forEach((key) => {
-      const value = slotProps[key] ?? props[key] ?? defaultVariants[key];
+    return [
+      ...(initial === undefined ? [] : cellsOf(key, String(initial), slot)),
+      ...breakpoints
+        .filter(([name]) => value[name] !== undefined)
+        .map(([name, query]) => atBreakpoint(query, key, String(value[name]), slot))
+        .filter(isDefined),
+    ];
+  };
 
-      if (value === undefined) {
-        return;
-      }
+  const resolve = (slot: string, props: Props, slotProps: Props = {}): SerializedStyles[] => {
+    const values = variantKeys
+      .map((key) => [key, slotProps[key] ?? props[key] ?? defaultVariants[key]] as const)
+      .filter((entry): entry is [string, VariantValue | Values] => entry[1] !== undefined);
+    const resolved: Record<string, string> = Object.fromEntries(
+      values
+        .filter(([, value]) => typeof value !== 'object')
+        .map(([key, value]) => [key, String(value)]),
+    );
 
-      // A responsive value is left out of `resolved`: no single value holds at every
-      // breakpoint, so the axis cannot satisfy a compound condition.
-      if (typeof value === 'object') {
-        const initial = value.initial ?? defaultVariants[key];
-
-        if (initial !== undefined) {
-          styles.push(...cellsOf(key, String(initial), slot));
-        }
-
-        breakpoints.forEach(([name, query]) => {
-          if (value[name] !== undefined) {
-            push(atBreakpoint(query, key, String(value[name]), slot));
-          }
-        });
-
-        return;
-      }
-
-      const valueKey = String(value);
-
-      resolved[key] = valueKey;
-      styles.push(...cellsOf(key, valueKey, slot));
-    });
-
-    compoundStyles.forEach(({ condition, styles: compound }) => {
-      const isMatch = Object.entries(condition).every(([key, values]) =>
-        values.includes(resolved[key]),
-      );
-
-      if (isMatch) {
-        push(compound[slot]);
-      }
-    });
-
-    return styles;
-  }
+    return [
+      ...layers.map((layer) => layer.base[slot]),
+      ...values.flatMap(([key, value]) => stylesOf(key, value, slot)),
+      ...compoundStyles
+        .filter(({ condition }) =>
+          Object.entries(condition).every(([key, matches]) => matches.includes(resolved[key])),
+        )
+        .map(({ styles }) => styles[slot]),
+    ].filter(isDefined);
+  };
 
   const register = <F extends object>(result: F): F => {
     registry.set(result, {
@@ -262,13 +212,12 @@ function define(
   };
 
   if (slotNames) {
-    const forEachSlot = <V>(callback: (slot: string) => V): Record<string, V> =>
-      Object.fromEntries(slotNames.map((slot) => [slot, callback(slot)]));
-
     return register(
       Object.assign(
         (props: Props = {}) =>
-          forEachSlot((slot) => (slotProps?: Props) => resolve(slot, props, slotProps)),
+          Object.fromEntries(
+            slotNames.map((slot) => [slot, (slotProps?: Props) => resolve(slot, props, slotProps)]),
+          ),
         {
           variants: () => variantKeys,
         },
@@ -302,12 +251,31 @@ function define(
  * ```
  */
 export function createClassName(css: (...styles: SerializedStyles[]) => string): ClassNameHelpers {
-  // Injecting is a side effect, so each map is built once, on first request.
   const built = new WeakMap<object, EvClassNames<Plain>>();
+
   const classNameOf = (styles: Array<SerializedStyles | undefined>) => {
-    const defined = styles.filter((style) => style !== undefined);
+    const defined = styles.filter(isDefined);
 
     return defined.length ? css(...defined) : '';
+  };
+
+  const build = ({ layers, variantKeys }: Internals): EvClassNames<Plain> => {
+    const variants = Object.fromEntries(
+      variantKeys.map((key) => [
+        key,
+        Object.fromEntries(
+          unique(layers.flatMap((layer) => Object.keys(layer.variants[key] ?? {}))).map((value) => [
+            value,
+            classNameOf(layers.map((layer) => layer.variants[key]?.[value]?.[ROOT])),
+          ]),
+        ),
+      ]),
+    );
+
+    return {
+      base: classNameOf(layers.map((layer) => layer.base[ROOT])),
+      variants,
+    };
   };
 
   const className = (
@@ -316,13 +284,11 @@ export function createClassName(css: (...styles: SerializedStyles[]) => string):
   ) => {
     const result = fn(props);
 
-    if (Array.isArray(result)) {
-      return css(...result);
-    }
-
-    return Object.fromEntries(
-      Object.entries(result).map(([slot, styles]) => [slot, css(...styles())]),
-    );
+    return Array.isArray(result)
+      ? css(...result)
+      : Object.fromEntries(
+          Object.entries(result).map(([slot, styles]) => [slot, css(...styles())]),
+        );
   };
 
   const classNames = (fn: object) => {
@@ -334,30 +300,9 @@ export function createClassName(css: (...styles: SerializedStyles[]) => string):
       );
     }
 
-    let result = built.get(fn);
+    const result = built.get(fn) ?? build(internals);
 
-    if (!result) {
-      const { layers, variantKeys } = internals;
-      const variants: Record<string, Record<string, string>> = {};
-
-      variantKeys.forEach((key) => {
-        variants[key] = {};
-
-        layers
-          .flatMap((layer) => Object.keys(layer.variants[key] ?? {}))
-          .forEach((value) => {
-            variants[key][value] = classNameOf(
-              layers.map((layer) => layer.variants[key]?.[value]?.[ROOT]),
-            );
-          });
-      });
-
-      result = {
-        base: classNameOf(layers.map((layer) => layer.base[ROOT])),
-        variants,
-      };
-      built.set(fn, result);
-    }
+    built.set(fn, result);
 
     return result;
   };
