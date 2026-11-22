@@ -190,7 +190,7 @@ classNames(button) === classNames(button); // true
 
 `classNames()` covers `base` and single variant values only. **Compound variants are not represented here** — there is no key for a combination. Use [`className()`](#classname) when compound styles matter.
 
-Concatenating these classes is not the same as calling the function. Each is a separate rule of equal specificity, so when `base` and a variant set the same property the winner is whichever Emotion inserted first, not the order you list them in. Use [`className()`](#classname) whenever a variant has to beat `base`.
+Concatenating these classes is close to calling the function, but not the same. `classNames()` injects `base` first and then each variant in the order the axes were declared, so a variant beats `base` and a later axis beats an earlier one, whatever order you list the classes in. A class whose exact styles another `ev()` already injected keeps its earlier position, though. Use [`className()`](#classname) when the result has to match the function.
 
 `base` is an empty string when the config has no `base`.
 
@@ -384,7 +384,16 @@ Avoid putting `css={button(...)}` and `className={className(button, ...)}` on th
 
 </Callout>
 
-### Share one cache
+Which `css` to pass depends on where the class is needed:
+
+| Where the class is needed | `css` to pass |
+|---|---|
+| Client-rendered app | `css` from `@emotion/css`, with [one shared cache](#share-one-cache) |
+| CSP `nonce`, Shadow DOM, or a custom `key` | `css` of [your own instance](#custom-instance) |
+| Server rendering, inside render | `css` from [`ClassNames`](#server-rendering) |
+| Server rendering, outside React | `css` from `@emotion/css`, extracted with [`@emotion/server`](#server-rendering) |
+
+### Share one cache [#share-one-cache]
 
 In a client-rendered app, hand the `@emotion/css` cache to `@emotion/react`. Both the `css` prop and the class-name helpers then write to the same cache, in one insertion order.
 
@@ -397,7 +406,7 @@ import { CacheProvider } from '@emotion/react';
 </CacheProvider>;
 ```
 
-### Use `nonce`, `container`, or a custom `key`
+### Use `nonce`, `container`, or a custom `key` [#custom-instance]
 
 Create an instance with [`@emotion/css/create-instance`](https://emotion.sh/docs/@emotion/css#custom-instances) and pass its `css`. The same `cache` can go to `CacheProvider`.
 
@@ -413,16 +422,30 @@ export const emotion = createEmotion({
 export const { className, classNames } = createClassName(emotion.css);
 ```
 
-### Server rendering
+### Server rendering [#server-rendering]
 
 An `@emotion/css` cache lives for the whole server process, not for one request, so its styles are extracted with [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach). Collecting only `@emotion/react`'s cache ships markup whose `className()` and `classNames()` rules are missing, and the first paint is unstyled until hydration.
 
-Where that extraction is not available, such as streaming rendering in the Next.js App Router, get the class inside render with `ClassNames` from `@emotion/react` instead. It uses the same cache as the `css` prop and needs no `@emotion/css`.
+Where that extraction is not available, such as streaming rendering in the Next.js App Router, create the helpers inside render from the `css` that `ClassNames` from `@emotion/react` provides. The styles go to the same cache as the `css` prop, are sent with the markup on every request, and need no `@emotion/css`.
 
 ```tsx
 import { ClassNames } from '@emotion/react';
+import { createClassName } from 'emotion-variants';
 
 <ClassNames>
-  {({ css }) => <ThirdParty className={css(button({ size: 'large' }))} />}
+  {({ css }) => {
+    const { className } = createClassName(css);
+    const slots = className(card, {
+      size: 'large',
+    });
+
+    return (
+      <section className={slots.root}>
+        <h3 className={slots.title}>Title</h3>
+      </section>
+    );
+  }}
 </ClassNames>;
 ```
+
+`classNames()` is memoized per `createClassName` call, so it is built again on each render here. Prefer `className()` inside render.

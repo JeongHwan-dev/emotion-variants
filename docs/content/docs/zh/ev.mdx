@@ -190,7 +190,7 @@ classNames(button) === classNames(button); // true
 
 `classNames()` 只覆盖 `base` 和单个 variant 值。**这里不包含 compound variants**，因为组合没有对应的键。需要 compound 样式时，请使用 [`className()`](#classname)。
 
-拼接这些 class 与调用函数并不等价。每个 class 都是特异性相同的独立规则，所以当 `base` 和某个 variant 设置同一属性时，生效的是 Emotion 先插入的那个，而不是你列出的顺序。只要 variant 需要胜过 `base`，就请使用 [`className()`](#classname)。
+拼接这些 class 的结果接近调用函数，但并不等价。`classNames()` 会先注入 `base`，再按轴的声明顺序注入各个 variant。因此无论你以什么顺序列出这些 class，variant 都会胜过 `base`，后声明的轴也会胜过先声明的轴。不过，如果另一个 `ev()` 已经注入了完全相同的样式，这个 class 会保持在先前注入的位置。需要结果与函数一致时，请使用 [`className()`](#classname)。
 
 配置中没有 `base` 时，`base` 为空字符串。
 
@@ -384,7 +384,16 @@ iconButton({
 
 </Callout>
 
-### 共享同一个 cache
+该传入哪个 `css`，取决于在哪里需要 class：
+
+| 需要 class 的位置 | 传入的 `css` |
+|---|---|
+| 仅在客户端渲染的应用 | `@emotion/css` 的 `css`，并[共享同一个 cache](#share-one-cache) |
+| CSP `nonce`、Shadow DOM 或自定义 `key` | [自己创建的实例](#custom-instance)的 `css` |
+| 服务端渲染，渲染过程中 | [`ClassNames`](#server-rendering) 提供的 `css` |
+| 服务端渲染，React 之外 | `@emotion/css` 的 `css`，并用 [`@emotion/server`](#server-rendering) 提取 |
+
+### 共享同一个 cache [#share-one-cache]
 
 在客户端渲染的应用中，把 `@emotion/css` 的 cache 交给 `@emotion/react`。这样 `css` prop 和 class name 辅助函数都会写入同一个 cache，共用一个插入顺序。
 
@@ -397,7 +406,7 @@ import { CacheProvider } from '@emotion/react';
 </CacheProvider>;
 ```
 
-### 使用 `nonce`、`container` 或自定义 `key`
+### 使用 `nonce`、`container` 或自定义 `key` [#custom-instance]
 
 用 [`@emotion/css/create-instance`](https://emotion.sh/docs/@emotion/css#custom-instances) 创建一个实例，并传入它的 `css`。同一个 `cache` 也可以交给 `CacheProvider`。
 
@@ -413,16 +422,30 @@ export const emotion = createEmotion({
 export const { className, classNames } = createClassName(emotion.css);
 ```
 
-### 服务端渲染
+### 服务端渲染 [#server-rendering]
 
 `@emotion/css` 的 cache 存活于整个服务端进程，而不是单个请求，所以要用 [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach) 提取其中的样式。如果只收集 `@emotion/react` 的 cache，输出的 HTML 会缺少 `className()` 和 `classNames()` 的规则，首次绘制在 hydration 之前都没有样式。
 
-在无法进行这种提取的场景中，例如 Next.js App Router 的流式渲染，可以改用 `@emotion/react` 的 `ClassNames` 在渲染过程中获取 class。它与 `css` prop 使用同一个 cache，不需要 `@emotion/css`。
+在无法进行这种提取的场景中，例如 Next.js App Router 的流式渲染，可以用 `@emotion/react` 的 `ClassNames` 提供的 `css`，在渲染过程中创建辅助函数。样式会进入与 `css` prop 相同的 cache，每次请求都随 HTML 一起发送，并且不需要 `@emotion/css`。
 
 ```tsx
 import { ClassNames } from '@emotion/react';
+import { createClassName } from 'emotion-variants';
 
 <ClassNames>
-  {({ css }) => <ThirdParty className={css(button({ size: 'large' }))} />}
+  {({ css }) => {
+    const { className } = createClassName(css);
+    const slots = className(card, {
+      size: 'large',
+    });
+
+    return (
+      <section className={slots.root}>
+        <h3 className={slots.title}>Title</h3>
+      </section>
+    );
+  }}
 </ClassNames>;
 ```
+
+`classNames()` 按每次 `createClassName` 调用分别缓存，所以在这里每次渲染都会重新生成。在渲染过程中请使用 `className()`。

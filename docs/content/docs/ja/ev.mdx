@@ -190,7 +190,7 @@ classNames(button) === classNames(button); // true
 
 `classNames()` は `base` と単一の variant の値しか扱いません。**compound variants はここには含まれません。** 組み合わせに対応するキーはありません。compound のスタイルが必要な場合は [`className()`](#classname) を使ってください。
 
-これらの class を連結することは、関数を呼び出すことと同じではありません。それぞれが specificity の等しい別々のルールなので、`base` と variant が同じプロパティを設定している場合、列挙した順序ではなく Emotion が先に挿入したほうが優先されます。variant が `base` に勝つ必要がある場合は、[`className()`](#classname) を使ってください。
+これらの class を連結した結果は関数を呼び出した場合に近くなりますが、同じではありません。`classNames()` は最初に `base` を挿入し、続いて各 variant を軸の宣言順に挿入します。そのため class をどの順序で列挙しても、variant は `base` に勝ち、後に宣言した軸は前の軸に勝ちます。ただし、まったく同じスタイルを別の `ev()` がすでに挿入している場合、その class は先に挿入された位置のままです。結果を関数と一致させる必要がある場合は、[`className()`](#classname) を使ってください。
 
 設定に `base` がない場合、`base` は空文字列になります。
 
@@ -384,7 +384,16 @@ variant の値を編集して、ボタンの変化を確認してみましょう
 
 </Callout>
 
-### キャッシュをひとつにまとめる
+どの `css` を渡すかは、class が必要になる場所によって決まります。
+
+| class が必要な場所 | 渡す `css` |
+|---|---|
+| クライアントのみでレンダリングするアプリ | `@emotion/css` の `css`。あわせて[キャッシュをひとつにまとめます](#share-one-cache) |
+| CSP の `nonce`、Shadow DOM、独自の `key` | [独自のインスタンス](#custom-instance)の `css` |
+| サーバーレンダリング、レンダリング中 | [`ClassNames`](#server-rendering) が渡す `css` |
+| サーバーレンダリング、React の外 | `@emotion/css` の `css`。[`@emotion/server`](#server-rendering) で抽出します |
+
+### キャッシュをひとつにまとめる [#share-one-cache]
 
 クライアントでレンダリングするアプリでは、`@emotion/css` のキャッシュを `@emotion/react` に渡します。すると、`css` prop と class name ヘルパーの両方が同じキャッシュに、ひとつの挿入順序で書き込むようになります。
 
@@ -397,7 +406,7 @@ import { CacheProvider } from '@emotion/react';
 </CacheProvider>;
 ```
 
-### `nonce`、`container`、独自の `key` を使う
+### `nonce`、`container`、独自の `key` を使う [#custom-instance]
 
 [`@emotion/css/create-instance`](https://emotion.sh/docs/@emotion/css#custom-instances) でインスタンスを作り、その `css` を渡します。同じ `cache` を `CacheProvider` に渡すこともできます。
 
@@ -413,16 +422,30 @@ export const emotion = createEmotion({
 export const { className, classNames } = createClassName(emotion.css);
 ```
 
-### サーバーレンダリング
+### サーバーレンダリング [#server-rendering]
 
 `@emotion/css` のキャッシュは、リクエスト単位ではなくサーバープロセス全体で生き続けるため、そのスタイルは [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach) で抽出します。`@emotion/react` のキャッシュだけを収集すると、`className()` と `classNames()` のルールが欠けたマークアップが送られ、ハイドレーションが完了するまで初回描画にスタイルが適用されません。
 
-Next.js App Router のストリーミングレンダリングのように、この抽出ができない環境では、代わりに `@emotion/react` の `ClassNames` を使ってレンダリング中に class を取得してください。`css` prop と同じキャッシュを使い、`@emotion/css` は必要ありません。
+Next.js App Router のストリーミングレンダリングのように、この抽出ができない環境では、`@emotion/react` の `ClassNames` が渡す `css` を使って、レンダリング中にヘルパーを作成してください。スタイルは `css` prop と同じキャッシュに入り、リクエストごとにマークアップと一緒に送られ、`@emotion/css` は必要ありません。
 
 ```tsx
 import { ClassNames } from '@emotion/react';
+import { createClassName } from 'emotion-variants';
 
 <ClassNames>
-  {({ css }) => <ThirdParty className={css(button({ size: 'large' }))} />}
+  {({ css }) => {
+    const { className } = createClassName(css);
+    const slots = className(card, {
+      size: 'large',
+    });
+
+    return (
+      <section className={slots.root}>
+        <h3 className={slots.title}>Title</h3>
+      </section>
+    );
+  }}
 </ClassNames>;
 ```
+
+`classNames()` は `createClassName` の呼び出しごとにメモ化されるため、ここではレンダリングのたびに作り直されます。レンダリング中は `className()` を使ってください。
