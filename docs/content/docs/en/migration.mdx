@@ -25,7 +25,7 @@ Create the helpers once with the `css` function that should inject the styles, t
 import { css } from '@emotion/css';
 import { createClassName } from 'emotion-variants';
 
-export const { className, classNames } = createClassName(css);
+export const { className, classNameMap } = createClassName(css);
 ```
 
 ```diff
@@ -33,7 +33,7 @@ export const { className, classNames } = createClassName(css);
 + className(button, { size: 'large' });
 
 - button.classNames.variants.size.small;
-+ classNames(button).variants.size.small;
++ classNameMap(button).variants.size.small;
 
 - card.className({ size: 'large' }).title;
 + className(card, { size: 'large' }).title;
@@ -44,6 +44,15 @@ Passing `css` from `@emotion/css` keeps the v2 behavior. To use `nonce`, `contai
 ### `EvFunction` and `EvSlotsFunction` lose their class-name members
 
 `className` and `classNames` are gone from both types. The helpers are typed by the new [`ClassNameHelpers`](./types.mdx#classnamehelpers).
+
+### `classNames` is now `classNameMap`
+
+The lookup table is renamed so that it no longer differs from `className()` by one letter. Its type is renamed with it.
+
+```diff
+- import type { EvClassNames } from 'emotion-variants';
++ import type { EvClassNameMap } from 'emotion-variants';
+```
 
 ## Migrating to v2
 

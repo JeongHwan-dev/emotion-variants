@@ -10,7 +10,7 @@ import type {
   ClassNameHelpers,
   CompoundVariant,
   Ev,
-  EvClassNames,
+  EvClassNameMap,
   EvConfig,
   EvFunction,
   EvSlotsFunction,
@@ -132,12 +132,12 @@ type ButtonVariants = VariantProps<typeof button>;
 
 它解析出的类型与 `EvVariants<T, B>` 相同，但你不必写出 `T` 或 `B`。
 
-### `EvClassNames<T>`
+### `EvClassNameMap<T>`
 
-[`classNames()`](./ev.mdx#classnames) 的返回类型：`base` 加上每个 variant 值对应的 class name。键是每个值的字符串形式。
+[`classNameMap()`](./ev.mdx#classnamemap) 的返回类型：`base` 加上每个 variant 值对应的 class name。键是每个值的字符串形式。
 
 ```typescript
-type ClassNames = EvClassNames<{
+type ClassNameMap = EvClassNameMap<{
   outlined: { true: {}; false: {} };
 }>;
 // { base: string; variants: { outlined: { true: string; false: string } } }
@@ -145,7 +145,7 @@ type ClassNames = EvClassNames<{
 
 ### `ClassNameHelpers`
 
-[`createClassName`](./ev.mdx#createclassname) 返回值的类型，即 `className` 和 `classNames` 这两个辅助函数。需要传递或封装这些辅助函数时会用到它。
+[`createClassName`](./ev.mdx#createclassname) 返回值的类型，即 `className` 和 `classNameMap` 这两个辅助函数。需要传递或封装这些辅助函数时会用到它。
 
 ```typescript
 import { css } from '@emotion/css';

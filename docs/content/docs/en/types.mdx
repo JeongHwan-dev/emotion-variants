@@ -10,7 +10,7 @@ import type {
   ClassNameHelpers,
   CompoundVariant,
   Ev,
-  EvClassNames,
+  EvClassNameMap,
   EvConfig,
   EvFunction,
   EvSlotsFunction,
@@ -132,12 +132,12 @@ type ButtonVariants = VariantProps<typeof button>;
 
 It resolves to the same type as `EvVariants<T, B>` without you having to name `T` or `B`.
 
-### `EvClassNames<T>`
+### `EvClassNameMap<T>`
 
-The return type of [`classNames()`](./ev.mdx#classnames) — `base` plus a class name per variant value. Keys are the string form of each value.
+The return type of [`classNameMap()`](./ev.mdx#classnamemap) — `base` plus a class name per variant value. Keys are the string form of each value.
 
 ```typescript
-type ClassNames = EvClassNames<{
+type ClassNameMap = EvClassNameMap<{
   outlined: { true: {}; false: {} };
 }>;
 // { base: string; variants: { outlined: { true: string; false: string } } }
@@ -145,7 +145,7 @@ type ClassNames = EvClassNames<{
 
 ### `ClassNameHelpers`
 
-The type [`createClassName`](./ev.mdx#createclassname) returns — the `className` and `classNames` helpers. Reach for it when you pass the helpers around or wrap them.
+The type [`createClassName`](./ev.mdx#createclassname) returns — the `className` and `classNameMap` helpers. Reach for it when you pass the helpers around or wrap them.
 
 ```typescript
 import { css } from '@emotion/css';

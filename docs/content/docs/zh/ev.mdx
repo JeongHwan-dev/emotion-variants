@@ -113,7 +113,7 @@ button({ size: undefined }); // 与 button() 相同
 import { css } from '@emotion/css';
 import { createClassName } from 'emotion-variants';
 
-export const { className, classNames } = createClassName(css);
+export const { className, classNameMap } = createClassName(css);
 ```
 
 `emotion-variants` 自身从不导入 `@emotion/css`。只有用到这些辅助函数时才需要安装它，至于该传入哪个 `css`，请参阅 [Cache 与服务端渲染](#caches)。
@@ -138,7 +138,7 @@ className(button);
 
 (`string`)：覆盖整个组合的一个 class name。
 
-### `classNames(button)` [#classnames]
+### `classNameMap(button)` [#classnamemap]
 
 各个 class name 的查找表：`base` 一个，每个 variant 值各一个。适合与自行构建 class 列表的代码组合使用，或用来查看生成了什么。
 
@@ -169,28 +169,28 @@ const button = ev({
   },
 });
 
-classNames(button).base; // 'css-abc123'
-classNames(button).variants.size.small; // 'css-def456'
+classNameMap(button).base; // 'css-abc123'
+classNameMap(button).variants.size.small; // 'css-def456'
 ```
 
 键使用值的字符串形式，所以 Boolean 和数字维度要以 `true` 和 `1` 读取：
 
 ```typescript
-classNames(button).variants.outlined.true;
-classNames(button).variants.level[1];
+classNameMap(button).variants.outlined.true;
+classNameMap(button).variants.level[1];
 ```
 
-在第一次调用 `classNames(button)` 之前，不会向文档注入任何样式，并且结果会被缓存：只使用 `css` prop 的代码不会为此付出任何开销。
+在第一次调用 `classNameMap(button)` 之前，不会向文档注入任何样式，并且结果会被缓存：只使用 `css` prop 的代码不会为此付出任何开销。
 
 ```typescript
-classNames(button) === classNames(button); // true
+classNameMap(button) === classNameMap(button); // true
 ```
 
 <Callout type="warn">
 
-`classNames()` 只覆盖 `base` 和单个 variant 值。**这里不包含 compound variants**，因为组合没有对应的键。需要 compound 样式时，请使用 [`className()`](#classname)。
+`classNameMap()` 只覆盖 `base` 和单个 variant 值。**这里不包含 compound variants**，因为组合没有对应的键。需要 compound 样式时，请使用 [`className()`](#classname)。
 
-拼接这些 class 的结果接近调用函数，但并不等价。`classNames()` 会先注入 `base`，再按轴的声明顺序注入各个 variant。因此无论你以什么顺序列出这些 class，variant 都会胜过 `base`，后声明的轴也会胜过先声明的轴。不过，如果另一个 `ev()` 已经注入了完全相同的样式，这个 class 会保持在先前注入的位置。需要结果与函数一致时，请使用 [`className()`](#classname)。
+拼接这些 class 的结果接近调用函数，但并不等价。`classNameMap()` 会先注入 `base`，再按轴的声明顺序注入各个 variant。因此无论你以什么顺序列出这些 class，variant 都会胜过 `base`，后声明的轴也会胜过先声明的轴。不过，如果另一个 `ev()` 已经注入了完全相同的样式，这个 class 会保持在先前注入的位置。需要结果与函数一致时，请使用 [`className()`](#classname)。
 
 配置中没有 `base` 时，`base` 为空字符串。
 
@@ -198,7 +198,7 @@ classNames(button) === classNames(button); // true
 
 #### 返回值
 
-(`EvClassNames<T>`)：`{ base, variants }`，其中 `variants[axis][value]` 是一个 class name。
+(`EvClassNameMap<T>`)：`{ base, variants }`，其中 `variants[axis][value]` 是一个 class name。
 
 ### `button.variants()` [#variants]
 
@@ -283,7 +283,7 @@ const { root, title } = card({
 class name 辅助函数与普通形式有两处不同：
 
 - `className(card, variants)` 为每个 slot 返回一个 class name，形如 `{ root: string, title: string }`。
-- `classNames(card)` 会报类型错误，并且会抛出错误。
+- `classNameMap(card)` 会报类型错误，并且会抛出错误。
 
 `card.variants()` 保持不变。
 
@@ -376,7 +376,7 @@ iconButton({
 
 ## Cache 与服务端渲染 [#caches]
 
-`className()` 和 `classNames()` 会把样式注入到你传给 [`createClassName`](#createclassname) 的 `css` 函数所属的 cache 中。如果用的是 [`@emotion/css`](https://emotion.sh/docs/@emotion/css) 的 `css`，那就是一个独立于 `@emotion/react` 的全局 cache。它会忽略 `CacheProvider` 的 `key`、`nonce` 等选项，并且两个 cache 不共享插入顺序。
+`className()` 和 `classNameMap()` 会把样式注入到你传给 [`createClassName`](#createclassname) 的 `css` 函数所属的 cache 中。如果用的是 [`@emotion/css`](https://emotion.sh/docs/@emotion/css) 的 `css`，那就是一个独立于 `@emotion/react` 的全局 cache。它会忽略 `CacheProvider` 的 `key`、`nonce` 等选项，并且两个 cache 不共享插入顺序。
 
 <Callout type="warn">
 
@@ -419,12 +419,12 @@ export const emotion = createEmotion({
   nonce,
 });
 
-export const { className, classNames } = createClassName(emotion.css);
+export const { className, classNameMap } = createClassName(emotion.css);
 ```
 
 ### 服务端渲染 [#server-rendering]
 
-`@emotion/css` 的 cache 存活于整个服务端进程，而不是单个请求，所以要用 [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach) 提取其中的样式。如果只收集 `@emotion/react` 的 cache，输出的 HTML 会缺少 `className()` 和 `classNames()` 的规则，首次绘制在 hydration 之前都没有样式。
+`@emotion/css` 的 cache 存活于整个服务端进程，而不是单个请求，所以要用 [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach) 提取其中的样式。如果只收集 `@emotion/react` 的 cache，输出的 HTML 会缺少 `className()` 和 `classNameMap()` 的规则，首次绘制在 hydration 之前都没有样式。
 
 在无法进行这种提取的场景中，例如 Next.js App Router 的流式渲染，可以用 `@emotion/react` 的 `ClassNames` 提供的 `css`，在渲染过程中创建辅助函数。样式会进入与 `css` prop 相同的 cache，每次请求都随 HTML 一起发送，并且不需要 `@emotion/css`。
 
@@ -448,4 +448,4 @@ import { createClassName } from 'emotion-variants';
 </ClassNames>;
 ```
 
-`classNames()` 按每次 `createClassName` 调用分别缓存，所以在这里每次渲染都会重新生成。在渲染过程中请使用 `className()`。
+`classNameMap()` 按每次 `createClassName` 调用分别缓存，所以在这里每次渲染都会重新生成。在渲染过程中请使用 `className()`。

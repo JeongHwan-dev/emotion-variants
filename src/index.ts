@@ -3,7 +3,7 @@ export type {
   ClassNameHelpers,
   CompoundVariant,
   Ev,
-  EvClassNames,
+  EvClassNameMap,
   EvConfig,
   EvFunction,
   EvSlotsFunction,

@@ -10,7 +10,7 @@ import type {
   ClassNameHelpers,
   CompoundVariant,
   Ev,
-  EvClassNames,
+  EvClassNameMap,
   EvConfig,
   EvFunction,
   EvSlotsFunction,
@@ -132,12 +132,12 @@ type ButtonVariants = VariantProps<typeof button>;
 
 `EvVariants<T, B>`와 같은 타입으로 풀리지만, `T`와 `B`를 직접 적지 않아도 돼요.
 
-### `EvClassNames<T>`
+### `EvClassNameMap<T>`
 
-[`classNames()`](./ev.mdx#classnames)의 반환 타입이에요. `base` 하나와 variant 값마다 class name이 하나씩 있어요. 키는 각 값을 문자열로 바꾼 형태예요.
+[`classNameMap()`](./ev.mdx#classnamemap)의 반환 타입이에요. `base` 하나와 variant 값마다 class name이 하나씩 있어요. 키는 각 값을 문자열로 바꾼 형태예요.
 
 ```typescript
-type ClassNames = EvClassNames<{
+type ClassNameMap = EvClassNameMap<{
   outlined: { true: {}; false: {} };
 }>;
 // { base: string; variants: { outlined: { true: string; false: string } } }
@@ -145,7 +145,7 @@ type ClassNames = EvClassNames<{
 
 ### `ClassNameHelpers`
 
-[`createClassName`](./ev.mdx#createclassname)이 반환하는 타입이에요. `className`과 `classNames` helper가 들어 있어요. helper를 다른 곳에 넘기거나 감쌀 때 꺼내 쓰세요.
+[`createClassName`](./ev.mdx#createclassname)이 반환하는 타입이에요. `className`과 `classNameMap` helper가 들어 있어요. helper를 다른 곳에 넘기거나 감쌀 때 꺼내 쓰세요.
 
 ```typescript
 import { css } from '@emotion/css';

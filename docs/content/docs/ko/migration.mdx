@@ -25,7 +25,7 @@ v3.0.0부터는 `@emotion/css`를 import하지 않아요. class name helper가 `
 import { css } from '@emotion/css';
 import { createClassName } from 'emotion-variants';
 
-export const { className, classNames } = createClassName(css);
+export const { className, classNameMap } = createClassName(css);
 ```
 
 ```diff
@@ -33,7 +33,7 @@ export const { className, classNames } = createClassName(css);
 + className(button, { size: 'large' });
 
 - button.classNames.variants.size.small;
-+ classNames(button).variants.size.small;
++ classNameMap(button).variants.size.small;
 
 - card.className({ size: 'large' }).title;
 + className(card, { size: 'large' }).title;
@@ -44,6 +44,15 @@ export const { className, classNames } = createClassName(css);
 ### `EvFunction`과 `EvSlotsFunction`에서 class name 멤버가 빠져요
 
 두 타입 모두에서 `className`과 `classNames`가 없어졌어요. helper의 타입은 새로 생긴 [`ClassNameHelpers`](./types.mdx#classnamehelpers)예요.
+
+### `classNames`가 `classNameMap`으로 바뀌어요
+
+`className()`과 한 글자 차이라 헷갈리지 않도록 이름을 바꿨어요. 타입 이름도 같이 바뀌어요.
+
+```diff
+- import type { EvClassNames } from 'emotion-variants';
++ import type { EvClassNameMap } from 'emotion-variants';
+```
 
 ## v2로 마이그레이션 [#migrating-to-v2]
 

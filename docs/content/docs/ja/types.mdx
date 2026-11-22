@@ -10,7 +10,7 @@ import type {
   ClassNameHelpers,
   CompoundVariant,
   Ev,
-  EvClassNames,
+  EvClassNameMap,
   EvConfig,
   EvFunction,
   EvSlotsFunction,
@@ -132,12 +132,12 @@ type ButtonVariants = VariantProps<typeof button>;
 
 `T` や `B` を明示しなくても、`EvVariants<T, B>` と同じ型に解決されます。
 
-### `EvClassNames<T>`
+### `EvClassNameMap<T>`
 
-[`classNames()`](./ev.mdx#classnames) の戻り値の型です。`base` と、variant の値ごとの class name を持ちます。キーは各値を文字列にしたものです。
+[`classNameMap()`](./ev.mdx#classnamemap) の戻り値の型です。`base` と、variant の値ごとの class name を持ちます。キーは各値を文字列にしたものです。
 
 ```typescript
-type ClassNames = EvClassNames<{
+type ClassNameMap = EvClassNameMap<{
   outlined: { true: {}; false: {} };
 }>;
 // { base: string; variants: { outlined: { true: string; false: string } } }
@@ -145,7 +145,7 @@ type ClassNames = EvClassNames<{
 
 ### `ClassNameHelpers`
 
-[`createClassName`](./ev.mdx#createclassname) が返す型で、`className` と `classNames` のヘルパーを持ちます。ヘルパーを別の場所に渡したり、ラップしたりするときに使います。
+[`createClassName`](./ev.mdx#createclassname) が返す型で、`className` と `classNameMap` のヘルパーを持ちます。ヘルパーを別の場所に渡したり、ラップしたりするときに使います。
 
 ```typescript
 import { css } from '@emotion/css';

@@ -4,7 +4,7 @@ import type { SerializedStyles } from '@emotion/react';
 import { describe, expect, it } from 'vitest';
 import { createClassName, createEv, ev } from '../src/ev';
 
-const { className, classNames } = createClassName(css);
+const { className, classNameMap } = createClassName(css);
 
 const stylesOf = (result: SerializedStyles[]) => result.map((s) => s.styles);
 
@@ -386,8 +386,8 @@ describe('ev - Edge Cases', () => {
   });
 });
 
-describe('ev - classNames', () => {
-  it('does not inject styles until classNames() is called', () => {
+describe('ev - classNameMap', () => {
+  it('does not inject styles until classNameMap() is called', () => {
     const before = Object.keys(cache.inserted).length;
     const box = ev({
       base: { padding: '99px' },
@@ -400,7 +400,7 @@ describe('ev - classNames', () => {
 
     expect(Object.keys(cache.inserted).length).toBe(before);
 
-    expect(classNames(box)).toBeDefined();
+    expect(classNameMap(box)).toBeDefined();
 
     expect(Object.keys(cache.inserted).length).toBe(before + 2);
   });
@@ -418,10 +418,10 @@ describe('ev - classNames', () => {
       },
     });
 
-    expect(classNames(button).base).toMatch(/^css-/);
-    expect(cache.registered[classNames(button).base]).toBe('padding:10px;');
-    expect(cache.registered[classNames(button).variants.size.small]).toBe('font-size:12px;');
-    expect(cache.registered[classNames(button).variants.size.large]).toBe('font-size:16px;');
+    expect(classNameMap(button).base).toMatch(/^css-/);
+    expect(cache.registered[classNameMap(button).base]).toBe('padding:10px;');
+    expect(cache.registered[classNameMap(button).variants.size.small]).toBe('font-size:12px;');
+    expect(cache.registered[classNameMap(button).variants.size.large]).toBe('font-size:16px;');
   });
 
   it('keys boolean and number variants by their string form', () => {
@@ -437,9 +437,9 @@ describe('ev - classNames', () => {
       },
     });
 
-    expect(cache.registered[classNames(box).variants.outlined.true]).toBe('border:1px solid;');
-    expect(cache.registered[classNames(box).variants.outlined.false]).toBe('border:none;');
-    expect(cache.registered[classNames(box).variants.level[1]]).toBe('z-index:1;');
+    expect(cache.registered[classNameMap(box).variants.outlined.true]).toBe('border:1px solid;');
+    expect(cache.registered[classNameMap(box).variants.outlined.false]).toBe('border:none;');
+    expect(cache.registered[classNameMap(box).variants.level[1]]).toBe('z-index:1;');
   });
 
   it('returns an empty base class name when base is not provided', () => {
@@ -451,7 +451,7 @@ describe('ev - classNames', () => {
       },
     });
 
-    expect(classNames(box).base).toBe('');
+    expect(classNameMap(box).base).toBe('');
   });
 
   it('injects base first, then variants in the order the axes were declared', () => {
@@ -466,7 +466,7 @@ describe('ev - classNames', () => {
         },
       },
     });
-    const names = classNames(box);
+    const names = classNameMap(box);
     const inserted = Object.keys(cache.inserted);
     const indexOf = (name: string) => inserted.indexOf(name.replace('css-', ''));
 
@@ -477,7 +477,7 @@ describe('ev - classNames', () => {
   it('returns the same object on repeated calls', () => {
     const box = ev({ base: { margin: 0 } });
 
-    expect(classNames(box)).toBe(classNames(box));
+    expect(classNameMap(box)).toBe(classNameMap(box));
   });
 });
 
@@ -494,12 +494,12 @@ describe('createClassName', () => {
 
     expect(name).toMatch(/^custom-/);
     expect(emotion.cache.registered[name]).toBe('padding:77px;');
-    expect(custom.classNames(box).base).toBe(name);
+    expect(custom.classNameMap(box).base).toBe(name);
     expect(cache.registered[name.replace('custom-', 'css-')]).toBeUndefined();
   });
 
   it('rejects a function that ev() did not return', () => {
-    expect(() => classNames((() => []) as never)).toThrow('returned by `ev()`');
+    expect(() => classNameMap((() => []) as never)).toThrow('returned by `ev()`');
   });
 });
 
@@ -702,7 +702,7 @@ describe('ev - Slots', () => {
     expect(stylesOf(box().constructor())).toEqual(['color:red;']);
   });
 
-  it('exposes variants() and a className per slot, but rejects classNames()', () => {
+  it('exposes variants() and a className per slot, but rejects classNameMap()', () => {
     const slotNames = className(card, {
       size: 'large',
     });
@@ -712,7 +712,7 @@ describe('ev - Slots', () => {
     expect(cache.registered[slotNames.root]).toContain('padding:16px;');
     expect(cache.registered[slotNames.footer]).toContain('gap:8px;');
     expect(cache.registered[slotNames.footer]).not.toContain('padding');
-    expect(() => classNames(card as never)).toThrow('without `slots`');
+    expect(() => classNameMap(card as never)).toThrow('without `slots`');
   });
 });
 
@@ -874,17 +874,19 @@ describe('ev - extend', () => {
     ]);
   });
 
-  it('merges layers in className() and classNames', () => {
+  it('merges layers in className() and classNameMap', () => {
     expect(cache.registered[className(iconButton)]).toContain('padding:8px;');
     expect(cache.registered[className(iconButton)]).toContain('width:48px;');
-    expect(cache.registered[classNames(iconButton).base]).toContain('padding:8px;');
-    expect(cache.registered[classNames(iconButton).base]).toContain('display:inline-flex;');
-    expect(cache.registered[classNames(iconButton).variants.size.large]).toContain(
+    expect(cache.registered[classNameMap(iconButton).base]).toContain('padding:8px;');
+    expect(cache.registered[classNameMap(iconButton).base]).toContain('display:inline-flex;');
+    expect(cache.registered[classNameMap(iconButton).variants.size.large]).toContain(
       'font-size:16px;',
     );
-    expect(cache.registered[classNames(iconButton).variants.size.large]).toContain('width:48px;');
-    expect(classNames(iconButton).variants.size.small).toBe(classNames(button).variants.size.small);
-    expect(Object.keys(classNames(iconButton).variants.size)).toEqual(['small', 'large', 'huge']);
+    expect(cache.registered[classNameMap(iconButton).variants.size.large]).toContain('width:48px;');
+    expect(classNameMap(iconButton).variants.size.small).toBe(
+      classNameMap(button).variants.size.small,
+    );
+    expect(Object.keys(classNameMap(iconButton).variants.size)).toEqual(['small', 'large', 'huge']);
   });
 
   describe('slots', () => {

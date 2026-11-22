@@ -5,7 +5,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import { createClassName, createEv, ev } from '../src/ev';
 import type { EvFunction, VariantProps } from '../src/types';
 
-const { className, classNames } = createClassName(css);
+const { className, classNameMap } = createClassName(css);
 
 describe('ev - Type Tests', () => {
   it('createClassName accepts the css of any @emotion/css instance', () => {
@@ -121,7 +121,7 @@ describe('ev - Type Tests', () => {
     expectTypeOf(button()).toEqualTypeOf<SerializedStyles[]>();
   });
 
-  it('classNames and className types', () => {
+  it('classNameMap and className types', () => {
     const button = ev({
       base: { padding: '10px' },
       variants: {
@@ -140,16 +140,16 @@ describe('ev - Type Tests', () => {
       },
     });
 
-    expectTypeOf(classNames(button).base).toBeString();
-    expectTypeOf(classNames(button).variants.size).toEqualTypeOf<{
+    expectTypeOf(classNameMap(button).base).toBeString();
+    expectTypeOf(classNameMap(button).variants.size).toEqualTypeOf<{
       small: string;
       large: string;
     }>();
-    expectTypeOf(classNames(button).variants.outlined).toEqualTypeOf<{
+    expectTypeOf(classNameMap(button).variants.outlined).toEqualTypeOf<{
       true: string;
       false: string;
     }>();
-    expectTypeOf(classNames(button).variants.level).toEqualTypeOf<{ 1: string; 2: string }>();
+    expectTypeOf(classNameMap(button).variants.level).toEqualTypeOf<{ 1: string; 2: string }>();
     // @ts-expect-error - 'medium' is not a size value
     className(button, { size: 'medium' });
     expectTypeOf(className(button)).toBeString();
@@ -331,8 +331,8 @@ describe('ev - Type Tests', () => {
       title: string;
     }>();
     expectTypeOf<VariantProps<typeof card>>().toEqualTypeOf<Variants>();
-    // @ts-expect-error - classNames() does not accept a function with slots
-    expect(() => classNames(card)).toThrow();
+    // @ts-expect-error - classNameMap() does not accept a function with slots
+    expect(() => classNameMap(card)).toThrow();
     card().title({
       // @ts-expect-error - 'medium' is not a size value
       size: 'medium',
@@ -490,8 +490,8 @@ describe('ev - Type Tests', () => {
     }>();
     expectTypeOf(iconButton()).toEqualTypeOf<SerializedStyles[]>();
     expectTypeOf(iconButton.variants()).toEqualTypeOf<Array<'size' | 'tone' | 'round'>>();
-    expectTypeOf(classNames(iconButton).variants.size.huge).toBeString();
-    expectTypeOf(classNames(iconButton).variants.tone.danger).toBeString();
+    expectTypeOf(classNameMap(iconButton).variants.size.huge).toBeString();
+    expectTypeOf(classNameMap(iconButton).variants.tone.danger).toBeString();
 
     const fab = ev({
       extend: iconButton,
@@ -590,8 +590,8 @@ describe('ev - Type Tests', () => {
       title: SlotFunction;
       footer: SlotFunction;
     }>();
-    // @ts-expect-error - classNames() does not accept a function with slots
-    expect(() => classNames(mediaCard)).toThrow();
+    // @ts-expect-error - classNameMap() does not accept a function with slots
+    expect(() => classNameMap(mediaCard)).toThrow();
 
     const toneCard = ev({
       extend: card,

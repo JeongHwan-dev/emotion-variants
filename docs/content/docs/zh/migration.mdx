@@ -25,7 +25,7 @@ v3.0.0 不再导入 `@emotion/css`。class name 辅助函数从 `ev()` 的返回
 import { css } from '@emotion/css';
 import { createClassName } from 'emotion-variants';
 
-export const { className, classNames } = createClassName(css);
+export const { className, classNameMap } = createClassName(css);
 ```
 
 ```diff
@@ -33,7 +33,7 @@ export const { className, classNames } = createClassName(css);
 + className(button, { size: 'large' });
 
 - button.classNames.variants.size.small;
-+ classNames(button).variants.size.small;
++ classNameMap(button).variants.size.small;
 
 - card.className({ size: 'large' }).title;
 + className(card, { size: 'large' }).title;
@@ -44,6 +44,15 @@ export const { className, classNames } = createClassName(css);
 ### `EvFunction` 和 `EvSlotsFunction` 不再包含 class name 成员
 
 `className` 和 `classNames` 已从这两个类型中移除。辅助函数的类型由新增的 [`ClassNameHelpers`](./types.mdx#classnamehelpers) 提供。
+
+### `classNames` 改名为 `classNameMap`
+
+为了避免与 `className()` 只差一个字母而混淆，这个查找表改了名字。它的类型也随之改名。
+
+```diff
+- import type { EvClassNames } from 'emotion-variants';
++ import type { EvClassNameMap } from 'emotion-variants';
+```
 
 ## 迁移到 v2 [#migrating-to-v2]
 

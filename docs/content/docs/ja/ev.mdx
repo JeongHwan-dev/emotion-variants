@@ -113,7 +113,7 @@ prop もデフォルト値もない軸は、まるごとスキップされます
 import { css } from '@emotion/css';
 import { createClassName } from 'emotion-variants';
 
-export const { className, classNames } = createClassName(css);
+export const { className, classNameMap } = createClassName(css);
 ```
 
 `emotion-variants` 自体が `@emotion/css` を import することはありません。これらのヘルパーを使う場合にだけインストールしてください。どの `css` を渡すべきかは[キャッシュとサーバーレンダリング](#caches)を参照してください。
@@ -138,7 +138,7 @@ className(button);
 
 (`string`): 組み合わせ全体をカバーするひとつの class name です。
 
-### `classNames(button)` [#classnames]
+### `classNameMap(button)` [#classnamemap]
 
 個々の class name のルックアップテーブルです。`base` にひとつ、variant の値ごとにひとつずつあります。独自に class のリストを組み立てるコードと組み合わせたり、生成された内容を確認したりするのに便利です。
 
@@ -169,28 +169,28 @@ const button = ev({
   },
 });
 
-classNames(button).base; // 'css-abc123'
-classNames(button).variants.size.small; // 'css-def456'
+classNameMap(button).base; // 'css-abc123'
+classNameMap(button).variants.size.small; // 'css-def456'
 ```
 
 キーは値を文字列にしたものなので、Boolean や数値の軸は `true` や `1` で読み取ります。
 
 ```typescript
-classNames(button).variants.outlined.true;
-classNames(button).variants.level[1];
+classNameMap(button).variants.outlined.true;
+classNameMap(button).variants.level[1];
 ```
 
-最初に `classNames(button)` を呼び出すまでドキュメントには何も挿入されず、結果はメモ化されます。`css` prop だけを使うコードにはコストがかかりません。
+最初に `classNameMap(button)` を呼び出すまでドキュメントには何も挿入されず、結果はメモ化されます。`css` prop だけを使うコードにはコストがかかりません。
 
 ```typescript
-classNames(button) === classNames(button); // true
+classNameMap(button) === classNameMap(button); // true
 ```
 
 <Callout type="warn">
 
-`classNames()` は `base` と単一の variant の値しか扱いません。**compound variants はここには含まれません。** 組み合わせに対応するキーはありません。compound のスタイルが必要な場合は [`className()`](#classname) を使ってください。
+`classNameMap()` は `base` と単一の variant の値しか扱いません。**compound variants はここには含まれません。** 組み合わせに対応するキーはありません。compound のスタイルが必要な場合は [`className()`](#classname) を使ってください。
 
-これらの class を連結した結果は関数を呼び出した場合に近くなりますが、同じではありません。`classNames()` は最初に `base` を挿入し、続いて各 variant を軸の宣言順に挿入します。そのため class をどの順序で列挙しても、variant は `base` に勝ち、後に宣言した軸は前の軸に勝ちます。ただし、まったく同じスタイルを別の `ev()` がすでに挿入している場合、その class は先に挿入された位置のままです。結果を関数と一致させる必要がある場合は、[`className()`](#classname) を使ってください。
+これらの class を連結した結果は関数を呼び出した場合に近くなりますが、同じではありません。`classNameMap()` は最初に `base` を挿入し、続いて各 variant を軸の宣言順に挿入します。そのため class をどの順序で列挙しても、variant は `base` に勝ち、後に宣言した軸は前の軸に勝ちます。ただし、まったく同じスタイルを別の `ev()` がすでに挿入している場合、その class は先に挿入された位置のままです。結果を関数と一致させる必要がある場合は、[`className()`](#classname) を使ってください。
 
 設定に `base` がない場合、`base` は空文字列になります。
 
@@ -198,7 +198,7 @@ classNames(button) === classNames(button); // true
 
 #### 戻り値
 
-(`EvClassNames<T>`): `{ base, variants }` で、`variants[axis][value]` が class name です。
+(`EvClassNameMap<T>`): `{ base, variants }` で、`variants[axis][value]` が class name です。
 
 ### `button.variants()` [#variants]
 
@@ -283,7 +283,7 @@ slot のスタイルは、`slots` 内のその slot のエントリ、一致し�
 class name ヘルパーは、通常の形と 2 点だけ異なります。
 
 - `className(card, variants)` は slot ごとに class name をひとつずつ、`{ root: string, title: string }` の形で返します。
-- `classNames(card)` は型エラーになり、実行時にもエラーを投げます。
+- `classNameMap(card)` は型エラーになり、実行時にもエラーを投げます。
 
 `card.variants()` は変わりません。
 
@@ -376,7 +376,7 @@ variant の値を編集して、ボタンの変化を確認してみましょう
 
 ## キャッシュとサーバーレンダリング [#caches]
 
-`className()` と `classNames()` は、[`createClassName`](#createclassname) に渡した `css` 関数のキャッシュにスタイルを挿入します。[`@emotion/css`](https://emotion.sh/docs/@emotion/css) の `css` を渡した場合、それは `@emotion/react` とは別のグローバルキャッシュです。`CacheProvider` の `key` や `nonce` などのオプションは無視され、2 つのキャッシュは挿入順序を共有しません。
+`className()` と `classNameMap()` は、[`createClassName`](#createclassname) に渡した `css` 関数のキャッシュにスタイルを挿入します。[`@emotion/css`](https://emotion.sh/docs/@emotion/css) の `css` を渡した場合、それは `@emotion/react` とは別のグローバルキャッシュです。`CacheProvider` の `key` や `nonce` などのオプションは無視され、2 つのキャッシュは挿入順序を共有しません。
 
 <Callout type="warn">
 
@@ -419,12 +419,12 @@ export const emotion = createEmotion({
   nonce,
 });
 
-export const { className, classNames } = createClassName(emotion.css);
+export const { className, classNameMap } = createClassName(emotion.css);
 ```
 
 ### サーバーレンダリング [#server-rendering]
 
-`@emotion/css` のキャッシュは、リクエスト単位ではなくサーバープロセス全体で生き続けるため、そのスタイルは [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach) で抽出します。`@emotion/react` のキャッシュだけを収集すると、`className()` と `classNames()` のルールが欠けたマークアップが送られ、ハイドレーションが完了するまで初回描画にスタイルが適用されません。
+`@emotion/css` のキャッシュは、リクエスト単位ではなくサーバープロセス全体で生き続けるため、そのスタイルは [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach) で抽出します。`@emotion/react` のキャッシュだけを収集すると、`className()` と `classNameMap()` のルールが欠けたマークアップが送られ、ハイドレーションが完了するまで初回描画にスタイルが適用されません。
 
 Next.js App Router のストリーミングレンダリングのように、この抽出ができない環境では、`@emotion/react` の `ClassNames` が渡す `css` を使って、レンダリング中にヘルパーを作成してください。スタイルは `css` prop と同じキャッシュに入り、リクエストごとにマークアップと一緒に送られ、`@emotion/css` は必要ありません。
 
@@ -448,4 +448,4 @@ import { createClassName } from 'emotion-variants';
 </ClassNames>;
 ```
 
-`classNames()` は `createClassName` の呼び出しごとにメモ化されるため、ここではレンダリングのたびに作り直されます。レンダリング中は `className()` を使ってください。
+`classNameMap()` は `createClassName` の呼び出しごとにメモ化されるため、ここではレンダリングのたびに作り直されます。レンダリング中は `className()` を使ってください。

@@ -113,7 +113,7 @@ prop도 기본값도 없는 축은 아예 건너뛰어요.
 import { css } from '@emotion/css';
 import { createClassName } from 'emotion-variants';
 
-export const { className, classNames } = createClassName(css);
+export const { className, classNameMap } = createClassName(css);
 ```
 
 `emotion-variants`는 `@emotion/css`를 직접 import하지 않아요. 이 helper를 쓸 때만 설치하면 되고, 어떤 `css`를 넘길지는 [cache와 서버 렌더링](#caches)에서 확인하세요.
@@ -138,7 +138,7 @@ className(button);
 
 (`string`): 조합 전체를 담은 class name 하나를 반환해요.
 
-### `classNames(button)` [#classnames]
+### `classNameMap(button)` [#classnamemap]
 
 개별 class name을 모아 둔 객체예요. `base` 하나와 variant 값마다 하나씩 들어 있어요. class 목록을 직접 조립하는 코드와 함께 쓰거나, 무엇이 생성됐는지 들여다볼 때 편해요.
 
@@ -169,28 +169,28 @@ const button = ev({
   },
 });
 
-classNames(button).base; // 'css-abc123'
-classNames(button).variants.size.small; // 'css-def456'
+classNameMap(button).base; // 'css-abc123'
+classNameMap(button).variants.size.small; // 'css-def456'
 ```
 
 키는 값을 문자열로 바꾼 형태예요. 그래서 Boolean과 숫자 축은 `true`, `1`로 읽어요.
 
 ```typescript
-classNames(button).variants.outlined.true;
-classNames(button).variants.level[1];
+classNameMap(button).variants.outlined.true;
+classNameMap(button).variants.level[1];
 ```
 
-`classNames(button)`을 처음 호출할 때까지는 문서에 아무것도 주입되지 않고, 결과는 memoize돼요. `css` prop만 쓰는 코드는 이 비용을 전혀 치르지 않아요.
+`classNameMap(button)`을 처음 호출할 때까지는 문서에 아무것도 주입되지 않고, 결과는 memoize돼요. `css` prop만 쓰는 코드는 이 비용을 전혀 치르지 않아요.
 
 ```typescript
-classNames(button) === classNames(button); // true
+classNameMap(button) === classNameMap(button); // true
 ```
 
 <Callout type="warn">
 
-`classNames()`는 `base`와 단일 variant 값만 다뤄요. **compound variants는 여기에 들어 있지 않아요.** 조합에 대응하는 키가 없어요. compound 스타일이 필요하면 [`className()`](#classname)을 사용하세요.
+`classNameMap()`은 `base`와 단일 variant 값만 다뤄요. **compound variants는 여기에 들어 있지 않아요.** 조합에 대응하는 키가 없어요. compound 스타일이 필요하면 [`className()`](#classname)을 사용하세요.
 
-이 class들을 이어 붙이면 함수를 호출한 것과 비슷하지만, 똑같지는 않아요. `classNames()`는 `base`를 먼저 주입하고 그다음 variant를 축을 선언한 순서대로 주입해요. 그래서 class를 어떤 순서로 나열하든 variant가 `base`를 이기고, 뒤에 선언한 축이 앞의 축을 이겨요. 다만 다른 `ev()`가 완전히 같은 스타일을 이미 주입했다면, 그 class는 먼저 주입된 자리에 그대로 있어요. 결과가 함수와 일치해야 한다면 [`className()`](#classname)을 쓰세요.
+이 class들을 이어 붙이면 함수를 호출한 것과 비슷하지만, 똑같지는 않아요. `classNameMap()`은 `base`를 먼저 주입하고 그다음 variant를 축을 선언한 순서대로 주입해요. 그래서 class를 어떤 순서로 나열하든 variant가 `base`를 이기고, 뒤에 선언한 축이 앞의 축을 이겨요. 다만 다른 `ev()`가 완전히 같은 스타일을 이미 주입했다면, 그 class는 먼저 주입된 자리에 그대로 있어요. 결과가 함수와 일치해야 한다면 [`className()`](#classname)을 쓰세요.
 
 스타일 정의에 `base`가 없으면 `base`는 빈 문자열이에요.
 
@@ -198,7 +198,7 @@ classNames(button) === classNames(button); // true
 
 #### 반환 값
 
-(`EvClassNames<T>`): `{ base, variants }` 형태예요. `variants[축][값]`이 class name이에요.
+(`EvClassNameMap<T>`): `{ base, variants }` 형태예요. `variants[축][값]`이 class name이에요.
 
 ### `button.variants()` [#variants]
 
@@ -283,7 +283,7 @@ const { root, title } = card({
 class name helper는 일반 형태와 두 군데가 달라요.
 
 - `className(card, variants)`는 slot마다 class name을 하나씩, `{ root: string, title: string }` 형태로 반환해요.
-- `classNames(card)`는 타입 에러가 나고, 실행하면 예외를 던져요.
+- `classNameMap(card)`은 타입 에러가 나고, 실행하면 예외를 던져요.
 
 `card.variants()`는 그대로예요.
 
@@ -376,7 +376,7 @@ variant 값을 바꿔 보면서 버튼이 어떻게 달라지는지 확인해 �
 
 ## cache와 서버 렌더링 [#caches]
 
-`className()`과 `classNames()`는 [`createClassName`](#createclassname)에 넘긴 `css` 함수의 cache에 스타일을 주입해요. [`@emotion/css`](https://emotion.sh/docs/@emotion/css)의 `css`를 넘겼다면, 그 cache는 `@emotion/react`의 cache와 별개인 global cache예요. `CacheProvider`의 `key`나 `nonce` 같은 옵션을 무시하고, 두 cache는 주입 순서를 공유하지 않아요.
+`className()`과 `classNameMap()`은 [`createClassName`](#createclassname)에 넘긴 `css` 함수의 cache에 스타일을 주입해요. [`@emotion/css`](https://emotion.sh/docs/@emotion/css)의 `css`를 넘겼다면, 그 cache는 `@emotion/react`의 cache와 별개인 global cache예요. `CacheProvider`의 `key`나 `nonce` 같은 옵션을 무시하고, 두 cache는 주입 순서를 공유하지 않아요.
 
 <Callout type="warn">
 
@@ -419,12 +419,12 @@ export const emotion = createEmotion({
   nonce,
 });
 
-export const { className, classNames } = createClassName(emotion.css);
+export const { className, classNameMap } = createClassName(emotion.css);
 ```
 
 ### 서버 렌더링 [#server-rendering]
 
-`@emotion/css`의 cache는 요청 하나가 아니라 서버 프로세스가 살아 있는 내내 유지돼요. 그래서 이 스타일은 [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach)로 뽑아내요. `@emotion/react`의 cache만 모으면 `className()`과 `classNames()`가 만든 규칙이 빠진 마크업이 나가서, hydration 전까지 스타일이 없는 화면이 보여요.
+`@emotion/css`의 cache는 요청 하나가 아니라 서버 프로세스가 살아 있는 내내 유지돼요. 그래서 이 스타일은 [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach)로 뽑아내요. `@emotion/react`의 cache만 모으면 `className()`과 `classNameMap()`이 만든 규칙이 빠진 마크업이 나가서, hydration 전까지 스타일이 없는 화면이 보여요.
 
 Next.js App Router의 streaming 렌더링처럼 그렇게 뽑아낼 수 없는 환경에서는, `@emotion/react`의 `ClassNames`가 주는 `css`로 렌더링 안에서 helper를 만드세요. 스타일이 `css` prop과 같은 cache에 들어가고, 요청마다 마크업과 함께 전송되고, `@emotion/css`가 필요 없어요.
 
@@ -448,4 +448,4 @@ import { createClassName } from 'emotion-variants';
 </ClassNames>;
 ```
 
-`classNames()`는 `createClassName` 호출마다 따로 메모이즈돼서, 여기서는 렌더링할 때마다 다시 만들어져요. 렌더링 안에서는 `className()`을 쓰세요.
+`classNameMap()`은 `createClassName` 호출마다 따로 메모이즈돼서, 여기서는 렌더링할 때마다 다시 만들어져요. 렌더링 안에서는 `className()`을 쓰세요.

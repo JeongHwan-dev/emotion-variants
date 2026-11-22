@@ -217,11 +217,11 @@ export type VariantProps<T> = T extends (variants?: infer P) => unknown ? NonNul
 /**
  * Class names generated for the base style and each variant value.
  *
- * Returned by the `classNames` helper from `createClassName`.
+ * Returned by the `classNameMap` helper from `createClassName`.
  *
  * @typeParam T - The variant configuration type
  */
-export type EvClassNames<T extends VariantConfig<Record<string, Record<string, CSSObject>>>> = {
+export type EvClassNameMap<T extends VariantConfig<Record<string, Record<string, CSSObject>>>> = {
   /** Class name for the base style, or an empty string when no base style is defined */
   base: string;
   /** Class names for each variant value, keyed by variant name and the value's string form */
@@ -333,12 +333,12 @@ export interface ClassNameHelpers {
    * @param fn - A function returned by `ev()` without `slots`
    * @returns Class names for the base style and each variant value
    */
-  classNames: <
+  classNameMap: <
     T extends VariantConfig<Record<string, Record<string, CSSObject>>>,
     B extends string = never,
   >(
     fn: EvFunction<T, B>,
-  ) => EvClassNames<T>;
+  ) => EvClassNameMap<T>;
 }
 
 /**

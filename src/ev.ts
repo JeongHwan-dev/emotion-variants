@@ -3,7 +3,7 @@ import { css } from '@emotion/react';
 import type {
   ClassNameHelpers,
   Ev,
-  EvClassNames,
+  EvClassNameMap,
   EvFunction,
   EvSlotsFunction,
   VariantConfig,
@@ -239,19 +239,19 @@ function define(
  * Styles are injected into the cache that `css` function belongs to.
  *
  * @param css - Function that injects styles and returns a class name
- * @returns `className` and `classNames` helpers
+ * @returns `className` and `classNameMap` helpers
  *
  * @example
  * ```typescript
  * import { css } from '@emotion/css';
  *
- * export const { className, classNames } = createClassName(css);
+ * export const { className, classNameMap } = createClassName(css);
  *
  * <button className={className(button, { size: 'large' })}>Click me</button>
  * ```
  */
 export function createClassName(css: (...styles: SerializedStyles[]) => string): ClassNameHelpers {
-  const built = new WeakMap<object, EvClassNames<Plain>>();
+  const built = new WeakMap<object, EvClassNameMap<Plain>>();
 
   const classNameOf = (styles: Array<SerializedStyles | undefined>) => {
     const defined = styles.filter(isDefined);
@@ -259,7 +259,7 @@ export function createClassName(css: (...styles: SerializedStyles[]) => string):
     return defined.length ? css(...defined) : '';
   };
 
-  const build = ({ layers, variantKeys }: Internals): EvClassNames<Plain> => {
+  const build = ({ layers, variantKeys }: Internals): EvClassNameMap<Plain> => {
     const base = classNameOf(layers.map((layer) => layer.base[ROOT]));
     const variants = Object.fromEntries(
       variantKeys.map((key) => [
@@ -292,12 +292,12 @@ export function createClassName(css: (...styles: SerializedStyles[]) => string):
         );
   };
 
-  const classNames = (fn: object) => {
+  const classNameMap = (fn: object) => {
     const internals = registry.get(fn);
 
     if (!internals || internals.slotNames) {
       throw new Error(
-        '[emotion-variants] `classNames()` expects a function returned by `ev()` without `slots`. If it is one, two copies of emotion-variants may be installed.',
+        '[emotion-variants] `classNameMap()` expects a function returned by `ev()` without `slots`. If it is one, two copies of emotion-variants may be installed.',
       );
     }
 
@@ -310,7 +310,7 @@ export function createClassName(css: (...styles: SerializedStyles[]) => string):
 
   return {
     className,
-    classNames,
+    classNameMap,
   } as ClassNameHelpers;
 }
 
