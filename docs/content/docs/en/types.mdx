@@ -7,9 +7,10 @@ Every type `emotion-variants` exports, and when you would reach for it.
 
 ```typescript
 import type {
+  ClassNameHelpers,
   CompoundVariant,
   Ev,
-  EvClassNames,
+  EvClassNameMap,
   EvConfig,
   EvFunction,
   EvSlotsFunction,
@@ -58,14 +59,12 @@ Every field is optional: `base`, `variants`, `compoundVariants`, `defaultVariant
 
 ### `EvFunction<T, B>`
 
-The type of the value [`ev()`](./ev.mdx) returns — callable, plus `variants()`, `className()`, and `classNames`.
+The type of the value [`ev()`](./ev.mdx) returns — callable, plus `variants()`.
 
 ```typescript
 interface EvFunction<T, B extends string = never> {
   (variants?: EvVariants<T, B>): SerializedStyles[];
   variants: () => Array<VariantKeys<T>>;
-  className: (variants?: EvVariants<T, B>) => string;
-  classNames: EvClassNames<T>;
 }
 ```
 
@@ -79,7 +78,6 @@ The type [`ev()`](./ev.mdx#slots) returns when the configuration declares `slots
 interface EvSlotsFunction<N extends string, T, B extends string = never> {
   (variants?: EvVariants<T, B>): { [K in N]: (slotVariants?: EvVariants<T, B>) => SerializedStyles[] };
   variants: () => Array<VariantKeys<T>>;
-  className: (variants?: EvVariants<T, B>) => { [K in N]: string };
 }
 ```
 
@@ -134,15 +132,26 @@ type ButtonVariants = VariantProps<typeof button>;
 
 It resolves to the same type as `EvVariants<T, B>` without you having to name `T` or `B`.
 
-### `EvClassNames<T>`
+### `EvClassNameMap<T>`
 
-The shape of [`classNames`](./ev.mdx#classnames) — `base` plus a class name per variant value. Keys are the string form of each value.
+The return type of [`classNameMap()`](./ev.mdx#classnamemap) — `base` plus a class name per variant value. Keys are the string form of each value.
 
 ```typescript
-type ClassNames = EvClassNames<{
+type ClassNameMap = EvClassNameMap<{
   outlined: { true: {}; false: {} };
 }>;
 // { base: string; variants: { outlined: { true: string; false: string } } }
+```
+
+### `ClassNameHelpers`
+
+The type [`createClassName`](./ev.mdx#createclassname) returns — the `className` and `classNameMap` helpers. Reach for it when you pass the helpers around or wrap them.
+
+```typescript
+import { css } from '@emotion/css';
+import { type ClassNameHelpers, createClassName } from 'emotion-variants';
+
+const helpers: ClassNameHelpers = createClassName(css);
 ```
 
 ### `CompoundVariant<T>`

@@ -7,9 +7,10 @@ description: 'emotion-variants 导出的所有类型，以及各自的使用场�
 
 ```typescript
 import type {
+  ClassNameHelpers,
   CompoundVariant,
   Ev,
-  EvClassNames,
+  EvClassNameMap,
   EvConfig,
   EvFunction,
   EvSlotsFunction,
@@ -58,14 +59,12 @@ const config: EvConfig<{ size: { small: { fontSize: number } } }> = {
 
 ### `EvFunction<T, B>`
 
-[`ev()`](./ev.mdx) 返回值的类型：可调用，并带有 `variants()`、`className()` 和 `classNames`。
+[`ev()`](./ev.mdx) 返回值的类型：可调用，并带有 `variants()`。
 
 ```typescript
 interface EvFunction<T, B extends string = never> {
   (variants?: EvVariants<T, B>): SerializedStyles[];
   variants: () => Array<VariantKeys<T>>;
-  className: (variants?: EvVariants<T, B>) => string;
-  classNames: EvClassNames<T>;
 }
 ```
 
@@ -79,7 +78,6 @@ interface EvFunction<T, B extends string = never> {
 interface EvSlotsFunction<N extends string, T, B extends string = never> {
   (variants?: EvVariants<T, B>): { [K in N]: (slotVariants?: EvVariants<T, B>) => SerializedStyles[] };
   variants: () => Array<VariantKeys<T>>;
-  className: (variants?: EvVariants<T, B>) => { [K in N]: string };
 }
 ```
 
@@ -134,15 +132,26 @@ type ButtonVariants = VariantProps<typeof button>;
 
 它解析出的类型与 `EvVariants<T, B>` 相同，但你不必写出 `T` 或 `B`。
 
-### `EvClassNames<T>`
+### `EvClassNameMap<T>`
 
-[`classNames`](./ev.mdx#classnames) 的结构：`base` 加上每个 variant 值对应的 class name。键是每个值的字符串形式。
+[`classNameMap()`](./ev.mdx#classnamemap) 的返回类型：`base` 加上每个 variant 值对应的 class name。键是每个值的字符串形式。
 
 ```typescript
-type ClassNames = EvClassNames<{
+type ClassNameMap = EvClassNameMap<{
   outlined: { true: {}; false: {} };
 }>;
 // { base: string; variants: { outlined: { true: string; false: string } } }
+```
+
+### `ClassNameHelpers`
+
+[`createClassName`](./ev.mdx#createclassname) 返回值的类型，即 `className` 和 `classNameMap` 这两个辅助函数。需要传递或封装这些辅助函数时会用到它。
+
+```typescript
+import { css } from '@emotion/css';
+import { type ClassNameHelpers, createClassName } from 'emotion-variants';
+
+const helpers: ClassNameHelpers = createClassName(css);
 ```
 
 ### `CompoundVariant<T>`

@@ -7,27 +7,28 @@ description: 'emotion-variants と Emotion の peer dependency をインスト�
 
 - **React** 16.14 以上。自動 JSX runtime（`react/jsx-runtime`）は 16.14 で導入されました
 - **`@emotion/react`** 11.x
-- **`@emotion/css`** 11.x
 
 ## インストール
 
 ```sh tab="npm"
-npm install emotion-variants @emotion/react @emotion/css
+npm install emotion-variants @emotion/react
 ```
 
 ```sh tab="pnpm"
-pnpm add emotion-variants @emotion/react @emotion/css
+pnpm add emotion-variants @emotion/react
 ```
 
 ```sh tab="yarn"
-yarn add emotion-variants @emotion/react @emotion/css
+yarn add emotion-variants @emotion/react
 ```
 
 ```sh tab="bun"
-bun add emotion-variants @emotion/react @emotion/css
+bun add emotion-variants @emotion/react
 ```
 
-Emotion の 2 つのパッケージはどちらも peer dependency なので、`emotion-variants` と一緒にインストールする必要があります。`@emotion/react` は `css` prop に渡すスタイルをシリアライズし、`@emotion/css` は [`className()` と `classNames`](./ev.mdx#classname) を支えています。`@emotion/css` は無条件に import されるため、`css` prop しか使わない場合でも必要です。
+peer dependency は `@emotion/react` だけです。`css` prop に渡すスタイルをシリアライズします。
+
+[`className()` と `classNameMap()`](./ev.mdx#createclassname) は、Emotion の `css` 関数を受け取って動きます。通常は `@emotion/css` の `css` を渡します。`@emotion/css` は、これらを使う場合にだけインストールしてください。
 
 ## `css` prop を有効にする
 

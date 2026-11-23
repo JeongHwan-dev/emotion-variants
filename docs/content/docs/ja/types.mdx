@@ -7,9 +7,10 @@ description: 'emotion-variants が export するすべての型と、それぞ�
 
 ```typescript
 import type {
+  ClassNameHelpers,
   CompoundVariant,
   Ev,
-  EvClassNames,
+  EvClassNameMap,
   EvConfig,
   EvFunction,
   EvSlotsFunction,
@@ -58,14 +59,12 @@ const config: EvConfig<{ size: { small: { fontSize: number } } }> = {
 
 ### `EvFunction<T, B>`
 
-[`ev()`](./ev.mdx) が返す値の型です。呼び出し可能で、`variants()`、`className()`、`classNames` を持ちます。
+[`ev()`](./ev.mdx) が返す値の型です。呼び出し可能で、`variants()` を持ちます。
 
 ```typescript
 interface EvFunction<T, B extends string = never> {
   (variants?: EvVariants<T, B>): SerializedStyles[];
   variants: () => Array<VariantKeys<T>>;
-  className: (variants?: EvVariants<T, B>) => string;
-  classNames: EvClassNames<T>;
 }
 ```
 
@@ -79,7 +78,6 @@ interface EvFunction<T, B extends string = never> {
 interface EvSlotsFunction<N extends string, T, B extends string = never> {
   (variants?: EvVariants<T, B>): { [K in N]: (slotVariants?: EvVariants<T, B>) => SerializedStyles[] };
   variants: () => Array<VariantKeys<T>>;
-  className: (variants?: EvVariants<T, B>) => { [K in N]: string };
 }
 ```
 
@@ -134,15 +132,26 @@ type ButtonVariants = VariantProps<typeof button>;
 
 `T` や `B` を明示しなくても、`EvVariants<T, B>` と同じ型に解決されます。
 
-### `EvClassNames<T>`
+### `EvClassNameMap<T>`
 
-[`classNames`](./ev.mdx#classnames) の形です。`base` と、variant の値ごとの class name を持ちます。キーは各値を文字列にしたものです。
+[`classNameMap()`](./ev.mdx#classnamemap) の戻り値の型です。`base` と、variant の値ごとの class name を持ちます。キーは各値を文字列にしたものです。
 
 ```typescript
-type ClassNames = EvClassNames<{
+type ClassNameMap = EvClassNameMap<{
   outlined: { true: {}; false: {} };
 }>;
 // { base: string; variants: { outlined: { true: string; false: string } } }
+```
+
+### `ClassNameHelpers`
+
+[`createClassName`](./ev.mdx#createclassname) が返す型で、`className` と `classNameMap` のヘルパーを持ちます。ヘルパーを別の場所に渡したり、ラップしたりするときに使います。
+
+```typescript
+import { css } from '@emotion/css';
+import { type ClassNameHelpers, createClassName } from 'emotion-variants';
+
+const helpers: ClassNameHelpers = createClassName(css);
 ```
 
 ### `CompoundVariant<T>`

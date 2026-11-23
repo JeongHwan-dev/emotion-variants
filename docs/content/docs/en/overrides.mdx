@@ -83,15 +83,15 @@ Do not name that prop `css`. Emotion's JSX runtime consumes `css` at the call si
 
 ```tsx
 // ✗ ordering is not guaranteed
-<button className={`${button.className({ size: 'large' })} ${myClass}`}>Submit</button>;
+<button className={`${className(button, { size: 'large' })} ${myClass}`}>Submit</button>;
 ```
 
-Compose the styles instead of the classes, then turn the result into one class with `@emotion/css`:
+Compose the styles instead of the classes, then turn the result into one class with the same `css` you passed to [`createClassName`](./ev.mdx#createclassname):
 
 ```tsx
-import { css as cssClassName } from '@emotion/css';
+import { css } from '@emotion/css';
 
-const full = cssClassName(button({ size: 'large' }), { width: '100%' });
+const full = css(button({ size: 'large' }), { width: '100%' });
 
 <button className={full}>Submit</button>;
 ```

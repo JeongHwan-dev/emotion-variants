@@ -222,19 +222,19 @@ For each slot, styles are appended in this order, and later entries win on CSS c
 
 ## Class names
 
-`className()` returns one class name per slot.
+[`className()`](./ev.mdx#classname) returns one class name per slot.
 
 ```tsx
-const classNames = card.className({
+const slots = className(card, {
   size: 'large',
 });
 
-<section className={classNames.root}>
-  <h3 className={classNames.title}>Title</h3>
+<section className={slots.root}>
+  <h3 className={slots.title}>Title</h3>
 </section>;
 ```
 
-There is no `classNames` lookup table when `slots` is declared.
+`classNameMap()` does not accept a function that declares `slots`.
 
 ## Rules
 

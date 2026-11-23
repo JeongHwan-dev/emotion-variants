@@ -195,10 +195,10 @@ title({
 
 ## class name
 
-`className()` 接收响应式值，返回的 class 中包含媒体查询规则。
+[`className()`](./ev.mdx#classname) 接收响应式值，返回的 class 中包含媒体查询规则。
 
 ```ts
-button.className({
+className(button, {
   size: {
     initial: 'small',
     md: 'large',
@@ -206,7 +206,7 @@ button.className({
 });
 ```
 
-`classNames` 为每个 variant 值保存一个 class，不包含 breakpoint 相关的条目。
+`classNameMap()` 为每个 variant 值保存一个 class，不包含 breakpoint 相关的条目。
 
 ## 规则
 

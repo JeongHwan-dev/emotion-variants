@@ -7,27 +7,28 @@ description: 'emotion-variants와 Emotion peer dependency를 설치하고 css pr
 
 - **React** 16.14 이상 — 자동 JSX runtime(`react/jsx-runtime`)이 16.14에서 들어왔어요
 - **`@emotion/react`** 11.x
-- **`@emotion/css`** 11.x
 
 ## 설치하기
 
 ```sh tab="npm"
-npm install emotion-variants @emotion/react @emotion/css
+npm install emotion-variants @emotion/react
 ```
 
 ```sh tab="pnpm"
-pnpm add emotion-variants @emotion/react @emotion/css
+pnpm add emotion-variants @emotion/react
 ```
 
 ```sh tab="yarn"
-yarn add emotion-variants @emotion/react @emotion/css
+yarn add emotion-variants @emotion/react
 ```
 
 ```sh tab="bun"
-bun add emotion-variants @emotion/react @emotion/css
+bun add emotion-variants @emotion/react
 ```
 
-Emotion 패키지 두 개는 모두 peer dependency라서 `emotion-variants`와 함께 꼭 설치해야 해요. `@emotion/react`는 `css` prop에 넘길 스타일을 직렬화하고, `@emotion/css`는 [`className()`과 `classNames`](./ev.mdx#classname)를 담당해요. `@emotion/css`는 조건 없이 import되기 때문에, `css` prop만 쓴다고 해도 설치는 필요해요.
+peer dependency는 `@emotion/react` 하나뿐이에요. `css` prop에 넘길 스타일을 직렬화해요.
+
+[`className()`과 `classNameMap()`](./ev.mdx#createclassname)은 Emotion `css` 함수를 직접 넘겨받아요. 보통은 `@emotion/css`의 `css`를 넘겨요. `@emotion/css`는 이 둘을 쓸 때만 설치하세요.
 
 ## `css` prop 활성화
 

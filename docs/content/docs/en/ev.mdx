@@ -65,7 +65,7 @@ The configuration object is required. Pass `ev({})` if you have nothing to decla
 
 #### Returns
 
-(`EvFunction<T>`): A callable object. Call it to get styles, or read [`className()`](#classname), [`classNames`](#classnames), and [`variants()`](#variants) off it. With `config.slots` it is an `EvSlotsFunction<N, T>` instead, described under [Slots](#slots).
+(`EvFunction<T>`): A callable object. Call it to get styles, or read [`variants()`](#variants) off it. For class names, pass it to the helpers from [`createClassName`](#createclassname). With `config.slots` it is an `EvSlotsFunction<N, T>` instead, described under [Slots](#slots).
 
 ### `button(variants)` [#call]
 
@@ -105,26 +105,40 @@ An axis with neither a prop nor a default is skipped entirely.
 
 (`SerializedStyles[]`): Always an array, even when a single style matches. Styles are ordered `base`, then matching `variants` entries in the order the axes were declared, then matching `compoundVariants` in array order. Later entries win on CSS conflicts, and the order of keys you pass in makes no difference.
 
-### `button.className(variants)` [#classname]
+### `createClassName(css)` [#createclassname]
+
+The class-name helpers below come from `createClassName`. It takes the Emotion `css` function that should inject the styles, so set it up once and export the helpers:
+
+```ts
+import { css } from '@emotion/css';
+import { createClassName } from 'emotion-variants';
+
+export const { className, classNameMap } = createClassName(css);
+```
+
+`emotion-variants` never imports `@emotion/css` itself. Install it only if you use these helpers, and see [Caches and server rendering](#caches) for which `css` to pass.
+
+### `className(button, variants)` [#classname]
 
 Use `className()` when you need a plain class string instead of the `css` prop — a non-React surface, a third-party component that only accepts `className`, or a test assertion. It merges `base`, the matching variants, **and** the matching compound variants into one class.
 
 ```tsx
-<button className={button.className({ size: 'large', color: 'primary' })}>Click me</button>;
+<button className={className(button, { size: 'large', color: 'primary' })}>Click me</button>;
 
 // defaultVariants apply exactly as they do for button().
-button.className();
+className(button);
 ```
 
 #### Parameters
 
+- `button` (`EvFunction<T>`): A function returned by `ev()`.
 - `variants` (`EvVariants<T>`, optional): Variant values. Every key is optional.
 
 #### Returns
 
 (`string`): One class name covering the whole combination.
 
-### `button.classNames` [#classnames]
+### `classNameMap(button)` [#classnamemap]
 
 A lookup table of the individual class names — one for `base` and one per variant value. Useful for composing with code that builds its own class lists, or for inspecting what was generated.
 
@@ -155,28 +169,28 @@ const button = ev({
   },
 });
 
-button.classNames.base; // 'css-abc123'
-button.classNames.variants.size.small; // 'css-def456'
+classNameMap(button).base; // 'css-abc123'
+classNameMap(button).variants.size.small; // 'css-def456'
 ```
 
 Keys use the string form of the value, so Boolean and number axes are read as `true` and `1`:
 
 ```typescript
-button.classNames.variants.outlined.true;
-button.classNames.variants.level[1];
+classNameMap(button).variants.outlined.true;
+classNameMap(button).variants.level[1];
 ```
 
-Nothing is injected into the document until you first touch `classNames`, and the result is memoized — code that only uses the `css` prop pays nothing for it.
+Nothing is injected into the document until the first `classNameMap(button)` call, and the result is memoized — code that only uses the `css` prop pays nothing for it.
 
 ```typescript
-button.classNames === button.classNames; // true
+classNameMap(button) === classNameMap(button); // true
 ```
 
 <Callout type="warn">
 
-`classNames` covers `base` and single variant values only. **Compound variants are not represented here** — there is no key for a combination. Use [`className()`](#classname) when compound styles matter.
+`classNameMap()` covers `base` and single variant values only. **Compound variants are not represented here** — there is no key for a combination. Use [`className()`](#classname) when compound styles matter.
 
-Concatenating these classes is not the same as calling the function. Each is a separate rule of equal specificity, so when `base` and a variant set the same property the winner is whichever Emotion inserted first, not the order you list them in. Use [`className()`](#classname) whenever a variant has to beat `base`.
+Concatenating these classes is close to calling the function, but not the same. `classNameMap()` injects `base` first and then each variant in the order the axes were declared, so a variant usually beats `base` and a later axis usually beats an earlier one, whatever order you list the classes in. That is not guaranteed. Two entries with exactly the same styles share one class, and a class is injected only once, at its first position. With a red `base`, a blue variant on the first axis, and a red variant on the second, the second axis reuses the `base` class and blue wins. The same happens when another `ev()` injected those styles earlier. Use [`className()`](#classname) when the result has to match the function.
 
 `base` is an empty string when the config has no `base`.
 
@@ -184,7 +198,7 @@ Concatenating these classes is not the same as calling the function. Each is a s
 
 #### Returns
 
-(`EvClassNames<T>`): `{ base, variants }`, where `variants[axis][value]` is a class name.
+(`EvClassNameMap<T>`): `{ base, variants }`, where `variants[axis][value]` is a class name.
 
 ### `button.variants()` [#variants]
 
@@ -266,10 +280,10 @@ Each slot function takes the same variants as the call. A value is resolved per 
 
 Styles for a slot are ordered: its entry in `slots`, matching `variants` entries, matching `compoundVariants`, then matching `compoundSlots`.
 
-The rest of the object differs from the plain form in two places:
+The class-name helpers differ from the plain form in two places:
 
-- `card.className(variants)` returns one class name per slot, as `{ root: string, title: string }`.
-- There is no `card.classNames`.
+- `className(card, variants)` returns one class name per slot, as `{ root: string, title: string }`.
+- `classNameMap(card)` is a type error and throws.
 
 `card.variants()` is unchanged.
 
@@ -360,12 +374,80 @@ Edit the variant values and watch the button change.
 
 See [Types](./types.mdx) for `EvConfig`, `EvFunction`, `EvVariants`, and the rest of the exported type definitions.
 
-<Callout type="warn" title="Working with @emotion/css">
+## Caches and server rendering [#caches]
 
-`className()` and `classNames` go through [`@emotion/css`](https://emotion.sh/docs/@emotion/css), which keeps its own global cache separate from `@emotion/react`. That means it ignores `CacheProvider` options such as `key` and `nonce`, and server rendering needs [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach) to extract those styles.
+`className()` and `classNameMap()` inject into the cache of the `css` function you passed to [`createClassName`](#createclassname). With `css` from [`@emotion/css`](https://emotion.sh/docs/@emotion/css), that is a global cache separate from `@emotion/react`'s. It ignores `CacheProvider` options such as `key` and `nonce`, and the two caches do not share an insertion order.
 
-Avoid putting `css={button(...)}` and `className={button.className(...)}` on the same element. The two caches do not share an insertion order, so overrides may not resolve the way you expect.
+<Callout type="warn">
 
-For server rendering this means two caches to extract, not one. Collecting only `@emotion/react`'s cache ships markup whose `className()` and `classNames` rules are missing, so the first paint is unstyled until hydration.
+Avoid putting `css={button(...)}` and `className={className(button, ...)}` on the same element while the caches are separate. Overrides may not resolve the way you expect.
 
 </Callout>
+
+Which `css` to pass depends on where the class is needed:
+
+| Where the class is needed | `css` to pass |
+|---|---|
+| Client-rendered app | `css` from `@emotion/css`, with [one shared cache](#share-one-cache) |
+| CSP `nonce`, Shadow DOM, or a custom `key` | `css` of [your own instance](#custom-instance) |
+| Server rendering, inside render | `css` from [`ClassNames`](#server-rendering) |
+| Server rendering, outside React | `css` from `@emotion/css`, extracted with [`@emotion/server`](#server-rendering) |
+
+### Share one cache [#share-one-cache]
+
+In a client-rendered app, hand the `@emotion/css` cache to `@emotion/react`. Both the `css` prop and the class-name helpers then write to the same cache, in one insertion order.
+
+```tsx
+import { cache } from '@emotion/css';
+import { CacheProvider } from '@emotion/react';
+
+<CacheProvider value={cache}>
+  <App />
+</CacheProvider>;
+```
+
+### Use `nonce`, `container`, or a custom `key` [#custom-instance]
+
+Create an instance with [`@emotion/css/create-instance`](https://emotion.sh/docs/@emotion/css#custom-instances) and pass its `css`. The same `cache` can go to `CacheProvider`.
+
+```tsx
+import createEmotion from '@emotion/css/create-instance';
+import { createClassName } from 'emotion-variants';
+
+export const emotion = createEmotion({
+  key: 'app',
+  nonce,
+});
+
+export const { className, classNameMap } = createClassName(emotion.css);
+```
+
+### Server rendering [#server-rendering]
+
+An `@emotion/css` cache lives for the whole server process, not for one request, so its styles are extracted with [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach). Collecting only `@emotion/react`'s cache ships markup whose `className()` and `classNameMap()` rules are missing, and the first paint is unstyled until hydration.
+
+Where that extraction is not available, such as streaming rendering in the Next.js App Router, create the helpers inside render from the `css` that `ClassNames` from `@emotion/react` provides. The styles go to the same cache as the `css` prop, are sent with the markup on every request, and need no `@emotion/css`.
+
+Two conditions apply. In the App Router this code must be in a Client Component, as any use of the `css` prop must. And the styles are sent with the markup only for Emotion's default cache or one made with `@emotion/cache`. If you gave `CacheProvider` the cache of an `@emotion/css` instance, as in [Share one cache](#share-one-cache), the server does not emit them and you are back to extracting with `@emotion/server`.
+
+```tsx
+import { ClassNames } from '@emotion/react';
+import { createClassName } from 'emotion-variants';
+
+<ClassNames>
+  {({ css }) => {
+    const { className } = createClassName(css);
+    const slots = className(card, {
+      size: 'large',
+    });
+
+    return (
+      <section className={slots.root}>
+        <h3 className={slots.title}>Title</h3>
+      </section>
+    );
+  }}
+</ClassNames>;
+```
+
+`classNameMap()` is memoized per `createClassName` call, so it is built again on each render here. Prefer `className()` inside render.

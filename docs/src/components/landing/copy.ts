@@ -10,7 +10,7 @@ import {
   SlidersIcon,
 } from '../icons';
 
-export const INSTALL = 'npm install emotion-variants @emotion/react @emotion/css';
+export const INSTALL = 'npm install emotion-variants @emotion/react';
 
 const IMPORT_EV = `import { ev } from 'emotion-variants';
 
@@ -243,7 +243,7 @@ export const copy = {
         "Works with `@emotion/react`'s `css` prop. No bundler config, no providers.",
       ],
       [
-        'classNames access',
+        'classNameMap access',
         'Read generated class names directly when integrating with non-React contexts or testing.',
       ],
     ],
@@ -314,7 +314,7 @@ export const copy = {
         '`@emotion/react`의 `css` prop과 바로 연결돼요. 번들러 설정도, Provider도 필요 없어요.',
       ],
       [
-        'classNames 직접 접근',
+        'classNameMap 직접 접근',
         '생성된 클래스 이름을 코드에서 바로 읽을 수 있어요. 테스트나 React 외부 환경에서 쓰기 좋아요.',
       ],
     ],
@@ -387,7 +387,7 @@ export const copy = {
         '`@emotion/react` の `css` prop とそのまま連携します。バンドラーの設定も Provider も不要です。',
       ],
       [
-        'classNames へのアクセス',
+        'classNameMap へのアクセス',
         '生成されたクラス名をコードから直接読み取れます。テストや React 以外の環境で役立ちます。',
       ],
     ],
@@ -456,7 +456,10 @@ export const copy = {
         '直接用于 Emotion',
         '与 `@emotion/react` 的 `css` prop 直接配合使用。无需打包工具配置，也无需 Provider。',
       ],
-      ['访问 classNames', '可以直接在代码中读取生成的类名，适合测试或在 React 以外的环境中使用。'],
+      [
+        '访问 classNameMap',
+        '可以直接在代码中读取生成的类名，适合测试或在 React 以外的环境中使用。',
+      ],
     ],
     compareTitle: '用代码来看',
     compareLead: '向下滚动，看看原生 Emotion 按钮如何变成一份 `ev()` 配置。',
