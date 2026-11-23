@@ -39,7 +39,7 @@ export const { className, classNameMap } = createClassName(css);
 + className(card, { size: 'large' }).title;
 ```
 
-传入 `@emotion/css` 的 `css` 可以保持 v2 的行为。要使用 `nonce`、`container` 或共享的 cache，请参阅 [Cache 与服务端渲染](./ev.mdx#caches)。
+传入 `@emotion/css` 的 `css` 可以保持 v2 的行为，但有一处不同：v2 在 variant 之后注入 `base`，而 `classNameMap()` 在 variant 之前注入 `base`。如果你把 `base` 的 class 与设置了同一属性的 variant class 拼接在一起，以前是 `base` 生效，现在是 variant 生效。要使用 `nonce`、`container` 或共享的 cache，请参阅 [Cache 与服务端渲染](./ev.mdx#caches)。
 
 ### `EvFunction` 和 `EvSlotsFunction` 不再包含 class name 成员
 

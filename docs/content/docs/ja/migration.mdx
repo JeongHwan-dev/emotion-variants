@@ -39,7 +39,7 @@ export const { className, classNameMap } = createClassName(css);
 + className(card, { size: 'large' }).title;
 ```
 
-`@emotion/css` の `css` を渡せば、v2 と同じ動作になります。`nonce`、`container`、共有キャッシュを使う場合は、[キャッシュとサーバーレンダリング](./ev.mdx#caches)を参照してください。
+`@emotion/css` の `css` を渡せば v2 と同じ動作になりますが、ひとつだけ違いがあります。v2 は `base` を variant の後に挿入していましたが、`classNameMap()` は `base` を variant より先に挿入します。`base` の class と、同じプロパティを設定する variant の class を連結している場合、以前は `base` が勝っていたところで、今後は variant が勝ちます。`nonce`、`container`、共有キャッシュを使う場合は、[キャッシュとサーバーレンダリング](./ev.mdx#caches)を参照してください。
 
 ### `EvFunction` と `EvSlotsFunction` から class name のメンバーがなくなった
 

@@ -190,7 +190,7 @@ classNameMap(button) === classNameMap(button); // true
 
 `classNameMap()` covers `base` and single variant values only. **Compound variants are not represented here** — there is no key for a combination. Use [`className()`](#classname) when compound styles matter.
 
-Concatenating these classes is close to calling the function, but not the same. `classNameMap()` injects `base` first and then each variant in the order the axes were declared, so a variant beats `base` and a later axis beats an earlier one, whatever order you list the classes in. A class whose exact styles another `ev()` already injected keeps its earlier position, though. Use [`className()`](#classname) when the result has to match the function.
+Concatenating these classes is close to calling the function, but not the same. `classNameMap()` injects `base` first and then each variant in the order the axes were declared, so a variant usually beats `base` and a later axis usually beats an earlier one, whatever order you list the classes in. That is not guaranteed. Two entries with exactly the same styles share one class, and a class is injected only once, at its first position. With a red `base`, a blue variant on the first axis, and a red variant on the second, the second axis reuses the `base` class and blue wins. The same happens when another `ev()` injected those styles earlier. Use [`className()`](#classname) when the result has to match the function.
 
 `base` is an empty string when the config has no `base`.
 
@@ -427,6 +427,8 @@ export const { className, classNameMap } = createClassName(emotion.css);
 An `@emotion/css` cache lives for the whole server process, not for one request, so its styles are extracted with [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach). Collecting only `@emotion/react`'s cache ships markup whose `className()` and `classNameMap()` rules are missing, and the first paint is unstyled until hydration.
 
 Where that extraction is not available, such as streaming rendering in the Next.js App Router, create the helpers inside render from the `css` that `ClassNames` from `@emotion/react` provides. The styles go to the same cache as the `css` prop, are sent with the markup on every request, and need no `@emotion/css`.
+
+Two conditions apply. In the App Router this code must be in a Client Component, as any use of the `css` prop must. And the styles are sent with the markup only for Emotion's default cache or one made with `@emotion/cache`. If you gave `CacheProvider` the cache of an `@emotion/css` instance, as in [Share one cache](#share-one-cache), the server does not emit them and you are back to extracting with `@emotion/server`.
 
 ```tsx
 import { ClassNames } from '@emotion/react';

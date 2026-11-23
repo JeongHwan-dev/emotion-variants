@@ -39,7 +39,7 @@ export const { className, classNameMap } = createClassName(css);
 + className(card, { size: 'large' }).title;
 ```
 
-Passing `css` from `@emotion/css` keeps the v2 behavior. To use `nonce`, `container`, or a shared cache, see [Caches and server rendering](./ev.mdx#caches).
+Passing `css` from `@emotion/css` keeps the v2 behavior, with one exception: `classNameMap()` now injects `base` before the variants, where v2 injected it after them. If you concatenate the `base` class with a variant class that sets the same property, the variant now wins where `base` used to. To use `nonce`, `container`, or a shared cache, see [Caches and server rendering](./ev.mdx#caches).
 
 ### `EvFunction` and `EvSlotsFunction` lose their class-name members
 

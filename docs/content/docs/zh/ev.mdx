@@ -190,7 +190,7 @@ classNameMap(button) === classNameMap(button); // true
 
 `classNameMap()` 只覆盖 `base` 和单个 variant 值。**这里不包含 compound variants**，因为组合没有对应的键。需要 compound 样式时，请使用 [`className()`](#classname)。
 
-拼接这些 class 的结果接近调用函数，但并不等价。`classNameMap()` 会先注入 `base`，再按轴的声明顺序注入各个 variant。因此无论你以什么顺序列出这些 class，variant 都会胜过 `base`，后声明的轴也会胜过先声明的轴。不过，如果另一个 `ev()` 已经注入了完全相同的样式，这个 class 会保持在先前注入的位置。需要结果与函数一致时，请使用 [`className()`](#classname)。
+拼接这些 class 的结果接近调用函数，但并不等价。`classNameMap()` 会先注入 `base`，再按轴的声明顺序注入各个 variant。因此无论你以什么顺序列出这些 class，通常 variant 会胜过 `base`，后声明的轴会胜过先声明的轴。但这并没有保证。样式完全相同的两个条目会共用一个 class，而一个 class 只会在它第一次出现的位置注入一次。如果 `base` 是 red，第一个轴的 variant 是 blue，第二个轴的 variant 是 red，那么第二个轴会复用 `base` 的 class，最终 blue 生效。另一个 `ev()` 先注入了相同样式时也是如此。需要结果与函数一致时，请使用 [`className()`](#classname)。
 
 配置中没有 `base` 时，`base` 为空字符串。
 
@@ -427,6 +427,8 @@ export const { className, classNameMap } = createClassName(emotion.css);
 `@emotion/css` 的 cache 存活于整个服务端进程，而不是单个请求，所以要用 [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach) 提取其中的样式。如果只收集 `@emotion/react` 的 cache，输出的 HTML 会缺少 `className()` 和 `classNameMap()` 的规则，首次绘制在 hydration 之前都没有样式。
 
 在无法进行这种提取的场景中，例如 Next.js App Router 的流式渲染，可以用 `@emotion/react` 的 `ClassNames` 提供的 `css`，在渲染过程中创建辅助函数。样式会进入与 `css` prop 相同的 cache，每次请求都随 HTML 一起发送，并且不需要 `@emotion/css`。
+
+这里有两个条件。在 App Router 中，这段代码必须位于 Client Component 内，与使用 `css` prop 时一样。另外，只有使用 Emotion 的默认 cache 或用 `@emotion/cache` 创建的 cache 时，样式才会随 HTML 一起发送。如果你像[共享同一个 cache](#share-one-cache)那样把 `@emotion/css` 实例的 cache 传给了 `CacheProvider`，服务端不会输出这些样式，仍然需要用 `@emotion/server` 提取。
 
 ```tsx
 import { ClassNames } from '@emotion/react';

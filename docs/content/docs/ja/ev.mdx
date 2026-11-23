@@ -190,7 +190,7 @@ classNameMap(button) === classNameMap(button); // true
 
 `classNameMap()` は `base` と単一の variant の値しか扱いません。**compound variants はここには含まれません。** 組み合わせに対応するキーはありません。compound のスタイルが必要な場合は [`className()`](#classname) を使ってください。
 
-これらの class を連結した結果は関数を呼び出した場合に近くなりますが、同じではありません。`classNameMap()` は最初に `base` を挿入し、続いて各 variant を軸の宣言順に挿入します。そのため class をどの順序で列挙しても、variant は `base` に勝ち、後に宣言した軸は前の軸に勝ちます。ただし、まったく同じスタイルを別の `ev()` がすでに挿入している場合、その class は先に挿入された位置のままです。結果を関数と一致させる必要がある場合は、[`className()`](#classname) を使ってください。
+これらの class を連結した結果は関数を呼び出した場合に近くなりますが、同じではありません。`classNameMap()` は最初に `base` を挿入し、続いて各 variant を軸の宣言順に挿入します。そのため class をどの順序で列挙しても、たいていは variant が `base` に勝ち、後に宣言した軸が前の軸に勝ちます。ただし、これは保証されません。スタイルがまったく同じ 2 つのエントリはひとつの class を共有し、class は最初に現れた位置で一度だけ挿入されます。`base` が red、最初の軸の variant が blue、2 番目の軸の variant が red の場合、2 番目の軸は `base` の class を再利用するため、blue が勝ちます。別の `ev()` が同じスタイルを先に挿入していた場合も同様です。結果を関数と一致させる必要がある場合は、[`className()`](#classname) を使ってください。
 
 設定に `base` がない場合、`base` は空文字列になります。
 
@@ -427,6 +427,8 @@ export const { className, classNameMap } = createClassName(emotion.css);
 `@emotion/css` のキャッシュは、リクエスト単位ではなくサーバープロセス全体で生き続けるため、そのスタイルは [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach) で抽出します。`@emotion/react` のキャッシュだけを収集すると、`className()` と `classNameMap()` のルールが欠けたマークアップが送られ、ハイドレーションが完了するまで初回描画にスタイルが適用されません。
 
 Next.js App Router のストリーミングレンダリングのように、この抽出ができない環境では、`@emotion/react` の `ClassNames` が渡す `css` を使って、レンダリング中にヘルパーを作成してください。スタイルは `css` prop と同じキャッシュに入り、リクエストごとにマークアップと一緒に送られ、`@emotion/css` は必要ありません。
+
+条件が 2 つあります。App Router では、`css` prop を使う場合と同じく、このコードを Client Component の中に置く必要があります。また、スタイルがマークアップと一緒に送られるのは、Emotion のデフォルトのキャッシュか、`@emotion/cache` で作成したキャッシュの場合だけです。[キャッシュをひとつにまとめる](#share-one-cache)のように `CacheProvider` に `@emotion/css` インスタンスのキャッシュを渡している場合、サーバーはスタイルを出力しないため、`@emotion/server` での抽出が必要になります。
 
 ```tsx
 import { ClassNames } from '@emotion/react';

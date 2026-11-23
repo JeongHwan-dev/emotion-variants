@@ -7,7 +7,7 @@ Stop importing `@emotion/css`. The class-name helpers now come from `createClass
 - `@emotion/css` is no longer a peer dependency. Install it only if you use the class-name helpers.
 - `button.className(variants)` is now `className(button, variants)`.
 - `button.classNames` is now `classNameMap(button)`. The name no longer differs from `className` by one letter.
-- `classNameMap()` injects `base` first and then each variant in the order the axes were declared, so concatenated classes resolve like the function call.
+- `classNameMap()` injects `base` first and then each variant in the order the axes were declared. v2 injected `base` last, so concatenating the `base` class with a variant class that sets the same property now lets the variant win. Entries with identical styles still share one class, so use `className()` when the result has to match the function.
 - `EvFunction` and `EvSlotsFunction` no longer have `className` and `classNames` members. `ClassNameHelpers` is exported.
 - The `EvClassNames` type is renamed to `EvClassNameMap`.
 

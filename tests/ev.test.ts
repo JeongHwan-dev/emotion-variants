@@ -474,6 +474,26 @@ describe('ev - classNameMap', () => {
     expect(indexOf(names.variants.tone.loud)).toBeLessThan(indexOf(names.variants.size.large));
   });
 
+  it('gives entries with identical styles one class, injected at its first position', () => {
+    const box = ev({
+      base: { color: 'rgb(4, 4, 4)' },
+      variants: {
+        first: {
+          on: { color: 'rgb(5, 5, 5)' },
+        },
+        second: {
+          on: { color: 'rgb(4, 4, 4)' },
+        },
+      },
+    });
+    const names = classNameMap(box);
+    const inserted = Object.keys(cache.inserted);
+    const indexOf = (name: string) => inserted.indexOf(name.replace('css-', ''));
+
+    expect(names.variants.second.on).toBe(names.base);
+    expect(indexOf(names.base)).toBeLessThan(indexOf(names.variants.first.on));
+  });
+
   it('returns the same object on repeated calls', () => {
     const box = ev({ base: { margin: 0 } });
 

@@ -190,7 +190,7 @@ classNameMap(button) === classNameMap(button); // true
 
 `classNameMap()`은 `base`와 단일 variant 값만 다뤄요. **compound variants는 여기에 들어 있지 않아요.** 조합에 대응하는 키가 없어요. compound 스타일이 필요하면 [`className()`](#classname)을 사용하세요.
 
-이 class들을 이어 붙이면 함수를 호출한 것과 비슷하지만, 똑같지는 않아요. `classNameMap()`은 `base`를 먼저 주입하고 그다음 variant를 축을 선언한 순서대로 주입해요. 그래서 class를 어떤 순서로 나열하든 variant가 `base`를 이기고, 뒤에 선언한 축이 앞의 축을 이겨요. 다만 다른 `ev()`가 완전히 같은 스타일을 이미 주입했다면, 그 class는 먼저 주입된 자리에 그대로 있어요. 결과가 함수와 일치해야 한다면 [`className()`](#classname)을 쓰세요.
+이 class들을 이어 붙이면 함수를 호출한 것과 비슷하지만, 똑같지는 않아요. `classNameMap()`은 `base`를 먼저 주입하고 그다음 variant를 축을 선언한 순서대로 주입해요. 그래서 class를 어떤 순서로 나열하든 대체로 variant가 `base`를 이기고, 뒤에 선언한 축이 앞의 축을 이겨요. 하지만 보장되지는 않아요. 스타일이 완전히 같은 두 항목은 class 하나를 같이 쓰고, class는 처음 나온 자리에서 한 번만 주입돼요. `base`가 red, 첫 번째 축의 variant가 blue, 두 번째 축의 variant가 red라면, 두 번째 축은 `base`의 class를 다시 쓰기 때문에 blue가 이겨요. 다른 `ev()`가 같은 스타일을 먼저 주입한 경우에도 마찬가지예요. 결과가 함수와 일치해야 한다면 [`className()`](#classname)을 쓰세요.
 
 스타일 정의에 `base`가 없으면 `base`는 빈 문자열이에요.
 
@@ -427,6 +427,8 @@ export const { className, classNameMap } = createClassName(emotion.css);
 `@emotion/css`의 cache는 요청 하나가 아니라 서버 프로세스가 살아 있는 내내 유지돼요. 그래서 이 스타일은 [`@emotion/server`](https://emotion.sh/docs/ssr#advanced-approach)로 뽑아내요. `@emotion/react`의 cache만 모으면 `className()`과 `classNameMap()`이 만든 규칙이 빠진 마크업이 나가서, hydration 전까지 스타일이 없는 화면이 보여요.
 
 Next.js App Router의 streaming 렌더링처럼 그렇게 뽑아낼 수 없는 환경에서는, `@emotion/react`의 `ClassNames`가 주는 `css`로 렌더링 안에서 helper를 만드세요. 스타일이 `css` prop과 같은 cache에 들어가고, 요청마다 마크업과 함께 전송되고, `@emotion/css`가 필요 없어요.
+
+조건이 두 가지 있어요. App Router에서는 `css` prop을 쓸 때와 마찬가지로 이 코드가 Client Component 안에 있어야 해요. 그리고 스타일이 마크업과 함께 전송되는 건 Emotion의 기본 cache나 `@emotion/cache`로 만든 cache일 때뿐이에요. [cache 하나를 같이 쓰기](#share-one-cache)처럼 `CacheProvider`에 `@emotion/css` 인스턴스의 cache를 넘겼다면 서버가 스타일을 내보내지 않아서, 다시 `@emotion/server`로 추출해야 해요.
 
 ```tsx
 import { ClassNames } from '@emotion/react';
